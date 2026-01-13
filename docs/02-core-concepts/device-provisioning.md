@@ -580,6 +580,58 @@ else:
 4. Check `provisionState` attribute on existing devices
 5. Enable debug logging on transport service
 
+## Common Pitfalls
+
+### Strategy Selection Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **ALLOW_CREATE_NEW_DEVICES without limits** | Malicious devices flood tenant | Configure device count limits in tenant profile |
+| **CHECK_PRE_PROVISIONED without device pre-creation** | Provisioning fails with "device not found" | Pre-create device entries before deployment |
+| **Wrong strategy for use case** | Either too permissive or too restrictive | ALLOW_CREATE for dynamic fleets; CHECK for controlled environments |
+
+### Credential Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Provision key reuse across devices** | Multiple devices share identity | Use unique provision key per device or batch |
+| **Provision secret in source code** | Secret exposed in firmware | Use secure provisioning or environment injection |
+| **Credentials never rotated** | Long-lived secrets increase risk | Implement credential rotation workflow |
+| **X.509 certificate expiration** | Devices silently fail to connect | Monitor certificate expiration; plan rotation |
+
+### Protocol Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Wrong provisioning topic** | Message ignored; no device created | Verify topic: `v1/devices/me/provision` for MQTT |
+| **Missing Content-Type header** | HTTP provisioning fails | Set `Content-Type: application/json` |
+| **JSON payload malformed** | Parse error; provisioning fails | Validate JSON format before sending |
+| **Device name conflicts** | Device created with wrong profile | Use unique deviceName per tenant |
+
+### Gateway Provisioning Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Child device limit exceeded** | Provisioning fails after limit | Monitor child count; increase gateway limits |
+| **Missing device name in gateway payload** | Gateway interprets as self-provision | Always include `deviceName` for child devices |
+| **Gateway not authorized for provisioning** | Permission denied | Enable provisioning in gateway device profile |
+
+### X.509 Provisioning Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **CN not matching device name** | Device name mismatch | Ensure CN in certificate matches expected device name |
+| **Trust chain incomplete** | TLS handshake fails | Install full certificate chain including intermediate CAs |
+| **Wrong certificate mapping** | Device matched to wrong profile | Configure certificateMapperType correctly; test mappings |
+
+### Security Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Provisioning over unencrypted channel** | Credentials exposed | Always use TLS for provisioning |
+| **Provision key logged** | Secret in log files | Mask sensitive fields in logging configuration |
+| **No rate limiting on provisioning** | DoS via provisioning requests | Configure rate limits at transport and tenant level |
+
 ## See Also
 
 - [Device Entity](./entities/device.md) - Device data model

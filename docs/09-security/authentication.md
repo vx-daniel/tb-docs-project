@@ -735,6 +735,83 @@ The system tracks last login timestamp per user:
 - Review audit logs regularly
 - Set up alerts for lockouts
 
+## Common Pitfalls
+
+### Token Management Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Storing tokens in localStorage** | XSS vulnerability exposure | Use httpOnly cookies for token storage in web applications |
+| **Not refreshing before expiration** | Sudden session logout | Implement proactive refresh when token is 80% expired |
+| **Ignoring refresh token expiration** | Users forced to re-login frequently | Monitor refresh token TTL; prompt re-auth before expiration |
+| **Token in URL query parameters** | Token leaked in logs and referrer headers | Use Authorization header exclusively |
+| **Caching authenticated responses** | Stale authorization data | Set `Cache-Control: no-store` for authenticated endpoints |
+
+### JWT Validation Errors
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Clock skew between servers** | Random token validation failures | Allow 30-60 second clock tolerance in clustered deployments |
+| **Missing signature verification** | Security vulnerability | Always verify JWT signature before trusting claims |
+| **Trusting client-provided claims** | Privilege escalation | Extract all security claims from server-side token validation |
+| **Wrong signing algorithm** | Signature mismatch | Ensure all nodes use same JWT signing key (HS512 default) |
+
+### OAuth2/SSO Configuration
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Redirect URI mismatch** | OAuth callback fails with error | Exact match required including trailing slash |
+| **Missing state parameter** | CSRF vulnerability | ThingsBoard manages state; ensure proxy doesn't strip it |
+| **IdP clock skew** | Token validation failures | Configure appropriate clock skew tolerance |
+| **User attribute mapping errors** | Users created with wrong tenant/customer | Verify mapper configuration extracts correct attributes |
+| **Multiple IdPs with email collision** | Wrong user authenticated | Use unique identifier per IdP, not just email |
+
+### Two-Factor Authentication
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **TOTP time drift** | Valid codes rejected | Ensure server NTP synced; allow 1-2 window tolerance |
+| **SMS rate limiting triggered** | Users can't receive codes | Enforce UI rate limit (30s between requests) |
+| **Backup codes stored insecurely** | Account compromise risk | Warn users to store backup codes offline securely |
+| **2FA setup not completed** | User locked out | Require code verification during setup before activation |
+| **Recovery without admin access** | Permanent lockout | Document admin unlock procedure; train support staff |
+
+### Password Policy Enforcement
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Policy changed, existing passwords valid** | Weak passwords remain | Enable "Force reset if not valid" option |
+| **Password history too short** | Users cycle through passwords | Set `passwordReuseFrequencyDays` to at least 365 |
+| **Expiration without warning** | Users locked out unexpectedly | Implement password expiration notifications (7 days ahead) |
+| **Maximum attempts too low** | Legitimate users locked out | Set at least 5-10 failed attempts before lockout |
+
+### Device Authentication
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Access token exposed in logs** | Credential leakage | Never log device credentials; use masked logging |
+| **Token rotation during active session** | Device disconnected | Implement graceful credential rotation with overlap period |
+| **X.509 certificate expiration** | Mass device disconnections | Monitor certificate expiry; automate renewal |
+| **Gateway credential scope confusion** | Child devices rejected | Gateway credentials only authenticate gateway, not children |
+| **Provisioning key in firmware** | Unauthorized device creation | Use short-lived provisioning keys; rotate regularly |
+
+### API Key Security
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **API key without expiration** | Long-term credential exposure risk | Always set expiration date; rotate keys periodically |
+| **Key in source code/config** | Credential leakage in repos | Use environment variables or secrets management |
+| **Single key for all integrations** | No granular revocation | Create separate keys per integration/use case |
+| **Not monitoring key usage** | Undetected abuse | Review API key audit logs regularly |
+
+### Session Management
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **No concurrent session limit** | Account sharing undetected | Configure max sessions per user if required |
+| **Sessions not invalidated on password change** | Old sessions still valid | Verify password change triggers session invalidation |
+| **Public customer session hijacking** | Unauthorized dashboard access | Use unique session IDs; validate IP consistency |
+
 ## See Also
 
 - [Authorization](./authorization.md) - Permission system

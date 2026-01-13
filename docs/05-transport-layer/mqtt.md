@@ -757,6 +757,60 @@ PUBLISH
   Payload: {"value": 42}
 ```
 
+## Common Pitfalls
+
+### Connection Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Empty password required** | Connection rejected despite valid token | Some clients require empty string for password, not null |
+| **Client ID conflicts** | Random disconnections | Ensure unique client IDs across all devices |
+| **Keep-alive too short** | Frequent reconnections | Set keep-alive to at least 60 seconds for mobile networks |
+| **QoS 2 not supported** | Unexpected message behavior | Platform downgrades QoS 2 to QoS 1 automatically |
+
+### Authentication Errors
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Token as password instead of username** | 4.01 Unauthorized | Access token goes in username field, leave password empty |
+| **Expired X.509 certificate** | TLS handshake failure | Check certificate validity, renew before expiration |
+| **Wrong certificate chain** | SSL verification failed | Include full certificate chain in client configuration |
+| **Case-sensitive tokens** | Authentication failures | Access tokens are case-sensitive, copy exactly |
+
+### Topic Errors
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Typo in topic path** | Messages not received | Verify exact topic path: `v1/devices/me/telemetry` |
+| **Missing request ID** | RPC responses lost | Include `{requestId}` in RPC response topic |
+| **Subscribe before publish** | Missed first message | Subscribe to response topics before sending requests |
+| **Wrong gateway topic** | Child device data lost | Gateway devices must use `v1/gateway/*` topics |
+
+### Payload Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Invalid JSON** | 400 Bad Request | Validate JSON syntax before sending |
+| **Timestamp in seconds** | Incorrect time-series data | Use milliseconds, not seconds, for `ts` field |
+| **Nested telemetry arrays** | Data parsing errors | Use flat key-value or `{"ts": ..., "values": {...}}` format |
+| **Payload too large** | Connection dropped | Default max is 65536 bytes; split large payloads |
+
+### Session Management
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **No clean session handling** | Duplicate messages after reconnect | Use QoS 1 with proper message ID tracking |
+| **Gateway ping timeout** | Child devices disconnected | Gateway ping propagates to children; maintain gateway connection |
+| **Provision timeout** | Device not registered | Complete provisioning within 60 seconds of credential response |
+
+### Performance Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **High-frequency publishing** | Rate limiting kicks in | Batch telemetry into single messages with multiple timestamps |
+| **Blocking on PUBACK** | Slow throughput | Use async publishing with QoS 0 for non-critical data |
+| **Large message queue** | Memory issues | Configure `msgQueueSizePerDeviceLimit` appropriately |
+
 ## See Also
 
 - [Transport Contract](./transport-contract.md) - Common transport interface

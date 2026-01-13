@@ -739,6 +739,80 @@ profileData:
 - Usage state transitions
 - Cross-tenant access attempts (should be zero)
 
+## Common Pitfalls
+
+### Tenant Profile Configuration
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Unlimited limits (0) in production** | Resource exhaustion by single tenant | Set explicit limits based on pricing tier |
+| **Warning threshold too high (>90%)** | No time to react before disabling | Keep warning threshold at 80% or lower |
+| **Rate limits too aggressive** | Legitimate device traffic dropped | Start generous, tighten based on monitoring |
+| **Profile changes not propagated** | Old limits still enforced | Verify cache invalidation; restart may be needed |
+
+### Tenant Isolation Violations
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Custom queries without tenant filter** | Cross-tenant data exposure | Always include `WHERE tenant_id = ?` in queries |
+| **Entity ID enumeration possible** | Security vulnerability | Return 404 (not 403) for cross-tenant entity access |
+| **Shared cache keys without tenant prefix** | Data leakage between tenants | Include tenantId in all cache key patterns |
+| **Rule chain accessing wrong tenant data** | Processing leak | Rule chains must only process originator's tenant data |
+
+### Hierarchy and Access Control
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **SYS_ADMIN accessing device directly** | 403 Forbidden | System admins cannot access tenant data directly |
+| **Customer user expecting write access** | Cannot modify entities | Customer users have limited write permissions |
+| **Authority vs Permission confusion** | Unexpected access denied | Authority gates endpoints; permissions gate entities |
+| **Orphaned customer assignments** | Ghost permissions | Clean up assignments when customers are deleted |
+
+### Usage Tracking Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Usage not resetting** | Permanent disabled state | Verify billing cycle boundaries; check scheduler |
+| **Data points miscounted** | Unexpected quota exhaustion | Each JSON key = 1 point; large strings count extra |
+| **Storage days accumulate** | Quota exceeded despite low volume | Storage days = points × TTL; reduce TTL if needed |
+| **JS executions spike** | Quota depleted rapidly | Optimize rule chains; reduce script complexity |
+
+### Queue and Processing Isolation
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Noisy neighbor in shared queue** | High-value tenant affected | Enable isolated queue for premium tenants |
+| **Isolation without dedicated resources** | Still affected by load | Isolated queue needs dedicated rule engine instances |
+| **Mixed isolation modes** | Unpredictable routing | Consistency: either all shared or per-tier isolation |
+| **Queue partition imbalance** | Some tenants slower | Verify partition assignment; consider tenant-based partitioning |
+
+### Tenant Lifecycle Management
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Tenant deletion leaves orphan data** | Storage not reclaimed | Verify cascade delete; run cleanup jobs |
+| **Creating tenant without profile** | Inherits default profile | Always assign explicit profile at creation |
+| **Profile deletion with assigned tenants** | Tenant becomes unpredictable | Prevent deletion; reassign tenants first |
+| **Bulk tenant operations** | API throttling | Use batch APIs; implement backoff for bulk operations |
+
+### Performance at Scale
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **No tenant_id index** | Full table scans | Add indexes on tenant_id for all entity tables |
+| **Profile lookup not cached** | Database hotspot | Verify TenantProfileCache is operational |
+| **Too many WebSocket subscriptions** | Memory exhaustion | Configure per-tenant subscription limits |
+| **Large tenant dominating resources** | Other tenants starved | Implement resource quotas; consider queue isolation |
+
+### Security and Compliance
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Audit logs without tenant context** | Cannot filter by tenant | Include tenantId in all audit log entries |
+| **Cross-tenant API calls attempted** | Security alert should fire | Monitor and alert on cross-tenant access attempts |
+| **Tenant data in error messages** | Information disclosure | Sanitize error responses; never expose other tenant IDs |
+| **Admin impersonation not logged** | Compliance gap | Log all tenant admin impersonation events |
+
 ## Implementation Details
 
 ### Tenant Profile Caching

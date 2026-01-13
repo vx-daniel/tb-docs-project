@@ -1,0 +1,272 @@
+# Task: Review and Update IoT Gateway Documentation
+
+  ## Context
+  - **Docs to update:** `docs/13-iot-gateway/`
+  - **Reference source:** `ref/thingsboard.github.io-master/`
+  - **Gateway code reference:** ThingsBoard IoT Gateway is a separate Python project; reference official docs primarily
+
+  ## Skills to Use
+  Invoke these skills during execution for specialized expertise:
+
+  | Skill | Purpose |
+  |-------|---------|
+  | `/iot-engineer` | Gateway architecture, protocol bridging, device connectivity patterns |
+  | `/mqtt-expert` | Gateway-to-platform communication, topic structure, QoS handling |
+  | `/workflow-orchestrator` | Data flow orchestration, connector pipelines, event processing |
+  | `/grpc-expert` | Gateway extension protocols, custom connector communication |
+
+  Use skills to **understand** gateway architecture deeply, then **translate** findings into technology-agnostic documentation.
+
+  ## Execution Steps
+
+  ### Phase 1: Discovery
+  1. Read all files in `docs/13-iot-gateway/` to understand current coverage
+  2. Search `ref/thingsboard.github.io-master/` for gateway content:
+     - Search patterns: `iot-gateway`, `gateway`, `connector`, `modbus`, `opc-ua`, `opcua`, `ble`, `bluetooth`, `bacnet`, `can`, `odbc`, `request`, `mqtt-connector`, `converter`, `extension`
+     - Check directories: `docs/iot-gateway/`, `docs/user-guide/`
+  3. Use `/iot-engineer` to analyze:
+     - Gateway deployment scenarios
+     - Protocol bridging patterns
+     - Device multiplexing architecture
+     - Edge processing capabilities
+  4. Use `/mqtt-expert` to understand:
+     - Gateway-platform communication
+     - Device topic structure
+     - Telemetry/attribute/RPC message formats
+  5. Use `/workflow-orchestrator` to understand:
+     - Connector data pipelines
+     - Converter chain processing
+     - Event routing logic
+  6. Create a gap analysis: what's missing, outdated, or incomplete
+
+  ### Phase 2: Update Each Document
+  For each file in `docs/13-iot-gateway/`:
+
+  1. **Cross-reference** with official docs for accuracy
+  2. **Use appropriate skill** to validate technical details
+  3. **Add missing content** from official source
+  4. **Ensure required sections exist:**
+     - Overview (what + why)
+     - Mermaid diagram (gateway architecture, connector flow, or data pipeline)
+     - Configuration examples
+     - Common Pitfalls section
+     - See Also cross-references
+  5. **Apply style rules:**
+     - Technology-agnostic (behavior/contracts, not implementation specifics)
+     - Junior developer audience
+     - Clear, concise language
+
+  ### Phase 3: Gateway-Specific Pitfalls Analysis
+  Use `/iot-engineer`, `/mqtt-expert`, and `/workflow-orchestrator` to identify and document common pitfalls:
+
+  **Gateway Deployment Pitfalls:**
+  - Resource sizing for connector count
+  - Python version compatibility
+  - Dependency installation failures
+  - Docker vs native installation trade-offs
+  - Gateway naming conflicts
+  - Access token vs certificate authentication
+
+  **Connector Configuration Pitfalls:**
+  - JSON syntax errors in config files
+  - Connector name uniqueness requirements
+  - Poll interval tuning (too fast/too slow)
+  - Connection timeout vs retry balance
+  - Connector enable/disable state confusion
+  - Hot reload limitations
+
+  **Modbus Connector Pitfalls:**
+  - Slave ID vs unit ID confusion
+  - Register address offset (0-based vs 1-based)
+  - Function code selection (read holding vs input)
+  - Byte order (big-endian vs little-endian)
+  - Word order for 32-bit values
+  - TCP vs RTU configuration differences
+
+  **OPC-UA Connector Pitfalls:**
+  - Node ID format and namespace
+  - Security policy and mode mismatches
+  - Certificate trust establishment
+  - Subscription vs polling mode selection
+  - Browse path vs node ID addressing
+  - Data type conversion issues
+
+  **BLE Connector Pitfalls:**
+  - Device discovery timing
+  - Characteristic UUID format
+  - Notification vs read mode
+  - Connection stability on busy channels
+  - Passkey pairing requirements
+  - Platform-specific BLE stack issues
+
+  **MQTT Connector Pitfalls:**
+  - Topic filter wildcards behavior
+  - QoS level propagation
+  - Retained message handling
+  - Client ID conflicts
+  - Broker reconnection backoff
+  - Message ordering assumptions
+
+  **Converter Pitfalls:**
+  - JSON path expression errors
+  - Data type casting failures
+  - Missing required fields in output
+  - Converter exception handling
+  - Custom converter deployment
+  - Uplink vs downlink converter confusion
+
+  **Data Flow Pitfalls:**
+  - Device auto-creation timing
+  - Attribute vs telemetry routing
+  - RPC response timeout handling
+  - Large payload fragmentation
+  - Timestamp synchronization
+  - Data loss during gateway restart
+
+  **Platform Communication Pitfalls:**
+  - Gateway device vs connected device confusion
+  - Topic structure format errors
+  - JSON payload schema validation
+  - Rate limiting on platform side
+  - Connection drop detection
+  - Credential rotation procedure
+
+  Translate these into **generic concepts** for documentation:
+  Implementation-specific: "TBGatewayMqttClient inherits from paho.mqtt.client with ThingsBoard extensions"
+  Technology-agnostic: "The gateway maintains a persistent MQTT connection to ThingsBoard for data exchange"
+
+  Config-specific: "connector.json contains 'type': 'modbus' with 'server' section for TCP settings"
+  Technology-agnostic: "Each connector is configured with connection parameters and data mapping rules"
+
+  Code-specific: "BytesModbusUplinkConverter.convert() transforms register values using struct.unpack()"
+  Technology-agnostic: "Converters transform raw protocol data into ThingsBoard telemetry format"
+
+  Pattern-specific: "OpcUaConnector uses asyncua library with subscription callbacks for data changes"
+  Technology-agnostic: "OPC-UA connector can subscribe to node changes or poll values at intervals"
+
+  Protocol-specific: "BLEConnector scans for devices matching 'deviceNameExpression' regex pattern"
+  Technology-agnostic: "BLE connector discovers devices by name pattern and connects to read characteristics"
+
+  ### Phase 4: Validation
+  1. Verify each document has a Mermaid diagram
+  2. Confirm Common Pitfalls section exists in each
+  3. Check cross-references point to valid files
+  4. Use `/iot-engineer` to verify gateway architecture accuracy
+  5. Ensure all major connectors are documented
+
+  ## Style Guide
+
+  DO: "The IoT Gateway bridges non-IP devices to ThingsBoard via protocol connectors"
+  DON'T: "TBGatewayService initializes ConnectorManager with YAML config parsed by PyYAML"
+
+  DO: "Connectors poll or subscribe to devices and forward data through converters"
+  DON'T: "BaseConnector.run() spawns threading.Thread calling _process_data() in while loop"
+
+  DO: "The gateway appears as a single device but reports telemetry for multiple connected devices"
+  DON'T: "GatewayDeviceService.gw_send_telemetry() publishes to 'v1/gateway/telemetry' topic"
+
+  DO: "Modbus connector reads registers from industrial devices over TCP or serial RTU"
+  DON'T: "ModbusConnector uses pymodbus.ModbusTcpClient with ReadHoldingRegistersRequest"
+
+  DO: "OPC-UA connector integrates with industrial automation systems using standard node addressing"
+  DON'T: "OpcUaConnector.browse_nodes() traverses ObjectsFolder with asyncua.Client"
+
+  DO: "Converters transform protocol-specific data formats into ThingsBoard JSON structure"
+  DON'T: "CustomConverter extends Converter with convert() returning {'deviceName': ..., 'telemetry': ...}"
+
+  DO: "RPC commands flow from ThingsBoard through the gateway to connected devices"
+  DON'T: "GatewayRpcService.on_rpc_request() dispatches to connector.server_side_rpc_handler()"
+
+  ## IoT Gateway Specific Content Checklist
+  Ensure documentation covers:
+
+  ### Gateway Architecture
+  - [ ] Gateway purpose and use cases
+  - [ ] Gateway vs direct device connectivity
+  - [ ] Gateway deployment models
+  - [ ] Resource requirements
+  - [ ] Supported platforms (Linux, Windows, Docker)
+
+  ### Core Components
+  - [ ] Gateway service lifecycle
+  - [ ] Connector framework
+  - [ ] Converter system
+  - [ ] Storage and buffering
+  - [ ] Remote configuration
+
+  ### Protocol Connectors
+  - [ ] Modbus (TCP and RTU/Serial)
+  - [ ] OPC-UA
+  - [ ] BLE (Bluetooth Low Energy)
+  - [ ] MQTT (bridging external brokers)
+  - [ ] REST/Request connector
+  - [ ] CAN bus
+  - [ ] BACnet
+  - [ ] SNMP
+  - [ ] ODBC/database connector
+  - [ ] Custom connector development
+
+  ### Converter System
+  - [ ] Uplink converters (device → platform)
+  - [ ] Downlink converters (platform → device)
+  - [ ] Built-in converter types
+  - [ ] Custom converter development
+  - [ ] Converter configuration
+
+  ### Data Mapping
+  - [ ] Device auto-provisioning
+  - [ ] Telemetry mapping
+  - [ ] Attribute mapping
+  - [ ] Device naming strategies
+  - [ ] Data type transformations
+
+  ### Platform Communication
+  - [ ] MQTT topic structure for gateway
+  - [ ] Telemetry reporting
+  - [ ] Attribute updates
+  - [ ] RPC request/response
+  - [ ] Device connect/disconnect events
+  - [ ] Claiming devices through gateway
+
+  ### Configuration
+  - [ ] Main gateway configuration (tb_gateway.yaml)
+  - [ ] Connector configuration files
+  - [ ] Logging configuration
+  - [ ] Remote shell access
+  - [ ] Remote configuration updates
+
+  ### Operations
+  - [ ] Installation procedures
+  - [ ] Upgrade process
+  - [ ] Monitoring gateway health
+  - [ ] Troubleshooting connectivity
+  - [ ] Log analysis
+  - [ ] Performance tuning
+
+  ### Advanced Topics
+  - [ ] Custom connector development
+  - [ ] Custom converter development
+  - [ ] Gateway extensions
+  - [ ] High availability considerations
+  - [ ] Security hardening
+
+  ## Output Format
+  After completing updates, provide a summary table:
+
+  | File | Changes Made | Gaps Filled | Diagrams Added | Skills Used |
+  |------|--------------|-------------|----------------|-------------|
+  | ... | ... | ... | ... | ... |
+
+  ## Success Criteria
+  - [ ] All files reviewed against official docs
+  - [ ] Relevant skills used to validate accuracy
+  - [ ] Each file contains at least one Mermaid diagram
+  - [ ] Each file has a "Common Pitfalls" section
+  - [ ] Language is technology-agnostic throughout
+  - [ ] Cross-references are valid
+  - [ ] Gateway architecture clearly explained
+  - [ ] All major connectors documented
+  - [ ] Converter system explained with examples
+  - [ ] Data mapping concepts clear
+  - [ ] Platform communication protocol documented
+  - [ ] Configuration examples provided

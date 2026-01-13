@@ -1,0 +1,325 @@
+# Task: Review and Update TBMQ Documentation
+
+## Context
+
+- **Docs to update:** `docs/15-tbmq/`
+- **Reference source:** `ref/thingsboard.github.io-master/`
+- **TBMQ code reference:** TBMQ is a separate project; reference official docs at `docs/mqtt-broker/`
+
+## Skills to Use
+
+  Invoke these skills during execution for specialized expertise:
+
+  | Skill | Purpose |
+  |-------|---------|
+  | `/mqtt-expert` | MQTT protocol deep-dive, QoS semantics, session management, broker patterns |
+  | `/iot-engineer` | IoT messaging architecture, scalability patterns, device connectivity |
+  | `/spring-boot-expert` | TBMQ service implementation, configuration, clustering |
+  | `/websocket-engineer` | WebSocket MQTT transport, connection handling |
+  | `/grpc-expert` | Cluster node communication, distributed coordination |
+
+  Use skills to **understand** TBMQ architecture deeply, then **translate** findings into technology-agnostic documentation.
+
+## Execution Steps
+
+### Phase 1: Discovery
+
+  1. Read all files in `docs/15-tbmq/` to understand current coverage
+  2. Search `ref/thingsboard.github.io-master/` for TBMQ content:
+     - Search patterns: `tbmq`, `mqtt-broker`, `mqtt5`, `mqtt-3`, `qos`, `session`, `persistent`, `shared-subscription`, `retain`, `will`, `topic-filter`, `client-credentials`, `kafka`, `broker`
+     - Check directories: `docs/mqtt-broker/`, `docs/mqtt-broker/user-guide/`
+  3. Use `/mqtt-expert` to analyze:
+     - MQTT 3.1.1 vs 5.0 feature differences
+     - QoS level implementations
+     - Session persistence mechanisms
+     - Shared subscription patterns
+  4. Use `/iot-engineer` to understand:
+     - IoT messaging scalability
+     - Device authentication patterns
+     - Cluster topology
+  5. Use `/spring-boot-expert` to understand:
+     - Service configuration
+     - Kafka integration for clustering
+     - Performance tuning options
+  6. Create a gap analysis: what's missing, outdated, or incomplete
+
+### Phase 2: Update Each Document
+
+  For each file in `docs/15-tbmq/`:
+
+  1. **Cross-reference** with official docs for accuracy
+  2. **Use appropriate skill** to validate technical details
+  3. **Add missing content** from official source
+  4. **Ensure required sections exist:**
+     - Overview (what + why)
+     - Mermaid diagram (broker architecture, message flow, or cluster topology)
+     - Configuration examples
+     - Common Pitfalls section
+     - See Also cross-references
+  5. **Apply style rules:**
+     - Technology-agnostic (behavior/contracts, not implementation specifics)
+     - Junior developer audience
+     - Clear, concise language
+
+### Phase 3: TBMQ-Specific Pitfalls Analysis
+
+  Use `/mqtt-expert` and `/iot-engineer` to identify and document common pitfalls:
+
+  **MQTT Protocol Pitfalls:**
+
+- QoS 0 vs 1 vs 2 trade-offs misunderstood
+- Clean session vs persistent session confusion
+- Session expiry interval (MQTT 5) misconfiguration
+- Message expiry vs session expiry difference
+- Topic alias limits and reuse
+- Maximum packet size constraints
+
+  **Connection Management Pitfalls:**
+
+- Client ID collision across devices
+- Keep-alive timeout tuning
+- Reconnection storm after broker restart
+- Connection rate limiting thresholds
+- TCP vs WebSocket selection criteria
+- TLS handshake performance impact
+
+  **Session Persistence Pitfalls:**
+
+- Persistent session storage growth
+- Session cleanup policy configuration
+- Message queue limits per session
+- Session takeover behavior
+- Orphaned session accumulation
+- Session state after client ID change
+
+  **QoS Delivery Pitfalls:**
+
+- QoS 1 duplicate delivery handling
+- QoS 2 exactly-once overhead
+- QoS downgrade on bridging
+- Inflight message window limits
+- Retry timing configuration
+- Packet ID exhaustion scenarios
+
+  **Shared Subscription Pitfalls:**
+
+- Load balancing strategy selection
+- Message ordering within group
+- Subscriber failure redistribution
+- Share name conventions
+- Mixing shared and regular subscriptions
+- QoS interaction with shared delivery
+
+  **Retained Message Pitfalls:**
+
+- Retained message storage limits
+- Clear retained message syntax
+- Retained message per-topic constraint
+- Startup retained message delivery
+- Retained message update frequency
+- Storage impact on high-cardinality topics
+
+  **Last Will and Testament Pitfalls:**
+
+- Will message trigger conditions
+- Will delay interval (MQTT 5) behavior
+- Will message not sent on clean disconnect
+- Will QoS and retain settings
+- Will topic access control
+- Multiple connection will override
+
+  **Topic and Subscription Pitfalls:**
+
+- Wildcard topic filter performance
+- Multi-level wildcard (#) scope
+- Single-level wildcard (+) boundaries
+- Topic name vs topic filter distinction
+- Subscription ID (MQTT 5) usage
+- Topic alias mapping limits
+
+  **Authentication Pitfalls:**
+
+- Basic vs certificate authentication trade-offs
+- Credential rotation procedures
+- Authorization rule precedence
+- Client credential scope
+- Application credential vs device credential
+- Integration with external auth systems
+
+  **Cluster and Scaling Pitfalls:**
+
+- Node discovery configuration
+- Kafka partition count vs throughput
+- Cluster rebalancing during scale
+- Split-brain prevention
+- Cross-node session migration
+- Monitoring lag across nodes
+
+  **Performance Pitfalls:**
+
+- Message throughput bottlenecks
+- Memory allocation for sessions
+- Disk I/O for persistence
+- Network buffer sizing
+- CPU usage from TLS
+- JVM tuning parameters
+
+  Translate these into **generic concepts** for documentation:
+  Implementation-specific: "MqttSessionHandler extends ChannelInboundHandlerAdapter with Netty pipeline"
+  Technology-agnostic: "Each client connection is handled by a session manager tracking subscriptions and state"
+
+  Protocol-specific: "CONNECT packet with cleanStart=false requests session resumption per MQTT 5.0 spec"
+  Technology-agnostic: "Clients can request persistent sessions that survive disconnection and preserve subscriptions"
+
+  Code-specific: "KafkaPersistentSessionStore partitions by clientId hash for distributed storage"
+  Technology-agnostic: "Session data is distributed across cluster nodes for scalability and fault tolerance"
+
+  Config-specific: "TBMQ_QOS2_MAX_INFLIGHT=1000 limits concurrent exactly-once deliveries"
+  Technology-agnostic: "QoS 2 message limits prevent memory exhaustion during high-volume exactly-once delivery"
+
+  Pattern-specific: "SharedSubscriptionProcessor uses round-robin or random strategy per $share group"
+  Technology-agnostic: "Shared subscriptions distribute messages across subscriber group using configurable strategies"
+
+### Phase 4: Validation
+
+  1. Verify each document has a Mermaid diagram
+  2. Confirm Common Pitfalls section exists in each
+  3. Check cross-references point to valid files
+  4. Use `/mqtt-expert` to verify MQTT protocol accuracy
+  5. Ensure MQTT 5.0 features are properly distinguished from 3.1.1
+
+## Style Guide
+
+  DO: "TBMQ is a scalable MQTT broker supporting both MQTT 3.1.1 and MQTT 5.0 protocols"
+  DON'T: "TbmqApplication extends SpringBootApplication with @EnableKafka for cluster coordination"
+
+  DO: "QoS 0 delivers at most once (fire and forget); QoS 1 at least once; QoS 2 exactly once"
+  DON'T: "QoS2Handler implements PUBREC/PUBREL/PUBCOMP state machine with PacketIdManager"
+
+  DO: "Persistent sessions store subscriptions and queued messages across client disconnections"
+  DON'T: "SessionStore.save() serializes ClientSession to Kafka topic 'tbmq.client.session'"
+
+  DO: "Shared subscriptions distribute messages across multiple subscribers for load balancing"
+  DON'T: "SharedSubscriptionService.getNextSubscriber() uses AtomicInteger round-robin counter"
+
+  DO: "Retained messages are stored per topic and delivered immediately to new subscribers"
+  DON'T: "RetainedMsgStore uses ConcurrentHashMap<String, RetainedMsg> with Kafka persistence"
+
+  DO: "MQTT 5.0 adds features like session expiry, message expiry, and user properties"
+  DON'T: "Mqtt5PublishMessage.getMessageExpiryInterval() returns Optional from property"
+
+  DO: "The broker cluster uses Kafka for distributing messages and session state across nodes"
+  DON'T: "TbmqKafkaConsumerService polls from 'tbmq.msg.' with ConsumerRecords batch"
+
+## TBMQ Specific Content Checklist
+
+  Ensure documentation covers:
+
+### TBMQ Overview
+
+- [ ] Purpose and positioning (standalone MQTT broker)
+- [ ] Comparison with ThingsBoard built-in MQTT transport
+- [ ] Use cases and deployment scenarios
+- [ ] Architecture overview
+
+### MQTT Protocol Support
+
+- [ ] MQTT 3.1.1 support
+- [ ] MQTT 5.0 support and new features
+- [ ] Protocol version negotiation
+- [ ] Feature comparison table
+
+### QoS Levels
+
+- [ ] QoS 0 (at most once) behavior
+- [ ] QoS 1 (at least once) behavior
+- [ ] QoS 2 (exactly once) behavior
+- [ ] QoS selection guidelines
+- [ ] Performance implications
+
+### Session Management
+
+- [ ] Clean session vs persistent session
+- [ ] Session expiry interval (MQTT 5)
+- [ ] Session state components
+- [ ] Session takeover behavior
+- [ ] Session storage and limits
+
+### Subscriptions
+
+- [ ] Topic filter syntax and wildcards
+- [ ] Subscription options (MQTT 5)
+- [ ] Shared subscriptions ($share)
+- [ ] Subscription identifiers (MQTT 5)
+- [ ] Maximum subscriptions per client
+
+### Message Features
+
+- [ ] Retained messages
+- [ ] Last will and testament
+- [ ] Message expiry (MQTT 5)
+- [ ] User properties (MQTT 5)
+- [ ] Content type and payload format
+
+### Authentication & Authorization
+
+- [ ] Client credentials (basic auth)
+- [ ] Application credentials
+- [ ] X.509 certificate authentication
+- [ ] Authorization rules
+- [ ] Integration with external systems
+
+### Cluster Architecture
+
+- [ ] Node types and roles
+- [ ] Kafka-based message distribution
+- [ ] Session state distribution
+- [ ] Cluster scaling
+- [ ] High availability configuration
+
+### Transport Options
+
+- [ ] TCP transport
+- [ ] TLS/SSL transport
+- [ ] WebSocket transport
+- [ ] WebSocket Secure (WSS)
+- [ ] Port configuration
+
+### Performance & Tuning
+
+- [ ] Connection limits
+- [ ] Message throughput optimization
+- [ ] Memory configuration
+- [ ] Kafka tuning for TBMQ
+- [ ] Monitoring metrics
+
+### Operations
+
+- [ ] Installation and deployment
+- [ ] Configuration reference
+- [ ] Monitoring and metrics
+- [ ] Troubleshooting guide
+- [ ] Upgrade procedures
+
+## Output Format
+
+  After completing updates, provide a summary table:
+
+  | File | Changes Made | Gaps Filled | Diagrams Added | Skills Used |
+  |------|--------------|-------------|----------------|-------------|
+  | ... | ... | ... | ... | ... |
+
+## Success Criteria
+
+- [ ] All files reviewed against official docs
+- [ ] Relevant skills used to validate accuracy
+- [ ] Each file contains at least one Mermaid diagram
+- [ ] Each file has a "Common Pitfalls" section
+- [ ] Language is technology-agnostic throughout
+- [ ] Cross-references are valid
+- [ ] MQTT 3.1.1 and 5.0 differences clearly explained
+- [ ] QoS levels comprehensively documented
+- [ ] Session management fully explained
+- [ ] Shared subscriptions documented
+- [ ] Cluster architecture clear
+- [ ] Authentication options covered

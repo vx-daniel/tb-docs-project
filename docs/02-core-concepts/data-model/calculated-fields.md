@@ -415,6 +415,61 @@ Sensor → Avg Temperature = AVG(temperature, 1 hour)
 Zone → Max Temperature = MAX(Sensor.avgTemperature)
 ```
 
+## Common Pitfalls
+
+### Configuration Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Source key misspelling** | Calculated field never updates | Verify exact key names match source telemetry/attributes |
+| **Wrong argument type** | Expression evaluation fails | Use TS_LATEST for latest telemetry, ATTRIBUTE for attributes |
+| **Missing default value** | Calculation fails when source unavailable | Always set defaultValue for graceful handling |
+| **Output key conflicts with source** | Feedback loops, unexpected overwrites | Use distinct output key names |
+
+### Window Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Window too small** | Noisy calculations, insufficient data | Use window appropriate for data frequency |
+| **Window too large** | High memory usage, slow calculations | Limit window size; consider pre-aggregation |
+| **Tumbling window misalignment** | Results don't align with business expectations | Use calendar-based intervals (HOUR, DAY) for reporting |
+| **Sliding window memory growth** | Out of memory with many entities | Monitor actor memory; use tumbling windows for high-volume |
+
+### Expression Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Division by zero** | Calculation error, field not updated | Add zero-check in expression: `divisor != 0 ? (num/div) : 0` |
+| **Null value in expression** | Expression fails | Use default values; check for null before calculation |
+| **Type mismatch in expression** | Type conversion error | Ensure consistent types; cast if necessary |
+| **Complex TBEL without debugging** | Hard to diagnose failures | Enable debug settings during development |
+
+### Multi-Entity Aggregation Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Relation path too deep** | Performance degradation | Limit relation traversal depth; use intermediate aggregations |
+| **Missing related entities** | Aggregation result is 0 or null | Handle missing data in aggregation logic |
+| **Relation changes not triggering update** | Stale aggregation values | Use CF_RELATION_ACTION_MSG handling; or scheduled recalculation |
+| **High fan-out aggregation** | Memory pressure, slow updates | Aggregate at intermediate hierarchy levels |
+
+### Performance Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Too many calculated fields per entity** | Actor overhead, memory pressure | Consolidate related calculations; limit to essential fields |
+| **TS_ROLLING with large limit** | High memory per entity actor | Balance limit vs window size; use smaller windows |
+| **Expression parsing on every update** | CPU overhead | Expressions are cached; avoid dynamic expression changes |
+| **Scheduled updates too frequent** | Unnecessary calculation overhead | Set scheduledUpdateInterval appropriate for data change rate |
+
+### State Recovery Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **RocksDB state loss** | Recalculation required on restart | Ensure RocksDB persistence configured properly |
+| **Partition rebalance during calculation** | Temporary inconsistency | System handles; allow time for state migration |
+| **Debug events filling disk** | Storage exhaustion | Disable debug in production; configure event retention |
+
 ## See Also
 
 - [Telemetry](./telemetry.md) - Source data for calculations

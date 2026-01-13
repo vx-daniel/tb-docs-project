@@ -1,0 +1,290 @@
+# Task: Review and Update Security Documentation
+
+## Context
+
+- **Docs to update:** `docs/09-security/`
+- **Reference source:** `ref/thingsboard.github.io-master/`
+- **Live code reference:** `ref/thingsboard-master/application/src/main/java/org/thingsboard/server/service/security/` and `ref/thingsboard-master/common/dao-api/src/main/java/org/thingsboard/server/dao/`
+
+## Skills to Use
+
+  Invoke these skills during execution for specialized expertise:
+
+  | Skill | Purpose |
+  |-------|---------|
+  | `/jwt-expert` | JWT token structure, claims, validation, refresh flows, best practices |
+  | `/spring-boot-expert` | Spring Security filters, authentication providers, security context |
+  | `/java-patterns` | Security patterns, permission checking, tenant isolation design |
+  | `/workflow-orchestrator` | Auth flows, session management, security event handling |
+  | `/iot-engineer` | Device authentication patterns, credential provisioning, IoT security |
+
+  Use skills to **understand** security implementation deeply, then **translate** findings into technology-agnostic documentation.
+
+## Execution Steps
+
+### Phase 1: Discovery
+
+  1. Read all files in `docs/09-security/` to understand current coverage
+  2. Search `ref/thingsboard.github.io-master/` for security content:
+     - Search patterns: `security`, `authentication`, `authorization`, `jwt`, `oauth`, `saml`, `ldap`, `permission`, `role`, `tenant`, `isolation`, `rate-limit`, `2fa`, `mfa`, `audit`, `ssl`, `tls`, `certificate`, `x509`
+     - Check directories: `docs/user-guide/`, `docs/reference/`, `docs/pe/user-guide/`
+  3. Use `/jwt-expert` to analyze:
+     - Token generation and validation
+     - Claims structure and permissions
+     - Refresh token mechanisms
+     - Token security best practices
+  4. Use `/spring-boot-expert` to understand:
+     - Security filter chain
+     - Authentication providers
+     - Method-level security
+  5. Use `/java-patterns` to understand:
+     - Tenant isolation implementation
+     - Permission checking patterns
+     - Rate limiting design
+  6. Create a gap analysis: what's missing, outdated, or incomplete
+
+### Phase 2: Update Each Document
+
+  For each file in `docs/09-security/`:
+
+  1. **Cross-reference** with official docs for accuracy
+  2. **Use appropriate skill** to validate technical details
+  3. **Add missing content** from official source
+  4. **Ensure required sections exist:**
+     - Overview (what + why)
+     - Mermaid diagram (auth flow, permission hierarchy, or isolation boundaries)
+     - Configuration examples
+     - Common Pitfalls section
+     - See Also cross-references
+  5. **Apply style rules:**
+     - Technology-agnostic (behavior/contracts, not implementation specifics)
+     - Junior developer audience
+     - Clear, concise language
+
+### Phase 3: Security-Specific Pitfalls Analysis
+
+  Use `/jwt-expert`, `/spring-boot-expert`, and `/java-patterns` to identify and document common pitfalls:
+
+  **Authentication Pitfalls:**
+
+- Token expiration grace period handling
+- Refresh token rotation security
+- Concurrent session limits
+- Password policy enforcement gaps
+- Brute force protection thresholds
+- Account lockout recovery process
+- Remember-me token security
+
+  **JWT Token Pitfalls:**
+
+- Token storage location (localStorage vs httpOnly cookie)
+- Token size bloat from excessive claims
+- Clock skew tolerance in validation
+- Token revocation limitations
+- Signature algorithm selection (HS256 vs RS256)
+- Public key rotation handling
+- Token replay attack prevention
+
+  **Authorization Pitfalls:**
+
+- Role hierarchy misunderstanding
+- Permission inheritance edge cases
+- Entity group permission propagation
+- Custom permission expression errors
+- API endpoint permission mapping
+- Dashboard permission vs entity permission
+- Edge case: orphaned permissions after deletion
+
+  **Multi-Tenancy Pitfalls:**
+
+- Cross-tenant data leakage vectors
+- Tenant context propagation in async operations
+- Shared resource isolation (cache, queue)
+- Tenant ID validation bypass attempts
+- System admin vs tenant admin scope confusion
+- Customer user tenant boundary enforcement
+
+  **Rate Limiting Pitfalls:**
+
+- Rate limit scope (per-tenant, per-user, per-IP)
+- Burst allowance configuration
+- Rate limit bypass for internal services
+- Distributed rate limiting consistency
+- Rate limit header interpretation
+- Graceful degradation vs hard blocking
+
+  **OAuth2/SSO Pitfalls:**
+
+- Redirect URI validation strictness
+- State parameter CSRF protection
+- Token exchange timing windows
+- IdP metadata refresh intervals
+- Claim mapping configuration
+- Logout propagation to IdP
+- Multi-IdP user collision handling
+
+  **Device Security Pitfalls:**
+
+- Access token vs X.509 certificate trade-offs
+- Credential rotation during active sessions
+- Gateway device credential scope
+- Provisioning key exposure
+- Device impersonation prevention
+- Firmware signature verification
+
+  **Audit & Compliance Pitfalls:**
+
+- Audit log retention vs storage costs
+- Sensitive data in audit logs
+- Audit log tampering protection
+- Compliance report generation gaps
+- GDPR data subject access requests
+- Audit event throttling under load
+
+  Translate these into **generic concepts** for documentation:
+  Spring-specific: "JwtAuthenticationFilter extends OncePerRequestFilter checking Bearer header"
+  Technology-agnostic: "Each API request is validated against the Authorization header token"
+
+  JWT-specific: "JwtTokenFactory.createAccessJwtToken() embeds userId and authorities in claims"
+  Technology-agnostic: "Access tokens contain user identity and permissions as embedded claims"
+
+  Implementation-specific: "@PreAuthorize('hasAuthority(TENANT_ADMIN)') on controller methods"
+  Technology-agnostic: "Endpoints enforce role requirements; unauthorized requests receive 403 Forbidden"
+
+  Code-specific: "TenantId extracted from SecurityContext and validated against requested EntityId"
+  Technology-agnostic: "Every data access validates that the requested entity belongs to the user's tenant"
+
+  Rate-limit-specific: "TbRateLimits uses Bucket4j with token bucket algorithm and sliding window"
+  Technology-agnostic: "Rate limiting uses token bucket algorithm allowing brief bursts within sustained limits"
+
+### Phase 4: Validation
+
+  1. Verify each document has a Mermaid diagram
+  2. Confirm Common Pitfalls section exists in each
+  3. Check cross-references point to valid files
+  4. Use `/jwt-expert` to verify token flow accuracy
+  5. Ensure tenant isolation is comprehensively documented
+
+## Style Guide
+
+  DO: "Users authenticate with username/password and receive access and refresh tokens"
+  DON'T: "AuthController.getToken() calls AuthenticationManager.authenticate() returning JwtTokenPair"
+
+  DO: "Access tokens expire quickly (15 minutes default); refresh tokens enable renewal without re-login"
+  DON'T: "JwtSettings configures tokenExpirationTime and refreshTokenExpTime in seconds"
+
+  DO: "Roles define permission sets: System Admin, Tenant Admin, Customer User, each with decreasing scope"
+  DON'T: "Authority enum defines SYS_ADMIN, TENANT_ADMIN, CUSTOMER_USER mapped to GrantedAuthority"
+
+  DO: "Every API request is validated to ensure the user can only access their tenant's data"
+  Technology-agnostic: "TenantId from JWT is matched against entity's tenantId in DAO layer queries"
+
+  DO: "Rate limits protect against abuse by capping requests per time window"
+  DON'T: "RateLimitService.checkRateLimit() returns true/false based on Bucket.tryConsume()"
+
+  DO: "Two-factor authentication adds a time-based code requirement after password verification"
+  DON'T: "TwoFactorAuthService validates TOTP using GoogleAuthenticator.authorize()"
+
+  DO: "X.509 certificates enable device authentication using cryptographic identity"
+  DON'T: "X509CertificateAuthenticationProvider extracts CN from X509Certificate chain"
+
+## Security Specific Content Checklist
+
+  Ensure documentation covers:
+
+### Authentication Methods
+
+- [ ] Username/password authentication
+- [ ] JWT token-based authentication
+- [ ] OAuth 2.0 integration
+- [ ] SAML 2.0 SSO (PE)
+- [ ] LDAP authentication (PE)
+- [ ] Two-factor authentication (2FA/MFA)
+- [ ] API key authentication
+- [ ] Device authentication (access token, X.509)
+
+### Token Management
+
+- [ ] Access token structure and claims
+- [ ] Refresh token flow
+- [ ] Token expiration configuration
+- [ ] Token revocation mechanisms
+- [ ] Token storage best practices
+
+### Authorization Model
+
+- [ ] Role hierarchy (System Admin → Tenant Admin → Customer User)
+- [ ] Built-in roles and permissions
+- [ ] Custom roles (PE)
+- [ ] Entity-level permissions
+- [ ] Entity group permissions (PE)
+- [ ] Dashboard permissions
+- [ ] API endpoint authorization
+
+### Multi-Tenant Isolation
+
+- [ ] Tenant boundary enforcement
+- [ ] Data isolation guarantees
+- [ ] Cross-tenant request prevention
+- [ ] Tenant context propagation
+- [ ] Shared infrastructure isolation
+- [ ] Cache and queue isolation
+
+### Rate Limiting
+
+- [ ] Rate limit scopes (tenant, user, device, API)
+- [ ] Configuration parameters
+- [ ] Burst handling
+- [ ] Rate limit response headers
+- [ ] Whitelisting and exceptions
+
+### Device Security
+
+- [ ] Device credential types
+- [ ] Access token authentication
+- [ ] X.509 certificate authentication
+- [ ] MQTT basic credentials
+- [ ] Credential provisioning
+- [ ] Credential rotation
+
+### Security Operations
+
+- [ ] Audit logging
+- [ ] Security event monitoring
+- [ ] Failed login tracking
+- [ ] Session management
+- [ ] Password policies
+- [ ] Account lockout
+
+### Compliance & Best Practices
+
+- [ ] HTTPS/TLS configuration
+- [ ] Security headers
+- [ ] CORS configuration
+- [ ] Input validation
+- [ ] SQL injection prevention
+- [ ] XSS prevention
+
+## Output Format
+
+  After completing updates, provide a summary table:
+
+  | File | Changes Made | Gaps Filled | Diagrams Added | Skills Used |
+  |------|--------------|-------------|----------------|-------------|
+  | ... | ... | ... | ... | ... |
+
+## Success Criteria
+
+- [ ] All files reviewed against official docs
+- [ ] Relevant skills used to validate accuracy
+- [ ] Each file contains at least one Mermaid diagram
+- [ ] Each file has a "Common Pitfalls" section
+- [ ] Language is technology-agnostic throughout
+- [ ] Cross-references are valid
+- [ ] All authentication methods documented
+- [ ] JWT token lifecycle fully explained
+- [ ] Role hierarchy and permissions clear
+- [ ] Multi-tenant isolation comprehensively covered
+- [ ] Rate limiting configuration documented
+- [ ] Device security patterns included
+- [ ] Security best practices highlighted

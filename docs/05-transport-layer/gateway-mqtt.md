@@ -758,6 +758,59 @@ The [ThingsBoard IoT Gateway](/docs/13-iot-gateway/README.md) is a reference imp
 | REST | HTTP/HTTPS | Web services |
 | SNMP | SNMPv1/v2c/v3 | Network equipment |
 
+## Common Pitfalls
+
+### Device Connection Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Connect before telemetry** | Data lost for unknown device | Always send connect message before device telemetry |
+| **Device name mismatch** | Data not linked to device | Ensure exact device name match in all messages |
+| **Missing disconnect** | Devices show online when offline | Send disconnect when devices go offline |
+| **Gateway not marked as gateway** | Child devices not created | Enable "Is Gateway" flag in device credentials |
+
+### Telemetry Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Wrong topic** | Data goes to gateway instead of device | Use `v1/gateway/telemetry`, not `v1/devices/me/telemetry` |
+| **Device name as key** | Payload parsing errors | Device names are top-level keys: `{"Device A": [...]}` |
+| **Timestamp format** | Incorrect time-series | Use milliseconds for `ts` field |
+| **Mixed payload formats** | Partial data loss | Use consistent format: all with `ts` or all without |
+
+### RPC Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Missing request ID** | Response not correlated | Include `id` from request in response |
+| **Wrong device name** | RPC response lost | Response `device` field must match request exactly |
+| **No RPC subscription** | Missed RPC commands | Subscribe to `v1/gateway/rpc` before expecting commands |
+| **Response timeout** | RPC appears failed | Respond within server timeout (default 10 seconds) |
+
+### Attribute Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Request format errors** | Attribute requests fail | Include `id`, `device`, `client`/`shared` flags, and `keys` array |
+| **Key mismatch** | Empty response | Verify attribute keys exist on device |
+| **Nested device name** | Parsing error | For updates, device names are top-level keys |
+
+### Connection Management
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Gateway disconnect drops children** | All child devices offline | Gateway ping propagates to children; maintain gateway connection |
+| **Too many child devices** | Performance degradation | Consider multiple gateways for >1000 devices |
+| **No connection state tracking** | Stale device states | Track child device connections; send disconnect when lost |
+
+### Performance Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Per-device messages** | High MQTT overhead | Batch multiple devices in single telemetry message |
+| **Large payloads** | Message drops | Stay under `netty.max_payload_size` (default 65536 bytes) |
+| **High-frequency connects** | Rate limiting | Cache connection state; don't reconnect for each message |
+
 ## See Also
 
 - [MQTT Protocol](./mqtt.md) - Standard MQTT device API

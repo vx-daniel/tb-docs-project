@@ -1,0 +1,297 @@
+# Task: Review and Update Architecture Documentation
+
+## Context
+
+- **Docs to update:** `docs/01-architecture/`
+- **Reference source:** `ref/thingsboard.github.io-master/`
+- **Live code reference:** `ref/thingsboard-master/` (overall project structure)
+
+## Skills to Use
+
+  Invoke these skills during execution for specialized expertise:
+
+  | Skill | Purpose |
+  |-------|---------|
+  | `/spring-boot-expert` | Spring Boot architecture patterns, service structure, configuration |
+  | `/java-patterns` | Design patterns, system decomposition, architectural decisions |
+  | `/workflow-orchestrator` | System orchestration, component interactions, data flows |
+  | `/grpc-expert` | Inter-service communication, API contracts, distributed coordination |
+  | `/iot-engineer` | IoT platform architecture, scalability patterns, device management |
+
+  Use skills to **understand** system architecture deeply, then **translate** findings into technology-agnostic documentation.
+
+## Execution Steps
+
+### Phase 1: Discovery
+
+  1. Read all files in `docs/01-architecture/` to understand current coverage
+  2. Search `ref/thingsboard.github.io-master/` for architecture content:
+     - Search patterns: `architecture`, `topology`, `multi-tenant`, `microservice`, `monolith`, `scalability`, `high-availability`, `cluster`, `component`, `layer`, `module`, `design`
+     - Check directories: `docs/reference/`, `docs/user-guide/install/`, `docs/getting-started-guides/`
+  3. Use `/java-patterns` to analyze:
+     - Module structure in `ref/thingsboard-master/`
+     - Layer separation patterns
+     - Design pattern usage
+  4. Use `/spring-boot-expert` to understand:
+     - Service composition
+     - Configuration hierarchy
+     - Dependency structure
+  5. Use `/iot-engineer` to understand:
+     - IoT platform architectural patterns
+     - Scalability considerations
+     - Device connectivity architecture
+  6. Create a gap analysis: what's missing, outdated, or incomplete
+
+### Phase 2: Update Each Document
+
+  For each file in `docs/01-architecture/`:
+
+  1. **Cross-reference** with official docs for accuracy
+  2. **Use appropriate skill** to validate technical details
+  3. **Add missing content** from official source
+  4. **Ensure required sections exist:**
+     - Overview (what + why)
+     - Mermaid diagram (system topology, component interaction, or layer structure)
+     - Configuration examples
+     - Common Pitfalls section
+     - See Also cross-references
+  5. **Apply style rules:**
+     - Technology-agnostic (behavior/contracts, not implementation specifics)
+     - Junior developer audience
+     - Clear, concise language
+
+### Phase 3: Architecture-Specific Pitfalls Analysis
+
+  Use `/java-patterns`, `/spring-boot-expert`, and `/iot-engineer` to identify and document common pitfalls:
+
+  **System Design Pitfalls:**
+
+- Monolith vs microservices selection criteria misunderstood
+- Over-engineering for small deployments
+- Under-engineering for enterprise scale
+- Component responsibility overlap
+- Tight coupling between layers
+- Circular dependencies between modules
+
+  **Topology Pitfalls:**
+
+- Single point of failure identification
+- Load balancer misconfiguration
+- Network partition handling gaps
+- Geographic distribution complexity
+- Hybrid cloud/on-premise challenges
+- Container orchestration assumptions
+
+  **Multi-Tenancy Pitfalls:**
+
+- Tenant isolation boundary violations
+- Resource contention between tenants
+- Tenant-specific customization limits
+- Cross-tenant data leakage vectors
+- Tenant quota enforcement gaps
+- Tenant migration complexity
+
+  **Scalability Pitfalls:**
+
+- Horizontal vs vertical scaling selection
+- Stateful component scaling limitations
+- Database bottleneck identification
+- Message queue throughput limits
+- Cache coherence at scale
+- Auto-scaling trigger misconfiguration
+
+  **High Availability Pitfalls:**
+
+- Failover time expectations
+- Data consistency during failover
+- Split-brain scenario handling
+- Health check granularity
+- Recovery procedure gaps
+- Backup/restore complexity
+
+  **Component Interaction Pitfalls:**
+
+- Synchronous vs asynchronous communication choice
+- Request timeout cascade effects
+- Circuit breaker configuration
+- Retry storm amplification
+- Message ordering assumptions
+- API versioning strategy
+
+  **Data Flow Pitfalls:**
+
+- Telemetry ingestion bottlenecks
+- Rule engine processing delays
+- Persistence layer saturation
+- Cache invalidation timing
+- Event sourcing complexity
+- Audit trail completeness
+
+  **Security Architecture Pitfalls:**
+
+- Trust boundary definition
+- Authentication flow complexity
+- Authorization granularity
+- Network segmentation gaps
+- Secret management approach
+- Audit logging coverage
+
+  **Deployment Pitfalls:**
+
+- Environment parity issues
+- Configuration drift detection
+- Rolling update disruption
+- Database migration coordination
+- Feature flag management
+- Monitoring blind spots
+
+  Translate these into **generic concepts** for documentation:
+  Implementation-specific: "TbCoreApplication bootstraps Spring context with @EnableAutoConfiguration"
+  Technology-agnostic: "The core service initializes all components and manages their lifecycle"
+
+  Code-specific: "ActorSystemContext coordinates TbActorSystem with Spring-managed services"
+  Technology-agnostic: "The actor system provides concurrent message processing across all components"
+
+  Pattern-specific: "AbstractTbApiClient uses RestTemplate with retry and circuit breaker"
+  Technology-agnostic: "External API calls include retry logic and fail gracefully when services are unavailable"
+
+  Architecture-specific: "TenantId is propagated via SecurityContext through all service layers"
+  Technology-agnostic: "Tenant context flows through all operations ensuring data isolation"
+
+  Deployment-specific: "docker-compose.yml orchestrates tb-node, postgres, kafka containers"
+  Technology-agnostic: "Deployment configurations define service dependencies and startup order"
+
+### Phase 4: Validation
+
+  1. Verify each document has a Mermaid diagram
+  2. Confirm Common Pitfalls section exists in each
+  3. Check cross-references point to valid files
+  4. Use `/iot-engineer` to verify IoT architecture patterns
+  5. Ensure architecture decisions have clear rationale
+
+## Style Guide
+
+  DO: "ThingsBoard uses a layered architecture separating transport, processing, and persistence"
+  DON'T: "Spring Boot auto-configuration wires TransportService, RuleEngineService, and TsService beans"
+
+  DO: "The platform supports both monolithic deployment (single process) and microservices (distributed)"
+  DON'T: "TbNodeApplication vs TbCoreApplication + TbRuleEngineApplication main classes"
+
+  DO: "Multi-tenancy isolates customer data at the application layer, ensuring complete separation"
+  DON'T: "TenantId column with @FilterDef annotation enables Hibernate multi-tenant filtering"
+
+  DO: "Horizontal scaling adds more service instances behind a load balancer"
+  DON'T: "Kubernetes ReplicaSet with HorizontalPodAutoscaler based on CPU metrics"
+
+  DO: "The message queue decouples data ingestion from processing, enabling backpressure handling"
+  DON'T: "KafkaTemplate.send() with ProducerRecord partitioned by EntityId hash"
+
+  DO: "High availability requires redundant instances of each service type with shared state"
+  DON'T: "Zookeeper ensemble provides leader election via ZkDiscoveryService"
+
+  DO: "The rule engine processes device data through configurable pipelines called rule chains"
+  DON'T: "TbRuleEngineActorService dispatches TbMsg to TbRuleChainActor via ActorRef.tell()"
+
+## Architecture Specific Content Checklist
+
+  Ensure documentation covers:
+
+### System Overview
+
+- [ ] Platform purpose and capabilities
+- [ ] High-level component diagram
+- [ ] Technology stack summary
+- [ ] Key architectural decisions
+
+### Layer Architecture
+
+- [ ] Transport layer (device connectivity)
+- [ ] Processing layer (rule engine, actors)
+- [ ] Persistence layer (databases, caching)
+- [ ] API layer (REST, WebSocket)
+- [ ] Presentation layer (UI)
+
+### Component Responsibilities
+
+- [ ] Core service responsibilities
+- [ ] Rule engine service responsibilities
+- [ ] Transport service responsibilities
+- [ ] Web UI service responsibilities
+- [ ] Supporting services (JS executor, etc.)
+
+### Deployment Topology
+
+- [ ] Monolithic deployment model
+- [ ] Microservices deployment model
+- [ ] Hybrid deployment options
+- [ ] Cloud vs on-premise considerations
+- [ ] Container orchestration (Kubernetes, Docker Compose)
+
+### Multi-Tenancy
+
+- [ ] Tenant isolation model
+- [ ] Data separation strategy
+- [ ] Resource quota enforcement
+- [ ] Tenant provisioning workflow
+- [ ] White-labeling capabilities
+
+### Scalability
+
+- [ ] Horizontal scaling patterns
+- [ ] Vertical scaling limits
+- [ ] Stateless vs stateful components
+- [ ] Database scaling strategies
+- [ ] Message queue scaling
+
+### High Availability
+
+- [ ] Redundancy requirements
+- [ ] Failover mechanisms
+- [ ] Data replication
+- [ ] Load balancing
+- [ ] Health monitoring
+
+### Data Flow
+
+- [ ] Device telemetry flow
+- [ ] Rule processing flow
+- [ ] API request flow
+- [ ] Real-time subscription flow
+- [ ] Alarm propagation flow
+
+### Integration Points
+
+- [ ] External system integration
+- [ ] API extensibility
+- [ ] Plugin architecture
+- [ ] Custom development hooks
+
+### Security Architecture
+
+- [ ] Authentication boundaries
+- [ ] Authorization model
+- [ ] Network security
+- [ ] Data encryption
+
+## Output Format
+
+  After completing updates, provide a summary table:
+
+  | File | Changes Made | Gaps Filled | Diagrams Added | Skills Used |
+  |------|--------------|-------------|----------------|-------------|
+  | ... | ... | ... | ... | ... |
+
+## Success Criteria
+
+- [ ] All files reviewed against official docs
+- [ ] Relevant skills used to validate accuracy
+- [ ] Each file contains at least one Mermaid diagram
+- [ ] Each file has a "Common Pitfalls" section
+- [ ] Language is technology-agnostic throughout
+- [ ] Cross-references are valid
+- [ ] Layer architecture clearly explained
+- [ ] Deployment topologies comprehensively covered
+- [ ] Multi-tenancy model thoroughly documented
+- [ ] Scalability patterns explained with decision criteria
+- [ ] High availability requirements clear
+- [ ] Data flow diagrams included

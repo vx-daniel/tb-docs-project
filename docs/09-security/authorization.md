@@ -569,6 +569,79 @@ flowchart TD
 
 This ensures users never see entities outside their permission scope, even in list views.
 
+## Common Pitfalls
+
+### Role Hierarchy Misunderstanding
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Expecting SYS_ADMIN to access devices** | 403 Forbidden on device endpoints | System admins manage tenants, not tenant resources; use Tenant Admin |
+| **Customer user expects write access** | Cannot create/delete entities | Customer users have read-mostly access; use Tenant Admin for modifications |
+| **Role inheritance assumptions** | Higher role missing lower permissions | Roles are distinct, not hierarchical; each role defines its own permissions |
+| **Confusing authority with permission** | Access denied despite correct role | Authority gates endpoints; permissions gate entity access within those endpoints |
+
+### Permission Scope Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Entity not assigned to customer** | Customer user gets 403 | Explicitly assign entities to customers via API or UI |
+| **Wrong customer assignment** | User sees different customer's data | Verify entity.customerId matches user.customerId |
+| **Orphaned permissions after entity deletion** | Stale references, potential errors | Clean up entity group memberships when entities are deleted |
+| **Dashboard visible but widgets fail** | Dashboard loads, data missing | Dashboard permission != device/asset data permission; assign both |
+
+### Entity Group Permissions (PE)
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Generic vs Group role confusion** | Unexpected permission scope | Generic = recursive to all owned; Group = specific entity group only |
+| **Sharing group without propagation** | Shared group visible but members aren't | Also share or assign the underlying entities |
+| **Role assigned to wrong owner level** | Permissions don't apply as expected | Generic roles cascade from assignment point; verify owner hierarchy |
+| **Missing Group Permission Entity (GPE)** | Role exists but doesn't grant access | Create GPE linking user group + role + entity group |
+
+### API Endpoint Authorization
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Calling wrong authority endpoint** | 403 immediately without entity check | Check API docs for required authority (TENANT_ADMIN vs CUSTOMER_USER) |
+| **Entity ID enumeration attempts** | 403 "Entity not found" | Returns "not found" for cross-tenant IDs to prevent enumeration |
+| **RPC blocked for system admin** | Cannot execute RPC | Use Tenant Admin or Customer User credentials for RPC operations |
+| **Credentials endpoint restricted** | Cannot read device credentials | READ_CREDENTIALS permission required; not granted to all roles |
+
+### Dashboard Permissions
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Dashboard visible but empty** | Dashboard renders, no data | Assign data source entities (devices/assets) to same customer |
+| **Widget "no permission" error** | Individual widgets fail | Widget queries entities user doesn't have access to |
+| **Public dashboard without public customer** | Cannot access public dashboard | Create public customer and assign dashboard to it |
+| **Dashboard state not persisting** | User preferences lost | Verify user has READ/WRITE_ATTRIBUTES on dashboard entity |
+
+### Customer User Access Patterns
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Claiming already-assigned device** | Claim fails | CLAIM_DEVICES only works for unassigned devices |
+| **Cannot see alarms on assigned device** | Alarm list empty | Verify alarm.customerId matches user.customerId |
+| **Entity view doesn't restrict data** | More data visible than expected | Entity view filters attributes/telemetry; assignment controls access |
+| **Customer user creating sub-entities** | Cannot create devices for customer | Customer users cannot CREATE; tenant admin must create and assign |
+
+### Cross-Role Operations
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Customer user modifying shared entity** | Write fails | Customer users can only WRITE to entities assigned to their customer |
+| **Tenant admin accessing other tenant** | 403 Forbidden | Tenant admins are scoped to single tenant; use system admin to switch |
+| **System admin trying direct entity access** | 403 on device/asset endpoints | System admin must impersonate or create tenant admin to access |
+
+### Best Practice Violations
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Single tenant admin for all operations** | Audit trail unclear | Create role-specific users; leverage custom roles (PE) |
+| **Broad permissions to all users** | Security exposure | Use principle of least privilege; grant minimum required permissions |
+| **Not testing customer user experience** | Permission gaps discovered in production | Test as customer user during development |
+| **Ignoring permission check in custom widgets** | Data leakage through widgets | Widgets inherit user permissions; don't bypass in custom code |
+
 ## See Also
 
 - [Authentication](./authentication.md) - How users prove identity

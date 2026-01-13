@@ -1,0 +1,288 @@
+# Task: Review and Update Trendz Documentation
+
+  ## Context
+  - **Docs to update:** `docs/16-trendz/`
+  - **Reference source:** `ref/thingsboard.github.io-master/`
+  - **Trendz reference:** Trendz is a separate product; reference official docs at `docs/trendz/`
+
+  ## Skills to Use
+  Invoke these skills during execution for specialized expertise:
+
+  | Skill | Purpose |
+  |-------|---------|
+  | `/iot-engineer` | IoT analytics patterns, time-series analysis, sensor data processing |
+  | `/spring-boot-expert` | Trendz service architecture, API integration, configuration |
+  | `/workflow-orchestrator` | Analytics pipelines, data transformation flows, scheduled jobs |
+  | `/java-patterns` | Data processing patterns, aggregation algorithms, caching strategies |
+
+  Use skills to **understand** Trendz architecture deeply, then **translate** findings into technology-agnostic documentation.
+
+  ## Execution Steps
+
+  ### Phase 1: Discovery
+  1. Read all files in `docs/16-trendz/` to understand current coverage
+  2. Search `ref/thingsboard.github.io-master/` for Trendz content:
+     - Search patterns: `trendz`, `analytics`, `visualization`, `prediction`, `forecast`, `anomaly`, `machine-learning`, `ml`, `aggregation`, `calculated-field`, `view`, `dashboard`, `report`, `state`
+     - Check directories: `docs/trendz/`, `docs/trendz/user-guide/`
+  3. Use `/iot-engineer` to analyze:
+     - IoT data analytics patterns
+     - Time-series aggregation strategies
+     - Sensor data anomaly detection
+  4. Use `/workflow-orchestrator` to understand:
+     - Data processing pipelines
+     - View calculation flows
+     - Scheduled report generation
+  5. Create a gap analysis: what's missing, outdated, or incomplete
+
+  ### Phase 2: Update Each Document
+  For each file in `docs/16-trendz/`:
+
+  1. **Cross-reference** with official docs for accuracy
+  2. **Use appropriate skill** to validate technical details
+  3. **Add missing content** from official source
+  4. **Ensure required sections exist:**
+     - Overview (what + why)
+     - Mermaid diagram (analytics pipeline, data flow, or component architecture)
+     - Configuration examples
+     - Common Pitfalls section
+     - See Also cross-references
+  5. **Apply style rules:**
+     - Technology-agnostic (behavior/contracts, not implementation specifics)
+     - Junior developer audience
+     - Clear, concise language
+
+  ### Phase 3: Trendz-Specific Pitfalls Analysis
+  Use `/iot-engineer` and `/workflow-orchestrator` to identify and document common pitfalls:
+
+  **Data Model Pitfalls:**
+  - Entity relationship mapping complexity
+  - Field path navigation errors
+  - Attribute vs telemetry selection
+  - Data type inference mistakes
+  - Missing data handling defaults
+  - Multi-tenant data isolation
+
+  **View Configuration Pitfalls:**
+  - Visualization type selection mismatch
+  - Axis configuration errors
+  - Legend and label truncation
+  - Color scheme accessibility
+  - Responsive layout breakpoints
+  - Export format limitations
+
+  **Aggregation Pitfalls:**
+  - Aggregation function selection (SUM vs AVG vs LAST)
+  - Time bucket granularity impact
+  - Null value aggregation behavior
+  - Group-by field ordering
+  - Large dataset performance
+  - Real-time vs historical aggregation
+
+  **Calculated Field Pitfalls:**
+  - Expression syntax errors
+  - Function availability per context
+  - Unit conversion mistakes
+  - Division by zero handling
+  - Date/time manipulation complexity
+  - Circular reference prevention
+
+  **Time Range Pitfalls:**
+  - Timezone handling inconsistencies
+  - Relative vs absolute time confusion
+  - Business hours filtering
+  - Daylight saving time transitions
+  - Historical data retention limits
+  - Real-time refresh intervals
+
+  **Prediction Pitfalls:**
+  - Insufficient historical data for training
+  - Seasonality pattern detection
+  - Overfitting to noise
+  - Prediction horizon limitations
+  - Model retraining frequency
+  - Confidence interval interpretation
+
+  **Anomaly Detection Pitfalls:**
+  - Threshold sensitivity tuning
+  - False positive rate management
+  - Baseline calculation period
+  - Multi-variate anomaly correlation
+  - Contextual vs point anomalies
+  - Alert fatigue from noise
+
+  **State Field Pitfalls:**
+  - State definition accuracy
+  - State transition logic errors
+  - Duration calculation precision
+  - State overlap handling
+  - Unknown state categorization
+  - State sequence dependencies
+
+  **Report Pitfalls:**
+  - Scheduled report timing
+  - Email delivery configuration
+  - PDF rendering limitations
+  - Data freshness at generation
+  - Report size constraints
+  - Recipient permission validation
+
+  **Integration Pitfalls:**
+  - ThingsBoard connection configuration
+  - API authentication token scope
+  - Dashboard embedding CORS issues
+  - Widget refresh synchronization
+  - Data permission inheritance
+  - Multi-instance coordination
+
+  **Performance Pitfalls:**
+  - Large time range queries
+  - High cardinality group-by fields
+  - Complex calculated field chains
+  - Concurrent user load
+  - Cache invalidation timing
+  - Database query optimization
+
+  Translate these into **generic concepts** for documentation:
+  Implementation-specific: "TrendzViewService.calculateView() executes AggregationPipeline stages"
+  Technology-agnostic: "Views process data through a pipeline of aggregation and transformation stages"
+
+  Code-specific: "PredictionService uses Prophet library with additive seasonality model"
+  Technology-agnostic: "Predictions use time-series forecasting that accounts for trends and seasonal patterns"
+
+  Config-specific: "trendz.datasource.thingsboard.url points to ThingsBoard REST API"
+  Technology-agnostic: "Trendz connects to ThingsBoard to access device telemetry and entity metadata"
+
+  Pattern-specific: "AnomalyDetector implements IsolationForest with contamination=0.01"
+  Technology-agnostic: "Anomaly detection identifies outliers using statistical models trained on historical data"
+
+  Query-specific: "CalculatedFieldEvaluator parses expressions with ANTLR grammar"
+  Technology-agnostic: "Calculated fields support mathematical expressions, functions, and field references"
+
+  ### Phase 4: Validation
+  1. Verify each document has a Mermaid diagram
+  2. Confirm Common Pitfalls section exists in each
+  3. Check cross-references point to valid files
+  4. Use `/iot-engineer` to verify analytics patterns accuracy
+  5. Ensure ML/prediction concepts are accessible to junior developers
+
+  ## Style Guide
+
+  DO: "Trendz is an analytics platform that transforms ThingsBoard data into visualizations and insights"
+  DON'T: "TrendzApplication extends SpringBootApplication connecting via ThingsboardRestClient"
+
+  DO: "Views define how data is queried, aggregated, and displayed in visualizations"
+  DON'T: "ViewEntity contains AggregationConfig with List and GroupByConfig"
+
+  DO: "Aggregations summarize data over time periods (hourly, daily) using functions like average or sum"
+  DON'T: "AggregationType enum includes AVG, SUM, MIN, MAX, COUNT, LAST with TimeBucket interval"
+
+  DO: "Calculated fields create new values from existing data using expressions and functions"
+  DON'T: "CalculatedField.expression uses SpEL with MathContext for precision arithmetic"
+
+  DO: "Predictions forecast future values based on historical patterns and trends"
+  DON'T: "ForecastService.predict() trains ARIMA model with auto_arima hyperparameter search"
+
+  DO: "Anomaly detection identifies unusual data points that deviate from expected patterns"
+  DON'T: "AnomalyDetectionService uses sklearn.IsolationForest with n_estimators=100"
+
+  DO: "State fields track how long entities spend in different conditions (on, off, active, idle)"
+  DON'T: "StateFieldCalculator aggregates state duration with StateTransition timestamp deltas"
+
+  ## Trendz Specific Content Checklist
+  Ensure documentation covers:
+
+  ### Trendz Overview
+  - [ ] Purpose and positioning (analytics add-on for ThingsBoard)
+  - [ ] Key capabilities summary
+  - [ ] Architecture overview
+  - [ ] Licensing and editions
+
+  ### Data Model
+  - [ ] Entity types and relationships
+  - [ ] Field types (telemetry, attribute, calculated, state)
+  - [ ] Data source configuration
+  - [ ] ThingsBoard integration
+
+  ### Visualizations
+  - [ ] Supported chart types (line, bar, pie, table, heatmap, etc.)
+  - [ ] View creation workflow
+  - [ ] Axis and series configuration
+  - [ ] Styling and formatting options
+  - [ ] Interactive features (zoom, drill-down)
+
+  ### Aggregation
+  - [ ] Aggregation functions (SUM, AVG, MIN, MAX, COUNT, LAST, etc.)
+  - [ ] Time bucketing (hourly, daily, weekly, monthly)
+  - [ ] Group-by functionality
+  - [ ] Filter expressions
+  - [ ] Null value handling
+
+  ### Calculated Fields
+  - [ ] Expression syntax
+  - [ ] Available functions (math, date, string, conditional)
+  - [ ] Field references
+  - [ ] Unit conversions
+  - [ ] Best practices
+
+  ### Predictions & Forecasting
+  - [ ] Prediction model types
+  - [ ] Training data requirements
+  - [ ] Forecast horizon configuration
+  - [ ] Accuracy metrics
+  - [ ] Confidence intervals
+  - [ ] Use cases and limitations
+
+  ### Anomaly Detection
+  - [ ] Detection algorithms overview
+  - [ ] Threshold configuration
+  - [ ] Alert integration
+  - [ ] False positive management
+  - [ ] Use cases
+
+  ### State Fields
+  - [ ] State definition
+  - [ ] State duration calculation
+  - [ ] State-based analytics
+  - [ ] State timeline visualization
+
+  ### Reports & Dashboards
+  - [ ] Dashboard creation
+  - [ ] Report scheduling
+  - [ ] Export formats (PDF, CSV, Excel)
+  - [ ] Email delivery
+  - [ ] Embedding in ThingsBoard
+
+  ### Operations
+  - [ ] Installation and setup
+  - [ ] Configuration options
+  - [ ] Performance tuning
+  - [ ] Troubleshooting
+  - [ ] Backup and recovery
+
+  ### Advanced Topics
+  - [ ] Custom functions
+  - [ ] API access
+  - [ ] Multi-tenancy
+  - [ ] Security considerations
+
+  ## Output Format
+  After completing updates, provide a summary table:
+
+  | File | Changes Made | Gaps Filled | Diagrams Added | Skills Used |
+  |------|--------------|-------------|----------------|-------------|
+  | ... | ... | ... | ... | ... |
+
+  ## Success Criteria
+  - [ ] All files reviewed against official docs
+  - [ ] Relevant skills used to validate accuracy
+  - [ ] Each file contains at least one Mermaid diagram
+  - [ ] Each file has a "Common Pitfalls" section
+  - [ ] Language is technology-agnostic throughout
+  - [ ] Cross-references are valid
+  - [ ] Visualization types comprehensively documented
+  - [ ] Aggregation concepts clear with examples
+  - [ ] Prediction/forecasting accessible to junior developers
+  - [ ] Anomaly detection explained without ML jargon
+  - [ ] State fields and duration analytics covered
+  - [ ] ThingsBoard integration documented
+

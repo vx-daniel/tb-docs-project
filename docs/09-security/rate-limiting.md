@@ -425,6 +425,76 @@ logging:
     org.thingsboard.server.service.ratelimit: DEBUG
 ```
 
+## Common Pitfalls
+
+### Configuration Errors
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Rate limits disabled by default** | No protection against abuse | Explicitly enable limits in production; set `enabled: true` |
+| **Limits too aggressive** | Legitimate users blocked | Start with generous limits; tighten based on monitoring data |
+| **Burst limit without sustained limit** | Prolonged abuse possible | Use compound limits: `100:1,2000:60` for burst AND sustained |
+| **Wrong format syntax** | Config parsing error | Use `count:seconds` format; comma-separate multiple limits |
+
+### Scope Misunderstanding
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Per-tenant vs per-user confusion** | Wrong users blocked | REST limits are per-tenant; configure both tenant AND customer limits |
+| **Device limit affects all tenant devices** | Legitimate device blocked | Device limit is per-device; tenant limit is aggregate of all devices |
+| **IP-based bypass with shared NAT** | Many users blocked together | Use token-based identification, not IP |
+| **WebSocket limit vs REST limit** | Different limits trigger unexpectedly | Configure both; WebSocket handles dashboard subscriptions |
+
+### Distributed Deployment Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Per-node limits multiply capacity** | Actual limit = N × configured | Use distributed rate limiting (Redis) in clustered deployments |
+| **Inconsistent limits across nodes** | Unpredictable blocking | Sync configuration across all nodes; use centralized config |
+| **Load balancer retry loops** | Amplified request count | Configure load balancer to not retry on 429 responses |
+
+### Response Handling
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Client ignoring Retry-After header** | Repeated 429 responses | Implement exponential backoff respecting Retry-After |
+| **No retry logic in integrations** | Data loss during throttling | Queue messages; retry after delay |
+| **WebSocket closed without notice** | Dashboard stops updating | Monitor WS connection; reconnect with backoff |
+| **Transport messages silently dropped** | Telemetry gaps | Implement device-side buffering and retry |
+
+### Monitoring Gaps
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **No alerting on rate limit events** | Abuse undetected | Set up alerts for rate limit log patterns |
+| **Cannot identify throttled tenant** | Support blind spots | Enable `print_tenant_names` for debugging |
+| **API usage dashboard not configured** | No visibility into limits | Deploy API usage dashboard for tenant visibility |
+
+### API Usage Quota Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Data points miscounted** | Unexpected quota exhaustion | Each JSON key = 1 point; large strings = multiple points |
+| **Storage days accumulate** | Quota exceeded despite low data rate | Storage days = points × TTL; reduce TTL or point count |
+| **Rule engine executions spike** | Quota depleted quickly | Optimize rule chains; reduce unnecessary node executions |
+| **Monthly quota reset timing** | Budget miscalculated | Quota resets on billing cycle, not calendar month |
+
+### Internal Service Bypass
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Rule engine blocked by transport limits** | Internal processing fails | Internal services may need bypass; use isolated queues |
+| **Notification service rate limited** | Alert delivery delayed | Configure notification service limits separately |
+| **System admin actions blocked** | Admin cannot manage | Consider admin bypass or higher admin-specific limits |
+
+### Performance Impact
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Rate limiting adds latency** | Slower response times | In-memory rate limiting is fast; distributed adds ~1-5ms |
+| **Lock contention at scale** | Throughput bottleneck | Token bucket implementations are lock-free; verify implementation |
+| **Log flooding from rate limit events** | Disk/IO impact | Throttle rate limit logging itself; use sampling |
+
 ## See Also
 
 - [Tenant Profiles](../02-core-concepts/entities/tenant.md) - Tenant configuration

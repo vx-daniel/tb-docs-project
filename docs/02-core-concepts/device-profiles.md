@@ -610,6 +610,59 @@ graph TB
 4. Test with debug logging enabled
 5. Validate message format (JSON/Protobuf)
 
+## Common Pitfalls
+
+### Profile Assignment Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Changing profile on active device** | Messages may route to wrong queue | Plan profile migration during maintenance |
+| **Deleting profile with assigned devices** | Deletion blocked with constraint error | Unassign all devices before profile deletion |
+| **Default profile not set** | New devices fail validation | Always maintain one default profile per tenant |
+| **Profile transport mismatch** | Device cannot connect | Verify profile transport matches device protocol |
+
+### Transport Configuration Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Wrong payload type** | Parse errors on telemetry | Match payload type (JSON/Protobuf/Text) to device format |
+| **Protobuf schema mismatch** | Deserialization fails silently | Regenerate schema after proto changes; test with device |
+| **LwM2M object mapping errors** | Attributes/telemetry not captured | Validate object ID mappings against device specification |
+| **SNMP OID configuration errors** | Polling returns no data | Test OID mappings with snmpwalk before deployment |
+
+### Alarm Rule Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Missing clear condition** | Alarms accumulate indefinitely | Always define clear rules alongside create rules |
+| **Threshold too sensitive** | Alarm noise | Use DURATION or REPEATING instead of SIMPLE |
+| **Duplicate alarm types** | Unexpected alarm updates | Use unique alarm types for distinct conditions |
+| **TBEL syntax error in rule** | Alarm never triggers | Test expressions in rule tester before deployment |
+
+### Queue Assignment Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Non-existent queue name** | Messages stuck in default queue | Verify queue exists before assigning to profile |
+| **High-priority queue for all devices** | Priority queue overwhelmed | Reserve priority queues for critical devices only |
+| **Queue change during processing** | In-flight messages use old queue | Schedule queue changes during low-activity periods |
+
+### Provisioning Settings Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **ALLOW_CREATE with sensitive profile** | Unauthorized devices get premium features | Use CHECK_PRE_PROVISIONED for controlled profiles |
+| **Provision key shared across profiles** | Devices provision with wrong profile | Use unique provision key per profile |
+| **Certificate mapping regex too broad** | Devices match wrong profile | Test regex with expected certificate CNs |
+
+### Performance Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Too many alarm rules per profile** | Slow alarm evaluation | Consolidate rules; move complex logic to rule engine |
+| **Profile used by thousands of devices** | Profile changes affect all at once | Plan gradual rollouts with multiple profiles |
+| **Complex transport configuration** | High CPU during message parsing | Simplify transformations; use efficient payload formats |
+
 ## See Also
 
 - [Device Entity](./entities/device.md) - Device configuration

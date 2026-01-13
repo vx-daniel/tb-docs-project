@@ -597,6 +597,66 @@ Once a device is reclaimed:
 - Device returns to tenant ownership
 - Claim process can be repeated
 
+## Common Pitfalls
+
+### Claiming Strategy Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **allowClaimingByDefault=true without authentication** | Any user can claim any unclaimed device | Require authentication or use secret key claiming |
+| **Device-side key without secure storage** | Key exposed in firmware or QR code | Consider server-side key for higher security needs |
+| **Server-side key generation not random** | Predictable keys enable unauthorized claiming | Use cryptographically secure random key generation |
+| **Secret key too short** | Brute-force vulnerability | Use minimum 8 character keys with alphanumeric characters |
+
+### Timing Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Claim duration too short** | Users cannot complete claiming in time | Set reasonable duration (hours/days, not minutes) |
+| **Claim duration infinite (0)** | Devices claimable forever | Set expiration for temporary claiming scenarios |
+| **Not handling claim expiration** | User experience confusion | Provide clear expiration feedback in UI |
+
+### Secret Key Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Secret key logged** | Key exposed in logs | Mask secretKey in all logging |
+| **Secret key transmitted unencrypted** | Key captured in transit | Always use HTTPS/TLS for claiming APIs |
+| **Same secret key for multiple devices** | One key claims multiple devices | Use unique keys per device |
+| **Secret key not cleared after claiming** | Key remains usable | Configure to clear claimingData after successful claim |
+
+### Device-Side Key Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **claimingAllowed attribute not set** | Claiming fails with "not allowed" | Ensure attribute exists or use allowClaimingByDefault |
+| **claimingData format incorrect** | Claiming fails with parse error | Validate JSON format: `{"secretKey": "...", "expirationTime": ...}` |
+| **Device offline during claiming** | Customer cannot claim | Design for claim registration that works when device connects |
+
+### Server-Side Key Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Not distributing key to customer** | Customer cannot complete claiming | Implement key distribution workflow (email, print, etc.) |
+| **Key visible in UI to non-admins** | Unauthorized key access | Control key visibility based on user role |
+| **Regenerating key destroys previous** | Previous key becomes invalid | Consider supporting multiple active keys |
+
+### Widget Integration Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Dashboard not assigned to customer** | Widget not visible to customer user | Assign claiming dashboard before claiming flow |
+| **Widget configured for wrong claim type** | Incorrect claiming API called | Match widget type (claimDevice vs claimDeviceWithKey) to strategy |
+| **Missing customer context** | Claiming creates device without customer assignment | Verify customer user context in claiming flow |
+
+### Re-claiming Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Expecting automatic reclaim after unclaim** | Device not auto-claimable after release | Must reset claimingAllowed attribute |
+| **Reclaim without new secret** | Old secret key works | Generate new secret on re-claim scenarios |
+| **Customer data remains after unclaim** | Privacy concern | Clear customer-specific data on unclaim |
+
 ## See Also
 
 - [Device Entity](./entities/device.md) - Device data model

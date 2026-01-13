@@ -1,0 +1,291 @@
+ # Task: Review and Update Integrations Documentation
+
+  ## Context
+  - **Docs to update:** `docs/14-integrations/`
+  - **Reference source:** `ref/thingsboard.github.io-master/`
+  - **Live code reference:** `ref/thingsboard-master/common/transport/` and `ref/thingsboard-master/application/src/main/java/org/thingsboard/server/service/integration/` (PE)
+
+  ## Skills to Use
+  Invoke these skills during execution for specialized expertise:
+
+  | Skill | Purpose |
+  |-------|---------|
+  | `/iot-engineer` | IoT platform patterns, LoRaWAN architecture, device onboarding |
+  | `/mqtt-expert` | MQTT integrations, broker bridging, topic mapping |
+  | `/grpc-expert` | Integration protocols, message serialization, streaming |
+  | `/spring-boot-expert` | Integration service implementation, HTTP clients, configuration |
+  | `/workflow-orchestrator` | Data transformation pipelines, uplink/downlink flows |
+
+  Use skills to **understand** integration architecture deeply, then **translate** findings into technology-agnostic documentation.
+
+  ## Execution Steps
+
+  ### Phase 1: Discovery
+  1. Read all files in `docs/14-integrations/` to understand current coverage
+  2. Search `ref/thingsboard.github.io-master/` for integration content:
+     - Search patterns: `integration`, `lorawan`, `ttn`, `chirpstack`, `sigfox`, `nb-iot`, `aws-iot`, `azure-iot`, `kinesis`, `pub-sub`, `kafka-integration`, `http-integration`, `mqtt-integration`, `converter`, `uplink`, `downlink`
+     - Check directories: `docs/user-guide/integrations/`, `docs/pe/user-guide/integrations/`
+  3. Use `/iot-engineer` to analyze:
+     - LoRaWAN network server integration patterns
+     - Cloud IoT platform connectivity
+     - Device provisioning through integrations
+  4. Use `/mqtt-expert` to understand:
+     - MQTT broker integration configuration
+     - Topic subscription patterns
+     - Message format transformations
+  5. Use `/workflow-orchestrator` to understand:
+     - Uplink data processing pipeline
+     - Downlink command routing
+     - Converter chain execution
+  6. Create a gap analysis: what's missing, outdated, or incomplete
+
+  ### Phase 2: Update Each Document
+  For each file in `docs/14-integrations/`:
+
+  1. **Cross-reference** with official docs for accuracy
+  2. **Use appropriate skill** to validate technical details
+  3. **Add missing content** from official source
+  4. **Ensure required sections exist:**
+     - Overview (what + why)
+     - Mermaid diagram (integration flow, data pipeline, or platform topology)
+     - Configuration examples
+     - Common Pitfalls section
+     - See Also cross-references
+  5. **Apply style rules:**
+     - Technology-agnostic (behavior/contracts, not implementation specifics)
+     - Junior developer audience
+     - Clear, concise language
+
+  ### Phase 3: Integration-Specific Pitfalls Analysis
+  Use `/iot-engineer`, `/mqtt-expert`, and `/workflow-orchestrator` to identify and document common pitfalls:
+
+  **General Integration Pitfalls:**
+  - Integration vs gateway selection criteria
+  - Converter debugging complexity
+  - Payload format assumptions
+  - Integration state persistence
+  - Credential management lifecycle
+  - Rate limiting from external platforms
+
+  **LoRaWAN Integration Pitfalls:**
+  - Device EUI format (hex vs base64)
+  - Application server vs network server confusion
+  - Join accept timing and ABP vs OTAA
+  - Downlink queue management
+  - Port number routing conventions
+  - Payload codec selection (CayenneLPP, custom)
+
+  **The Things Network (TTN) Pitfalls:**
+  - API key scope and permissions
+  - V2 vs V3 API differences
+  - Webhook vs MQTT integration choice
+  - Application ID vs device ID mapping
+  - Fair use policy limitations
+  - Region-specific endpoints
+
+  **ChirpStack Pitfalls:**
+  - API token authentication format
+  - gRPC vs REST API selection
+  - Application server URL configuration
+  - Device profile assignment
+  - Multicast group handling
+  - Gateway bridge configuration
+
+  **AWS IoT Pitfalls:**
+  - IAM role policy configuration
+  - Certificate provisioning workflow
+  - Thing registry synchronization
+  - Shadow document format
+  - Rule engine action limits
+  - Cross-region replication
+
+  **Azure IoT Hub Pitfalls:**
+  - Connection string format
+  - Device twin vs telemetry routing
+  - IoT Hub vs IoT Central differences
+  - Shared access policy scope
+  - Message routing query syntax
+  - D2C vs C2D message patterns
+
+  **Google Cloud IoT Pitfalls:**
+  - Service account key management
+  - Pub/Sub subscription configuration
+  - Registry vs device hierarchy
+  - JWT token refresh timing
+  - Cloud Functions integration
+  - Stackdriver logging setup
+
+  **HTTP Integration Pitfalls:**
+  - Webhook endpoint security
+  - Request timeout configuration
+  - Retry policy on failures
+  - Header vs body authentication
+  - Content-Type handling
+  - Response status interpretation
+
+  **MQTT Integration Pitfalls:**
+  - Client ID uniqueness across integrations
+  - Topic filter subscription scope
+  - QoS level propagation
+  - Clean session implications
+  - Last will and testament usage
+  - TLS certificate chain validation
+
+  **Kafka Integration Pitfalls:**
+  - Consumer group coordination
+  - Partition assignment strategy
+  - Offset management (earliest vs latest)
+  - Schema registry integration
+  - Serialization format mismatches
+  - Broker connection pool exhaustion
+
+  **Converter Pitfalls:**
+  - Uplink vs downlink converter scope
+  - Decoder exception handling
+  - Device name extraction logic
+  - Telemetry vs attribute classification
+  - Timestamp parsing formats
+  - Null value handling
+
+  Translate these into **generic concepts** for documentation:
+  Implementation-specific: "IntegrationService instantiates AbstractIntegration subclass per type"
+  Technology-agnostic: "Each integration type has a dedicated handler managing connection and data flow"
+
+  Code-specific: "TTNIntegration extends MqttIntegration with TTN-specific topic patterns"
+  Technology-agnostic: "LoRaWAN integrations subscribe to network server topics and transform payloads"
+
+  Config-specific: "integration.lorawan.ttn.dataUpTopic = 'v3/+/devices/+/up'"
+  Technology-agnostic: "Integrations subscribe to platform-specific topic patterns for device data"
+
+  Pattern-specific: "UplinkDataConverter.decode() returns List with telemetry maps"
+  Technology-agnostic: "Uplink converters extract device identity and transform payload into telemetry"
+
+  Protocol-specific: "AWSIoTIntegration uses AWS SDK with SigV4 authentication"
+  Technology-agnostic: "Cloud integrations authenticate using platform-specific credentials and protocols"
+
+  ### Phase 4: Validation
+  1. Verify each document has a Mermaid diagram
+  2. Confirm Common Pitfalls section exists in each
+  3. Check cross-references point to valid files
+  4. Use `/iot-engineer` to verify integration architecture accuracy
+  5. Ensure all major integration types are documented
+
+  ## Style Guide
+
+  DO: "Integrations connect ThingsBoard to external platforms, transforming data bidirectionally"
+  DON'T: "IntegrationController handles CRUD via IntegrationService with IntegrationDao persistence"
+
+  DO: "LoRaWAN integrations receive uplinks from network servers and route downlinks back"
+  DON'T: "LoRaWANIntegration extends AbstractIntegration implementing processUplink()"
+
+  DO: "Converters transform external payload formats into ThingsBoard device data structure"
+  DON'T: "DecoderScriptEngine evaluates JavaScript with Nashorn returning Map<String,Object>"
+
+  DO: "The Things Network integration subscribes to application topics for device uplinks"
+  DON'T: "TTNv3Integration uses PahoMqttClient with TLSv1.2 connecting to eu1.cloud.thethings.network"
+
+  DO: "AWS IoT integration synchronizes devices as Things and routes telemetry via rules"
+  DON'T: "AWSIoTIntegration uses AWSIoTMqttClient with X.509 certificateId authentication"
+
+  DO: "HTTP integrations receive webhooks and can push data to external endpoints"
+  DON'T: "HttpIntegration spawns OkHttpClient for outbound with WebhookController for inbound"
+
+  DO: "Uplink converters extract device name, telemetry, and attributes from raw payloads"
+  DON'T: "return {'deviceName': msg.dev_eui, 'telemetry': {'temp': bytes[0]}}"
+
+  ## Integrations Specific Content Checklist
+  Ensure documentation covers:
+
+  ### Integration Concepts
+  - [ ] Integration purpose and architecture
+  - [ ] Integration vs gateway comparison
+  - [ ] Uplink and downlink data flow
+  - [ ] Converter system overview
+  - [ ] Device provisioning through integrations
+
+  ### LoRaWAN Integrations
+  - [ ] The Things Network (TTN v3)
+  - [ ] ChirpStack
+  - [ ] Loriot
+  - [ ] Actility ThingPark
+  - [ ] LoRaWAN concepts (join, uplink, downlink)
+  - [ ] Device EUI and DevAddr handling
+  - [ ] Payload codec configuration
+
+  ### Sigfox Integration
+  - [ ] Sigfox backend configuration
+  - [ ] Callback setup
+  - [ ] Device type mapping
+  - [ ] Downlink limitations
+
+  ### NB-IoT / LTE-M
+  - [ ] Cellular IoT integration patterns
+  - [ ] SIM management considerations
+  - [ ] Power efficiency implications
+
+  ### Cloud Platform Integrations
+  - [ ] AWS IoT Core
+  - [ ] Azure IoT Hub
+  - [ ] Google Cloud IoT Core (note: deprecated)
+  - [ ] IBM Watson IoT
+  - [ ] Device registry synchronization
+  - [ ] Credential provisioning
+
+  ### Message Queue Integrations
+  - [ ] Kafka integration
+  - [ ] RabbitMQ integration
+  - [ ] AWS SQS integration
+  - [ ] Azure Service Bus
+  - [ ] Pub/Sub patterns
+
+  ### HTTP Integration
+  - [ ] Webhook receiver configuration
+  - [ ] Outbound HTTP requests
+  - [ ] Authentication options
+  - [ ] Retry and error handling
+
+  ### MQTT Integration
+  - [ ] External broker connectivity
+  - [ ] Topic subscription patterns
+  - [ ] QoS configuration
+  - [ ] TLS/SSL setup
+
+  ### Converters
+  - [ ] Uplink converter function
+  - [ ] Downlink converter function
+  - [ ] Built-in converters
+  - [ ] Custom converter development
+  - [ ] Converter debugging
+
+  ### Configuration
+  - [ ] Integration creation workflow
+  - [ ] Credential management
+  - [ ] Enable/disable and status
+  - [ ] Remote updates
+
+  ### Operations
+  - [ ] Monitoring integration health
+  - [ ] Troubleshooting connectivity
+  - [ ] Log analysis
+  - [ ] Performance considerations
+
+  ## Output Format
+  After completing updates, provide a summary table:
+
+  | File | Changes Made | Gaps Filled | Diagrams Added | Skills Used |
+  |------|--------------|-------------|----------------|-------------|
+  | ... | ... | ... | ... | ... |
+
+  ## Success Criteria
+  - [ ] All files reviewed against official docs
+  - [ ] Relevant skills used to validate accuracy
+  - [ ] Each file contains at least one Mermaid diagram
+  - [ ] Each file has a "Common Pitfalls" section
+  - [ ] Language is technology-agnostic throughout
+  - [ ] Cross-references are valid
+  - [ ] Integration architecture clearly explained
+  - [ ] LoRaWAN integrations documented (TTN, ChirpStack)
+  - [ ] Cloud platform integrations covered
+  - [ ] Messaging integrations documented
+  - [ ] Converter system explained with examples
+  - [ ] Integration vs gateway decision criteria clear

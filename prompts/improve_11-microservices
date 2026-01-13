@@ -1,0 +1,268 @@
+ # Task: Review and Update Microservices Documentation
+
+  ## Context
+  - **Docs to update:** `docs/11-microservices/`
+  - **Reference source:** `ref/thingsboard.github.io-master/`
+  - **Live code reference:** `ref/thingsboard-master/msa/` and `ref/thingsboard-master/application/`
+
+  ## Skills to Use
+  Invoke these skills during execution for specialized expertise:
+
+  | Skill | Purpose |
+  |-------|---------|
+  | `/spring-boot-expert` | Spring Boot microservices, service discovery, configuration management |
+  | `/grpc-expert` | Inter-service communication, protocol buffers, service contracts |
+  | `/java-patterns` | Service decomposition patterns, shared libraries, API design |
+  | `/workflow-orchestrator` | Service orchestration, saga patterns, distributed workflows |
+  | `/iot-engineer` | IoT platform scaling, telemetry processing distribution |
+
+  Use skills to **understand** microservice architecture deeply, then **translate** findings into technology-agnostic documentation.
+
+  ## Execution Steps
+
+  ### Phase 1: Discovery
+  1. Read all files in `docs/11-microservices/` to understand current coverage
+  2. Search `ref/thingsboard.github.io-master/` for microservices content:
+     - Search patterns: `microservice`, `monolith`, `tb-node`, `tb-core`, `tb-rule-engine`, `tb-transport`, `js-executor`, `edqs`, `web-ui`, `service`, `cluster`, `scaling`, `kubernetes`, `docker`
+     - Check directories: `docs/reference/`, `docs/user-guide/install/`, `docs/user-guide/`
+  3. Use `/spring-boot-expert` to analyze:
+     - Service structure in `ref/thingsboard-master/msa/`
+     - Service startup and configuration
+     - Shared library dependencies
+  4. Use `/grpc-expert` to understand:
+     - Inter-service communication protocols
+     - Service API contracts
+     - Message serialization
+  5. Use `/workflow-orchestrator` to understand:
+     - Request routing between services
+     - Distributed transaction handling
+     - Service coordination patterns
+  6. Create a gap analysis: what's missing, outdated, or incomplete
+
+  ### Phase 2: Update Each Document
+  For each file in `docs/11-microservices/`:
+
+  1. **Cross-reference** with official docs for accuracy
+  2. **Use appropriate skill** to validate technical details
+  3. **Add missing content** from official source
+  4. **Ensure required sections exist:**
+     - Overview (what + why)
+     - Mermaid diagram (service topology, communication flow, or scaling pattern)
+     - Configuration examples
+     - Common Pitfalls section
+     - See Also cross-references
+  5. **Apply style rules:**
+     - Technology-agnostic (behavior/contracts, not implementation specifics)
+     - Junior developer audience
+     - Clear, concise language
+
+  ### Phase 3: Microservices-Specific Pitfalls Analysis
+  Use `/spring-boot-expert`, `/grpc-expert`, and `/workflow-orchestrator` to identify and document common pitfalls:
+
+  **Service Decomposition Pitfalls:**
+  - Monolith vs microservices selection criteria
+  - Over-decomposition leading to complexity
+  - Shared database anti-pattern
+  - Distributed monolith symptoms
+  - Service boundary definition
+  - Domain-driven design violations
+
+  **TB-Node Pitfalls:**
+  - Resource allocation imbalance
+  - Actor system memory pressure
+  - Rule engine processing bottlenecks
+  - Session state distribution
+  - Hot spot formation
+  - Cluster coordination overhead
+
+  **TB-Core Pitfalls:**
+  - Entity service scaling limits
+  - Cache coherence across instances
+  - Database connection pool sizing
+  - API gateway routing configuration
+  - Tenant isolation in shared services
+  - Cluster state synchronization
+
+  **TB-Rule-Engine Pitfalls:**
+  - Queue consumer scaling mismatch
+  - Partition assignment imbalance
+  - Rule chain processing isolation
+  - Script execution resource limits
+  - External node timeout handling
+  - Analytics aggregation distribution
+
+  **TB-Transport Pitfalls:**
+  - Protocol-specific scaling needs
+  - Connection limit per instance
+  - Session affinity requirements
+  - Gateway device distribution
+  - SSL termination placement
+  - Load balancer health checks
+
+  **JS-Executor Pitfalls:**
+  - Sandbox isolation overhead
+  - Script execution timeout tuning
+  - Memory limits per script
+  - Cold start latency
+  - Executor pool sizing
+  - Script caching effectiveness
+
+  **EDQS (Entity Data Query Service) Pitfalls:**
+  - Query complexity limits
+  - Pagination with real-time updates
+  - Entity count aggregation accuracy
+  - Filter expression optimization
+  - Subscription scalability
+  - Cache invalidation timing
+
+  **Inter-Service Communication Pitfalls:**
+  - Network partition handling
+  - Service discovery lag
+  - Circuit breaker configuration
+  - Retry storm amplification
+  - Timeout cascade effects
+  - Message ordering across services
+
+  **Deployment Pitfalls:**
+  - Resource request vs limit mismatch
+  - Pod affinity anti-patterns
+  - Persistent volume claims
+  - ConfigMap vs Secret usage
+  - Rolling update disruption
+  - Health check misconfiguration
+
+  Translate these into **generic concepts** for documentation:
+  Spring-specific: "TbCoreComponent uses @ConditionalOnProperty to enable service features"
+  Technology-agnostic: "Services can be configured to enable or disable specific features via configuration"
+
+  gRPC-specific: "TbClusterService uses ClusterAPIProtos for inter-node RPC calls"
+  Technology-agnostic: "Services communicate using defined message contracts over internal RPC"
+
+  Implementation-specific: "JsInvokeService pools Nashorn ScriptEngine instances for execution"
+  Technology-agnostic: "Script execution uses pooled interpreters to balance performance and isolation"
+
+  Code-specific: "TbServiceInfoProvider determines node roles from TB_SERVICE_TYPE environment"
+  Technology-agnostic: "Service role (core, rule-engine, transport) is determined by configuration at startup"
+
+  Scaling-specific: "PartitionService.recalculatePartitions() redistributes on cluster membership change"
+  Technology-agnostic: "Workload is automatically redistributed when services join or leave the cluster"
+
+  ### Phase 4: Validation
+  1. Verify each document has a Mermaid diagram
+  2. Confirm Common Pitfalls section exists in each
+  3. Check cross-references point to valid files
+  4. Use `/grpc-expert` to verify inter-service communication accuracy
+  5. Ensure scaling guidance is clear and actionable
+
+  ## Style Guide
+
+  DO: "ThingsBoard can run as a monolith (single process) or microservices (distributed)"
+  DON'T: "TbCoreApplication vs TbNodeApplication main classes determine deployment mode"
+
+  DO: "TB-Core handles entity management, REST APIs, and WebSocket connections"
+  DON'T: "TbCoreTransportService autowires EntityService, AlarmService with @Lazy initialization"
+
+  DO: "TB-Rule-Engine processes device messages through configured rule chains"
+  DON'T: "TbRuleEngineService consumes from TbQueueConsumer<TbProtoQueueMsg>"
+
+  DO: "TB-Transport manages device connections for each protocol (MQTT, CoAP, HTTP)"
+  DON'T: "MqttTransportService extends AbstractTransportService with Netty ChannelHandlers"
+
+  DO: "JS-Executor runs user scripts in isolated sandboxes separate from core services"
+  DON'T: "RemoteJsInvokeService sends TbInvokeJsRequest via JsExecutorProtos over gRPC"
+
+  DO: "EDQS provides optimized queries for entity lists, counts, and subscriptions"
+  DON'T: "EntityDataQueryService uses Specification with JpaSpecificationExecutor"
+
+  DO: "Services discover each other through the message queue and cluster coordinator"
+  DON'T: "ZkDiscoveryService uses CuratorFramework with ServiceCache for node registration"
+
+  ## Microservices Specific Content Checklist
+  Ensure documentation covers:
+
+  ### Deployment Models
+  - [ ] Monolithic deployment (single instance)
+  - [ ] Microservices deployment (distributed)
+  - [ ] Hybrid configurations
+  - [ ] Selection criteria for each model
+
+  ### Service Types
+  - [ ] TB-Node (combined monolith)
+  - [ ] TB-Core (entity management, API, WebSocket)
+  - [ ] TB-Rule-Engine (rule processing)
+  - [ ] TB-Transport (MQTT, CoAP, HTTP, LWM2M, SNMP)
+  - [ ] TB-Web-UI (frontend serving)
+  - [ ] TB-JS-Executor (script sandbox)
+  - [ ] TB-VC-Executor (version control, PE)
+
+  ### EDQS (Entity Data Query Service)
+  - [ ] Purpose and use cases
+  - [ ] Query capabilities
+  - [ ] Subscription model
+  - [ ] Performance characteristics
+  - [ ] Configuration options
+
+  ### JS-Executor
+  - [ ] Script execution isolation
+  - [ ] Supported scripting features
+  - [ ] Resource limits and timeouts
+  - [ ] Scaling considerations
+  - [ ] Error handling
+
+  ### Inter-Service Communication
+  - [ ] Message queue-based communication
+  - [ ] RPC mechanisms
+  - [ ] Service discovery
+  - [ ] Load balancing
+  - [ ] Health checking
+
+  ### Scaling Patterns
+  - [ ] Horizontal scaling per service
+  - [ ] Partition-based scaling
+  - [ ] Stateless vs stateful services
+  - [ ] Session affinity requirements
+  - [ ] Auto-scaling triggers
+
+  ### Configuration
+  - [ ] Service type configuration
+  - [ ] Feature toggles per service
+  - [ ] Resource allocation guidelines
+  - [ ] Environment variables
+  - [ ] Shared configuration management
+
+  ### Operations
+  - [ ] Service health monitoring
+  - [ ] Log aggregation
+  - [ ] Distributed tracing
+  - [ ] Service mesh considerations
+  - [ ] Deployment strategies (rolling, blue-green)
+
+  ### Kubernetes Deployment
+  - [ ] Pod specifications
+  - [ ] Service definitions
+  - [ ] ConfigMaps and Secrets
+  - [ ] Persistent volumes
+  - [ ] Ingress configuration
+  - [ ] Resource quotas
+
+  ## Output Format
+  After completing updates, provide a summary table:
+
+  | File | Changes Made | Gaps Filled | Diagrams Added | Skills Used |
+  |------|--------------|-------------|----------------|-------------|
+  | ... | ... | ... | ... | ... |
+
+  ## Success Criteria
+  - [ ] All files reviewed against official docs
+  - [ ] Relevant skills used to validate accuracy
+  - [ ] Each file contains at least one Mermaid diagram
+  - [ ] Each file has a "Common Pitfalls" section
+  - [ ] Language is technology-agnostic throughout
+  - [ ] Cross-references are valid
+  - [ ] All service types documented with responsibilities
+  - [ ] Monolith vs microservices decision criteria clear
+  - [ ] EDQS purpose and capabilities explained
+  - [ ] JS-Executor isolation and limits documented
+  - [ ] Scaling patterns per service type covered
+  - [ ] Kubernetes deployment guidance included
+

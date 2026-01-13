@@ -545,6 +545,68 @@ client.loop_forever()
 4. Review device telemetry for state updates
 5. Check device logs for errors
 
+## Common Pitfalls
+
+### Package Management Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Missing checksum algorithm** | Corrupted firmware not detected | Always configure checksum; SHA256 recommended |
+| **Checksum mismatch** | Device rejects update | Verify checksum calculated correctly after upload |
+| **Package too large for device memory** | Update fails during download | Check device storage capacity; use chunked transfer |
+| **Deleting package assigned to devices** | Devices stuck waiting for unavailable package | Unassign package before deletion |
+
+### Assignment Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Assigning firmware to wrong device type** | Incompatible firmware installed | Use device profile targeting; validate device type |
+| **Mass assignment without rollout strategy** | All devices update simultaneously | Use gradual rollout; stage deployments |
+| **Assignment during critical operations** | Device restarts at wrong time | Consider device state before triggering update |
+| **Software vs firmware confusion** | Wrong package type assigned | Understand distinction: firmware = device OS, software = application |
+
+### State Machine Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Not implementing full state machine** | Cannot track update progress | Implement all fw_state transitions: DOWNLOADING → DOWNLOADED → UPDATING → UPDATED |
+| **Missing error state reporting** | Failed updates go undetected | Report FAILED state with fw_error for diagnostics |
+| **No timeout on DOWNLOADING state** | Stale updates consume resources | Implement download timeout; report FAILED on timeout |
+| **VERIFIED state skipped** | Checksum validation not confirmed | Always verify checksum before reporting DOWNLOADED |
+
+### Telemetry Reporting Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **fw_state not reported** | Dashboard shows no update status | Device must publish fw_state telemetry |
+| **Wrong attribute keys** | Platform ignores update telemetry | Use exact keys: fw_state, fw_error, current_fw_title, etc. |
+| **Reporting before applying** | State shows UPDATED but firmware not active | Report UPDATED only after restart with new firmware |
+
+### Chunked Transfer Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Chunk size too large** | Memory overflow on device | Match chunk size to device RAM constraints |
+| **Missing chunk request on reconnect** | Download restarts from beginning | Implement resume capability with offset tracking |
+| **Concurrent chunk requests** | Out-of-order assembly | Request chunks sequentially or track order |
+
+### LwM2M OTA Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Object 5 not implemented** | OTA not available | Implement Firmware Update Object (5) per specification |
+| **Write observe not configured** | State changes not reported | Enable observe on State resource |
+| **Package URI not accessible** | Device cannot download | Ensure device can reach URL; configure authentication if needed |
+
+### Recovery Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **No rollback mechanism** | Bricked device after bad update | Implement A/B partition or recovery mode |
+| **Update during low battery** | Device dies mid-update | Check battery level before starting update |
+| **No connectivity check** | Update starts without network for download | Verify connectivity before initiating OTA |
+| **Corrupt bootloader update** | Unrecoverable device** | Protect bootloader; consider read-only boot partition |
+
 ## See Also
 
 - [Device Provisioning](./device-provisioning.md) - Device registration

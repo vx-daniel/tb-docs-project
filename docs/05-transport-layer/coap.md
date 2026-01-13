@@ -510,6 +510,61 @@ ThingsBoard includes specialized support for Efento IoT sensors via dedicated Co
 | Observe not working | No Observe option | Include Observe: 0 |
 | Large payload fails | No block-wise | Enable block transfer |
 
+## Common Pitfalls
+
+### Connection Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **UDP blocked by firewall** | No response from server | Open UDP port 5683 (plain) or 5684 (DTLS) |
+| **NAT timeout too short** | Observe notifications stop | Use shorter observe intervals or implement keep-alive |
+| **Wrong port for DTLS** | Connection timeout | DTLS uses port 5684, plain CoAP uses 5683 |
+| **MTU issues** | Fragmented packets lost | Reduce MAX_MESSAGE_SIZE or enable block-wise transfer |
+
+### Authentication Errors
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Token in wrong URI position** | 4.01 Unauthorized | Token must be third path segment: `/api/v1/{TOKEN}/...` |
+| **DTLS certificate mismatch** | Handshake failure | Verify certificate SHA-3 hash matches device credentials |
+| **Certificate chain incomplete** | DTLS verification failed | Include full certificate chain in device configuration |
+| **Expired certificates** | Connection rejected | Monitor certificate expiration, renew proactively |
+
+### Protocol Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Missing Observe option** | No notifications received | Include `Observe: 0` header in subscription requests |
+| **CON vs NON confusion** | Unreliable delivery | Use CON for critical data, NON for frequent updates |
+| **Block-wise not enabled** | Large payload fails | Configure block-wise transfer for firmware downloads |
+| **Observe deregistration** | Stale subscriptions | Send request with `Observe: 1` to explicitly unsubscribe |
+
+### Payload Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Missing Content-Format** | Server rejects payload | Include `application/json` Content-Format option |
+| **Invalid JSON** | 4.00 Bad Request | Validate JSON before sending |
+| **Timestamp in seconds** | Time-series data incorrect | Use milliseconds for `ts` field |
+| **Payload exceeds MTU** | Packet dropped | Use block-wise transfer or reduce payload size |
+
+### DTLS Configuration
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **PSK/RPK not supported** | Authentication fails | ThingsBoard CoAP only supports X.509; use MQTT for PSK |
+| **Wrong cipher suite** | Handshake failure | Ensure client supports server's cipher suites |
+| **Connection ID mismatch** | Sessions not resuming | Configure matching CID length on client and server |
+| **Session timeout** | Frequent re-handshakes | Increase `dtls_session_inactivity_timeout` |
+
+### Power Saving Mode Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **PSM messages lost** | Device misses updates | Configure proper activity timer; updates queue until wake |
+| **eDRX window too short** | Updates delivered late | Align server paging window with device eDRX cycle |
+| **Power mode not configured** | Device stays awake | Set power mode in device profile or device-level config |
+
 ## See Also
 
 - [Transport Contract](./transport-contract.md) - Common transport behaviors

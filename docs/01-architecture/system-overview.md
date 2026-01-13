@@ -526,6 +526,89 @@ zk:
   recalculate_delay: 0ms
 ```
 
+## Common Pitfalls
+
+### Deployment Mode Selection
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Using monolith for production at scale** | Performance degradation beyond 10K devices | Migrate to microservices deployment for >10K devices |
+| **Microservices for small deployments** | Unnecessary operational complexity | Use monolithic deployment for dev/small deployments |
+| **Missing load balancer** | Single point of failure | Deploy HAProxy/Nginx in front of services |
+| **Ignoring resource requirements** | OOM errors, crashes | Size containers/VMs per official guidelines |
+
+### Horizontal Scaling Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Scaling stateful components** | Data inconsistency | Only scale stateless services; use shared storage for state |
+| **Uneven partition distribution** | Some nodes overloaded | Verify consistent hashing; adjust partition count |
+| **Missing ZooKeeper** | Cluster coordination fails | ZooKeeper required for service discovery in clusters |
+| **Auto-scaling too aggressive** | Partition rebalancing storms | Set conservative scaling thresholds; allow stabilization time |
+
+### Component Interaction Errors
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Transport directly hitting database** | Bypassed rate limiting | All device data must flow through message queue |
+| **Synchronous processing in rule nodes** | Rule engine backpressure | Use async operations; offload to external systems |
+| **Missing message queue** | Tight coupling, no backpressure | Message queue is required even in monolith mode |
+| **Queue consumer lag** | Message processing delays | Add more rule engine instances; optimize rule chains |
+
+### Data Flow Problems
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Telemetry processed but not stored** | Data missing from dashboards | Verify rule chain has "Save Telemetry" action node |
+| **RPC not reaching devices** | Timeout errors | Check device connectivity; verify transport subscription |
+| **WebSocket subscriptions not updating** | Stale dashboard data | Verify subscription paths; check WebSocket connection |
+| **Alarm not triggering** | Expected alarms missing | Verify alarm rule configuration; check device profile |
+
+### Storage Layer Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **PostgreSQL for high-volume telemetry** | Slow queries, disk full | Use Cassandra or TimescaleDB for time-series data |
+| **No TTL configured** | Unlimited storage growth | Configure telemetry TTL in tenant profile |
+| **Cache size too small** | High database load | Increase cache memory; monitor hit rates |
+| **Missing database indexes** | Slow queries | Ensure tenant_id indexes exist on all tables |
+
+### High Availability Gaps
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Single database instance** | Data loss on failure | Configure database replication |
+| **No Kafka replication** | Message loss on broker failure | Set replication factor ≥ 2 for production |
+| **Missing health checks** | Failed instances not removed | Configure container/service health probes |
+| **Recovery time not tested** | Prolonged outage | Document and test failover procedures |
+
+### Actor System Misconfiguration
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Dispatcher pool too small** | Message processing delays | Increase pool size based on workload |
+| **Throughput too high** | Actor starvation | Reduce throughput to allow fair scheduling |
+| **Device actor timeouts** | Device messages dropped | Increase actor initialization timeout |
+| **Rule chain loops** | Stack overflow, infinite loops | Add cycle detection; use finite processing depth |
+
+### Network and Security
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Transport ports not exposed** | Devices cannot connect | Open MQTT (1883), HTTP (8080), CoAP (5683) ports |
+| **No TLS termination** | Insecure device communication | Configure SSL at load balancer or transport level |
+| **Internal services exposed** | Security vulnerability | Firewall internal services; expose only API/transport |
+| **gRPC without TLS** | Inter-service eavesdropping | Enable TLS for gRPC in production clusters |
+
+### Performance Tuning
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Default JVM settings** | Suboptimal memory usage | Tune heap size (Xmx), GC algorithm |
+| **Too many partitions** | Coordination overhead | Use 10-20 partitions per service type initially |
+| **Poll interval too long** | Processing latency | Reduce poll interval (default 25ms is usually good) |
+| **Pack processing timeout too short** | Message drops during spikes | Increase timeout for batch-heavy workloads |
+
 ## See Also
 
 - [Actor System](../03-actor-system/README.md) - Concurrency model details

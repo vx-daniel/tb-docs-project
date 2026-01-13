@@ -583,6 +583,70 @@ curl -X POST \
   -d '{"deviceName": "NewDevice", "provisionDeviceKey": "key", "provisionDeviceSecret": "secret"}'
 ```
 
+## Common Pitfalls
+
+### Authentication Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Token in wrong URL position** | 401 Unauthorized | Token must be third path segment: `/api/v1/{TOKEN}/telemetry` |
+| **Using JWT instead of device token** | 401 Unauthorized | Device API uses access tokens, not JWT; JWT is for REST API |
+| **Case sensitivity** | Authentication fails | Access tokens are case-sensitive |
+| **URL encoding issues** | 404 or 401 errors | Ensure token is properly URL-encoded if it contains special characters |
+
+### Request Format Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Missing Content-Type header** | 400 Bad Request | Include `Content-Type: application/json` header |
+| **Invalid JSON syntax** | 400 Bad Request | Validate JSON before sending; check for trailing commas |
+| **Timestamp in seconds** | Incorrect time-series data | Use milliseconds for `ts` field, not seconds |
+| **Wrong HTTP method** | 405 Method Not Allowed | POST for telemetry/attributes upload, GET for retrieval |
+
+### Payload Size Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **RPC payload too large** | 413 Payload Too Large | RPC limit is 64 KB; reduce payload or use attribute updates |
+| **Telemetry payload too large** | 413 Payload Too Large | Default limit is 50 MB; batch data or increase limit |
+| **No Content-Length header** | Request rejected | Include Content-Length or use chunked transfer encoding |
+
+### Connection Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **HTTP instead of HTTPS** | Connection refused | Use HTTPS when SSL is enabled on server |
+| **Wrong port** | Connection timeout | Default is 8081; verify server configuration |
+| **Proxy blocking requests** | Intermittent failures | Configure proxy to allow ThingsBoard endpoints |
+| **HTTP/2 issues** | Protocol errors | HTTP/2 requires SSL; use HTTP/1.1 without SSL |
+
+### Long Polling Issues (Deprecated)
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Using long polling for production** | Scalability problems | Migrate to MQTT or CoAP for real-time updates |
+| **Timeout too short** | Frequent reconnections | Set timeout to at least 60000ms (60 seconds) |
+| **Missing timeout parameter** | Server defaults used | Explicitly set `timeout` query parameter |
+| **Not reconnecting after timeout** | Missed updates | Immediately reconnect after 408 timeout response |
+
+### Performance Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Per-message requests** | High latency overhead | Batch telemetry into single requests with multiple timestamps |
+| **Synchronous blocking** | Slow throughput | Use async HTTP client with connection pooling |
+| **No connection reuse** | High connection overhead | Enable HTTP keep-alive and connection pooling |
+| **Rate limiting** | 429 Too Many Requests | Implement backoff; batch data to reduce request count |
+
+### Error Handling
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Not checking response codes** | Silent failures | Always verify response status codes |
+| **Ignoring error messages** | Debugging difficulty | Parse error response JSON for detailed error codes |
+| **No retry logic** | Data loss on transient failures | Implement exponential backoff for 5xx errors |
+| **Retrying 4xx errors** | Wasted resources | Only retry 5xx and network errors; 4xx requires code fix |
+
 ## See Also
 
 - [Transport Contract](./transport-contract.md) - Common transport behaviors

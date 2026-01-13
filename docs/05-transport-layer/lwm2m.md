@@ -202,19 +202,69 @@ graph TB
 
 ### Object Versioning
 
-Objects can have multiple versions within a deployment:
+Objects can have multiple versions within a deployment. Proper version handling is critical for successful device communication.
 
+**Path Format with Version:**
 ```
-/{ObjectID}.{Version}/{InstanceID}/{ResourceID}
+/{ObjectID}_{ObjectVersion}/{InstanceID}/{ResourceID}
 ```
 
-Example: `/3.1.0/0/0` = Device Object v1.0, Instance 0, Manufacturer
+Example: `/3_1.2/0/9` = Device Object v1.2, Instance 0, Battery Level resource
 
-**Version Handling:**
-- Devices declare supported versions in registration links (`ver=1.0`)
-- Platform tracks `supportedClientObjects` map
-- Resource model validation based on declared version
-- Default fallback to version "1.0"
+**Version Handling Rules:**
+
+| Source | Priority | Description |
+|--------|----------|-------------|
+| Device Profile Model | 1 (Highest) | `<ObjectVersion>` tag in uploaded model |
+| LwM2MVersion from registration | 2 | Client's declared LwM2M version |
+| Default | 3 (Lowest) | Falls back to "1.0" |
+
+**Version Determination:**
+1. If model includes `<ObjectVersion>` tag → use that version
+2. If model lacks version tag → system sets ObjectVersion = 1.0
+3. During registration, client declares supported object versions
+4. All operations validate ObjectVersion matches profile configuration
+
+**Version in Terminal Commands:**
+
+```bash
+# Explicit version specification
+"/3_1.2/0/9"          # ObjectID=3, ObjectVersion=1.2
+
+# Implicit version (uses LwM2MVersion)
+"/3/0/9"              # ObjectID=3, ObjectVersion=LwM2MVersion
+                      # If LwM2MVersion=1.1 → becomes "/3_1.1/0/9"
+                      # If LwM2MVersion=1.2 → becomes "/3_1.2/0/9"
+```
+
+**Version Mismatch Handling:**
+
+| Scenario | Result |
+|----------|--------|
+| Request version matches client | ✓ Success |
+| Request version differs from client | ✗ Error: "Invalid object version. Required version: X.X" |
+| Profile version differs from client | ✗ Initialization operations rejected |
+
+**Example:**
+```bash
+# Client registered with ObjectID=3, ObjectVersion=1.1
+"/3_1.1/0/9"    # ✓ OK
+"/3_1.2/0/9"    # ✗ Error
+
+# Client registered with ObjectID=3, ObjectVersion=1.2
+"/3_1.1/0/9"    # ✗ Error
+"/3_1.2/0/9"    # ✓ OK
+```
+
+**Finding Device Object Versions:**
+
+After a client connects, check the telemetry logs for supported objects:
+```
+info: Endpoint [ClientName] Client registered with registration id: [xyz]
+      LwM2mVersion: [1.1], SupportedObjectIdVer [{1=1.1, 3=1.2, 5=1.1, 6=1.0}]
+```
+
+This log shows exact object versions the device supports.
 
 ### Composite Operations (LwM2M 1.1)
 
@@ -386,11 +436,49 @@ graph TB
 
 ### Observe Strategies
 
-| Strategy | Description |
-|----------|-------------|
-| SINGLE | One resource per observe request |
-| COMPOSITE_ALL | All resources in one request |
-| COMPOSITE_BY_OBJECT | Grouped by object ID |
+ThingsBoard supports multiple observe strategies that define how LwM2M resources are monitored.
+
+```mermaid
+graph TB
+    subgraph "Observe Strategies"
+        SINGLE[SINGLE<br/>Individual resource observation]
+        COMP_ALL[COMPOSITE_ALL<br/>All resources in one request]
+        COMP_OBJ[COMPOSITE_BY_OBJECT<br/>Grouped by object type]
+    end
+
+    SINGLE -->|"Low traffic, High accuracy"| USE1[Best for critical resources]
+    COMP_ALL -->|"Low overhead, Efficient"| USE2[Best for bulk monitoring]
+    COMP_OBJ -->|"Balanced"| USE3[Best for structured data]
+```
+
+| Strategy | Description | Traffic | Accuracy | LwM2M Version |
+|----------|-------------|---------|----------|---------------|
+| **SINGLE** | Each resource observed individually | Higher | Best | 1.0+ |
+| **COMPOSITE_ALL** | All resources via single Composite Observe | Lowest | Good | 1.1+ |
+| **COMPOSITE_BY_OBJECT** | Resources grouped per object type | Medium | Good | 1.1+ |
+
+**Strategy Selection Guidelines:**
+
+| Use Case | Recommended Strategy | Reason |
+|----------|---------------------|--------|
+| Critical individual values | SINGLE | Immediate per-resource notifications |
+| High-frequency telemetry | COMPOSITE_ALL | Reduced message overhead |
+| Object-oriented data models | COMPOSITE_BY_OBJECT | Logical grouping, balanced traffic |
+| Mixed LwM2M 1.0/1.1 devices | SINGLE | Backwards compatibility |
+
+**Changing Observe Strategy:**
+
+When changing strategies after a client is connected:
+
+| Current → New | Action Required |
+|---------------|-----------------|
+| SINGLE → SINGLE | Direct observe/cancel per resource |
+| COMPOSITE → COMPOSITE | Direct composite observe/cancel |
+| Different strategies | Execute **Cancel All Observations** first |
+
+Changes take effect:
+- **Immediately** if LwM2M session is active
+- **On next Update Registration** if session is inactive
 
 ## Firmware Updates
 
@@ -497,6 +585,46 @@ Per-client OTA state is maintained in `LwM2MClientFwOtaInfo` / `LwM2MClientSwOta
 | connection_id_length | 8 | RFC 9146 Connection ID |
 | max_transmission_unit | 1024 | Max DTLS fragment |
 | max_fragment_length | 1024 | Max CoAP message |
+
+### DTLS Connection ID (CID)
+
+The DTLS Connection ID (RFC 9146) improves connection resilience, especially in NAT or unstable network environments.
+
+**CID Benefits:**
+- Maintains DTLS sessions across IP/port changes
+- Essential for NATed environments
+- Enables stable multi-node deployments
+- Reduces re-handshake overhead
+
+**CID Length Configuration:**
+
+| Server CID Length | Mode | NodeID | Description |
+|-------------------|------|--------|-------------|
+| null or 0 | No CID | - | CID disabled |
+| 1-4 | SingleNode | - | CID without node routing |
+| 5+ | MultiNode | 0x00 | CID with node routing for clusters |
+
+**CID Alignment Table:**
+
+| Client CID | Server CID | Connection Mode | Notes |
+|------------|------------|-----------------|-------|
+| null | null | DTLS 1.2 (no CID) | Both sides don't support CID |
+| 1 | null | DTLS 1.2 (no CID) | Server doesn't support CID |
+| null | 4 | DTLS 1.2 (no CID) | Client must initiate CID |
+| 1 | 1 | DTLS 1.2 + CID | Short CID (SingleNode) |
+| 1 | 5 | DTLS 1.2 + CID (MultiNode) | Server generates NodeID |
+| 2 | 8 | DTLS 1.2 + CID (MultiNode) | Default recommended config |
+
+**Configuration:**
+```yaml
+# tb-lwm2m-transport.yml
+transport:
+  lwm2m:
+    dtls:
+      connection_id_length: 8  # Enables MultiNode mode
+```
+
+When `connection_id_length >= 5`, the MultiNodeConnectionIdGenerator assigns unique CIDs per client session, enabling proper routing in clustered deployments.
 
 **Supported Cipher Suites:**
 
@@ -621,6 +749,69 @@ sequenceDiagram
 | Wireshark | CoAP/DTLS packet analysis |
 | Debug logging | Server-side troubleshooting |
 | Device logs | Client-side issues |
+
+## Common Pitfalls
+
+### Registration Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Endpoint name mismatch** | Registration fails | Ensure endpoint name in credentials matches device |
+| **Wrong LwM2M server URI** | Connection timeout | Verify `coap://host:5685` (plain) or `coaps://host:5684` (DTLS) |
+| **Lifetime too short** | Frequent re-registrations | Set lifetime ≥ 300 seconds; account for network latency |
+| **Missing mandatory objects** | Registration rejected | Device must support Objects 0, 1, and 3 |
+
+### Security Configuration
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **PSK identity mismatch** | DTLS handshake fails | Verify PSK identity matches device credentials exactly |
+| **Key encoding errors** | Authentication failure | Ensure hex encoding for PSK, Base64 for RPK/X.509 |
+| **Certificate CN mismatch** | X.509 validation fails | Certificate Common Name must match endpoint name |
+| **Expired certificates** | DTLS rejected | Monitor certificate expiration; auto-renew if possible |
+
+### Object Version Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Profile version mismatch** | Operations rejected | Match profile ObjectVersion to device's declared version |
+| **Missing version in request** | Wrong resource accessed | Use explicit version: `/3_1.2/0/9` not `/3/0/9` |
+| **Model not uploaded** | Profile configuration fails | Upload LwM2M models to Resource Library first |
+| **Stale model version** | Unexpected behavior | Update model files when devices are upgraded |
+
+### Observe Strategy Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Composite on LwM2M 1.0** | Observe fails | Use SINGLE strategy for LwM2M 1.0 devices |
+| **Strategy change without cancel** | Duplicate observations | Cancel All Observations before changing strategy |
+| **Mixed strategy devices** | Inconsistent behavior | Use SINGLE for mixed 1.0/1.1 deployments |
+
+### Firmware Update Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Wrong update strategy** | OTA fails | Match strategy to device capability (binary vs URI) |
+| **Package URI not accessible** | Download fails | Ensure device can reach the firmware URL |
+| **State not monitored** | Silent failures | Observe /5/0/3 (State) and /5/0/5 (Result) |
+| **Checksum mismatch** | Update rejected | Verify SHA-256 hash in package configuration |
+
+### Connection Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **UDP port blocked** | No connectivity | Open ports 5685 (LwM2M), 5686 (Bootstrap), 5684 (DTLS) |
+| **NAT timeout** | Disconnections | Enable DTLS CID or reduce registration lifetime |
+| **MTU too large** | Fragmentation issues | Set MTU ≤ 1024 for constrained networks |
+| **CID not enabled** | Sessions lost on IP change | Configure `connection_id_length: 8` for NAT environments |
+
+### Bootstrap Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Bootstrap credentials wrong** | Bootstrap fails | Separate credentials for bootstrap vs LwM2M server |
+| **Security object not written** | Client can't connect to server | Verify bootstrap writes both /0 and /1 objects |
+| **Hold-off time too long** | Slow provisioning | Reduce client hold-off time for faster bootstrap |
 
 ## See Also
 

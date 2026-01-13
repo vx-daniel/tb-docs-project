@@ -594,6 +594,86 @@ Async isolation requirements:
 - Verify native queries include tenant parameter
 - Test API endpoints with cross-tenant tokens
 
+## Common Pitfalls
+
+### Cross-Tenant Data Leakage Vectors
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Entity ID guessing/enumeration** | Potential cross-tenant access | Platform returns 404 "not found" (not 403) to prevent enumeration |
+| **Shared cache without tenant key** | Data from another tenant returned | Cache keys must include tenantId as prefix |
+| **Global device name lookup** | Cross-tenant device discovery | Device lookup by name is tenant-scoped |
+| **Rule chain referencing wrong tenant** | Data processed with wrong context | Rule chains are tenant-isolated; verify ownership before assignments |
+
+### Tenant Context Propagation
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Async operation loses tenant context** | Null tenant in background processing | Use TenantContextComponent or explicit tenant context restoration |
+| **Scheduled task missing tenant** | Jobs fail or use wrong tenant | Schedule tasks with explicit tenant ID; restore context on execution |
+| **Callback without tenant propagation** | Cross-service calls fail isolation | Pass tenantId explicitly in async message headers |
+| **Thread pool context inheritance** | Stale tenant in reused threads | Clear and restore context at task boundaries |
+
+### Shared Resource Isolation
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Redis cache key collision** | Different tenants read same cache | Include tenantId in all cache key patterns |
+| **Kafka topic without tenant partition** | Messages mixed across tenants | Use tenant-based partitioning; consider isolated queues for premium |
+| **Shared widget bundles** | Custom widgets available cross-tenant | System widgets are shared; tenant widgets are isolated |
+| **Global rate limit exhausted** | One tenant affects others | Use per-tenant rate limiting; consider isolated processing |
+
+### Tenant ID Validation Bypass
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Custom REST endpoint without tenant check** | Cross-tenant data access | Always validate tenantId in custom controllers |
+| **Rule node accessing by ID only** | Processing entities from wrong tenant | Rule nodes inherit tenant context; validate if explicit ID used |
+| **Direct database query** | Query returns all-tenant data | All queries must include `WHERE tenant_id = :tenantId` |
+| **Integration callback without validation** | External system spoofing tenant | Validate request origin; use tenant-specific credentials |
+
+### System Admin vs Tenant Admin Scope
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **System admin modifying tenant data** | Accidental cross-tenant changes | System admin should impersonate tenant admin for modifications |
+| **Tenant admin expecting system access** | Cannot create tenants | Tenant admins are scoped; only system admin creates tenants |
+| **Mixed admin credentials in automation** | Wrong scope for operations | Use appropriate credential type for each operation type |
+
+### Database-Level Isolation
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Missing tenant_id column** | No isolation possible | All entity tables must include tenant_id |
+| **Foreign key without tenant scope** | Can reference cross-tenant entities | Include tenant_id in composite foreign keys or validate at app level |
+| **Aggregate queries across tenants** | Performance impact, potential leakage | System reports only; never expose to tenant users |
+| **Backup/restore mixing tenants** | Data corruption | Backup strategies must preserve tenant isolation |
+
+### Cache and Session Isolation
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Session cache without tenant prefix** | Session hijacking potential | Session keys must include tenant identifier |
+| **Token validation cache shared** | Token validated against wrong tenant | JWT validation includes tenant claim verification |
+| **Device session in wrong partition** | Device messages routed incorrectly | Device sessions include tenant context for routing |
+
+### Rule Engine Isolation
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Rule chain assigned to wrong tenant** | Processing leak | Rule chains inherit tenant; verify ownership on assignment |
+| **External call leaking data** | Sensitive data sent to wrong endpoint | Use tenant-specific integration configurations |
+| **JavaScript execution shared** | Potential side-effects | JS executor has tenant isolation; don't rely on global state |
+| **Custom node without tenant awareness** | Cross-tenant processing | Custom nodes must respect originator's tenant context |
+
+### Multi-Tenant Debugging
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Logs without tenant identifier** | Cannot filter by tenant | Include tenantId in all log statements |
+| **Metrics aggregated across tenants** | Cannot identify tenant issues | Use tenant dimension in metrics |
+| **Debug logging exposes other tenants** | Privacy/compliance violation | Debug logs must be tenant-filtered |
+
 ## See Also
 
 - [Authentication](./authentication.md) - How users prove identity

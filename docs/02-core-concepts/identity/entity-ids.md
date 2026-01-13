@@ -587,6 +587,58 @@ Benefits:
 - Composite indexes for tenant + entity ID
 - UUID comparison is efficient (binary comparison)
 
+## Common Pitfalls
+
+### ID Format Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Invalid UUID format** | 400 Bad Request | Validate 36-character format with proper hyphens |
+| **Uppercase UUID** | Usually accepted but inconsistent | Use lowercase for consistency |
+| **Missing entity type** | Cannot determine ID class | Always include entityType in JSON representation |
+| **Wrong entity type** | Type-safe cast fails at runtime | Verify entityType matches expected entity |
+
+### NULL_UUID Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Comparing to null instead of NULL_UUID** | Logic errors; unassigned not detected | Use `isNullUid()` method instead of null check |
+| **Treating NULL_UUID as "no entity"** | NULL_UUID is valid for system tenant | Check isNullUid() explicitly for optional references |
+| **Hardcoding NULL_UUID string** | Typo-prone; maintenance burden | Use EntityId.NULL_UUID constant |
+
+### Reference Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Storing ID as string without type** | Cannot reconstruct type-safe ID | Store both entityType and UUID |
+| **Deleted entity reference** | "Not found" on lookup; orphaned references | Handle deletion cascades; validate references on access |
+| **Cross-tenant ID usage** | Security violation; access denied | IDs don't encode tenant; validate tenant context |
+| **ID reuse after deletion** | UUIDs are unique; old ID never reused | Design for immutable ID references |
+
+### API Integration Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Using wrong ID in path** | 404 or wrong entity modified | Double-check ID extraction from correct entity |
+| **ID type mismatch in request body** | Validation error | Ensure nested IDs have correct entityType |
+| **Batch operations with mixed types** | Some operations fail | Validate all IDs in batch before execution |
+
+### Serialization Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **JSON deserialization without type** | Cannot instantiate correct ID class | Use EntityIdFactory for dynamic deserialization |
+| **Proto serialization losing type** | Type must be sent separately | Include EntityType in proto message |
+| **String parsing without validation** | Invalid UUID causes runtime exception | Validate UUID format before parsing |
+
+### Performance Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Creating new ID instances in hot paths** | Object allocation overhead | TenantId and EdgeId use caching; leverage it |
+| **ID comparison via string conversion** | Slower than UUID comparison | Use equals() method on ID objects |
+| **Logging full IDs** | Verbose logs; storage overhead | Log abbreviated IDs in high-volume scenarios |
+
 ## See Also
 
 - [Entity Types Overview](../entities/entity-types-overview.md) - All entity types

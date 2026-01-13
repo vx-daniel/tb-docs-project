@@ -1,0 +1,263 @@
+# Task: Review and Update Edge Documentation
+
+  ## Context
+  - **Docs to update:** `docs/12-edge/`
+  - **Reference source:** `ref/thingsboard.github.io-master/`
+  - **Live code reference:** `ref/thingsboard-master/application/src/main/java/org/thingsboard/server/service/edge/` and `ref/thingsboard-master/common/edge-api/`
+
+  ## Skills to Use
+  Invoke these skills during execution for specialized expertise:
+
+  | Skill | Purpose |
+  |-------|---------|
+  | `/iot-engineer` | Edge computing patterns, local processing, offline-first design |
+  | `/spring-boot-expert` | Edge service implementation, cloud integration, configuration |
+  | `/workflow-orchestrator` | Sync workflows, conflict resolution, eventual consistency |
+  | `/grpc-expert` | Cloud-edge communication protocols, message synchronization |
+  | `/mqtt-expert` | Edge device connectivity, local broker patterns |
+
+  Use skills to **understand** edge architecture deeply, then **translate** findings into technology-agnostic documentation.
+
+  ## Execution Steps
+
+  ### Phase 1: Discovery
+  1. Read all files in `docs/12-edge/` to understand current coverage
+  2. Search `ref/thingsboard.github.io-master/` for edge content:
+     - Search patterns: `edge`, `thingsboard-edge`, `cloud-sync`, `edge-rule-chain`, `edge-event`, `offline`, `local-processing`, `edge-install`, `grpc-edge`
+     - Check directories: `docs/edge/`, `docs/user-guide/`, `docs/pe/edge/`
+  3. Use `/iot-engineer` to analyze:
+     - Edge deployment scenarios
+     - Local processing requirements
+     - Offline operation capabilities
+     - Edge-cloud architecture patterns
+  4. Use `/workflow-orchestrator` to understand:
+     - Cloud-to-edge synchronization
+     - Edge-to-cloud data upload
+     - Conflict resolution strategies
+     - Event sequencing
+  5. Use `/grpc-expert` to understand:
+     - Edge-cloud communication protocol
+     - Message types and contracts
+     - Connection management
+  6. Create a gap analysis: what's missing, outdated, or incomplete
+
+  ### Phase 2: Update Each Document
+  For each file in `docs/12-edge/`:
+
+  1. **Cross-reference** with official docs for accuracy
+  2. **Use appropriate skill** to validate technical details
+  3. **Add missing content** from official source
+  4. **Ensure required sections exist:**
+     - Overview (what + why)
+     - Mermaid diagram (edge-cloud topology, sync flow, or rule chain distribution)
+     - Configuration examples
+     - Common Pitfalls section
+     - See Also cross-references
+  5. **Apply style rules:**
+     - Technology-agnostic (behavior/contracts, not implementation specifics)
+     - Junior developer audience
+     - Clear, concise language
+
+  ### Phase 3: Edge-Specific Pitfalls Analysis
+  Use `/iot-engineer`, `/workflow-orchestrator`, and `/grpc-expert` to identify and document common pitfalls:
+
+  **Edge Deployment Pitfalls:**
+  - Hardware resource underestimation
+  - Network bandwidth assumptions
+  - Storage capacity for offline buffering
+  - Edge instance naming collisions
+  - License key assignment errors
+  - Docker vs bare-metal trade-offs
+
+  **Cloud-Edge Sync Pitfalls:**
+  - Sync queue overflow during extended offline
+  - Entity assignment timing issues
+  - Partial sync state corruption
+  - Sync retry storm after reconnection
+  - Large payload sync failures
+  - Clock drift between edge and cloud
+
+  **Entity Assignment Pitfalls:**
+  - Device assignment vs asset assignment
+  - Dashboard assignment dependencies
+  - Rule chain assignment ordering
+  - Entity group propagation delays
+  - Unassignment cleanup incompleteness
+  - Circular assignment dependencies
+
+  **Rule Chain Pitfalls:**
+  - Cloud rule chain vs edge rule chain confusion
+  - Root rule chain requirements on edge
+  - External node limitations on edge
+  - Script execution resource constraints
+  - Rule chain version sync conflicts
+  - Debug mode storage on edge
+
+  **Offline Operation Pitfalls:**
+  - Local storage exhaustion
+  - Telemetry buffer prioritization
+  - Alarm state divergence
+  - User session expiration offline
+  - Credential validation without cloud
+  - Time-sensitive data staleness
+
+  **Data Flow Pitfalls:**
+  - Telemetry routing (edge-only vs cloud-sync)
+  - Attribute scope synchronization
+  - Alarm propagation direction
+  - RPC request routing
+  - Notification delivery scope
+  - Audit log synchronization
+
+  **Security Pitfalls:**
+  - Edge key exposure
+  - Certificate renewal coordination
+  - Local user management scope
+  - Token refresh during offline
+  - Tenant isolation on multi-edge
+  - Secure boot and tampering
+
+  **Operational Pitfalls:**
+  - Edge upgrade coordination with cloud
+  - Configuration drift detection
+  - Log aggregation from edge
+  - Monitoring edge health remotely
+  - Backup and recovery procedures
+  - Edge decommissioning process
+
+  Translate these into **generic concepts** for documentation:
+  Implementation-specific: "EdgeGrpcService handles CloudEventMsg sync via bidirectional streaming"
+  Technology-agnostic: "Edge and cloud maintain a persistent connection for real-time event synchronization"
+
+  Code-specific: "EdgeEventService queues EdgeEvent with seqId for ordered delivery"
+  Technology-agnostic: "Sync events are queued with sequence numbers to ensure ordered delivery"
+
+  gRPC-specific: "DownlinkMsg contains entityData wrapped in UpdateMsgType enum"
+  Technology-agnostic: "Cloud pushes entity updates to edge with operation type (create, update, delete)"
+
+  Pattern-specific: "EdgeSynchronizationManager uses optimistic locking with version vectors"
+  Technology-agnostic: "Sync conflicts are resolved using version tracking with last-write-wins strategy"
+
+  Config-specific: "cloud.routing_key and cloud.secret in tb-edge.yml establish identity"
+  Technology-agnostic: "Each edge instance authenticates to cloud using a unique key pair"
+
+  ### Phase 4: Validation
+  1. Verify each document has a Mermaid diagram
+  2. Confirm Common Pitfalls section exists in each
+  3. Check cross-references point to valid files
+  4. Use `/iot-engineer` to verify edge architecture accuracy
+  5. Ensure offline operation is comprehensively documented
+
+  ## Style Guide
+
+  DO: "ThingsBoard Edge runs locally, processing device data and syncing with the cloud"
+  DON'T: "TbEdgeApplication extends TbCoreApplication with EdgeGrpcClient for cloud connectivity"
+
+  DO: "Edge connects to cloud using secure credentials assigned during edge creation"
+  DON'T: "EdgeCredentials contains routingKey and secret validated by EdgeAuthService"
+
+  DO: "Entities (devices, assets, dashboards) are assigned to edge for local availability"
+  DON'T: "EdgeService.assignEntityToEdge() creates EdgeEvent with ActionType.ASSIGNED"
+
+  DO: "Edge buffers data during cloud disconnection and syncs when connectivity resumes"
+  DON'T: "EdgeEventRepository persists unsynced events with tsId for FIFO processing"
+
+  DO: "Rule chains can execute locally on edge, reducing latency and enabling offline actions"
+  DON'T: "TbRuleEngineDeviceRpcService checks isLocalEntity() before remote invocation"
+
+  DO: "Telemetry can be processed locally, sent to cloud, or both based on configuration"
+  DON'T: "TbEdgeMsgConstructor builds UplinkMsg with TelemetryUpdateMsg for cloud sync"
+
+  DO: "Edge supports a subset of cloud features optimized for resource-constrained environments"
+  DON'T: "EdgeSupportedFeatures enum defines ALARM, DEVICE, ASSET excluding SCHEDULER"
+
+  ## Edge Specific Content Checklist
+  Ensure documentation covers:
+
+  ### Edge Architecture
+  - [ ] Edge purpose and use cases
+  - [ ] Edge vs cloud feature comparison
+  - [ ] Edge hardware requirements
+  - [ ] Supported deployment platforms (Docker, bare-metal)
+  - [ ] Edge licensing model
+
+  ### Cloud-Edge Relationship
+  - [ ] Edge provisioning in cloud
+  - [ ] Edge authentication and credentials
+  - [ ] Connection establishment
+  - [ ] Reconnection handling
+  - [ ] Multi-edge deployments
+
+  ### Entity Assignment
+  - [ ] Device assignment to edge
+  - [ ] Asset assignment to edge
+  - [ ] Dashboard assignment
+  - [ ] Rule chain assignment
+  - [ ] Entity group assignment (PE)
+  - [ ] User assignment to edge
+  - [ ] Assignment propagation timing
+
+  ### Synchronization
+  - [ ] Cloud-to-edge sync (entity updates, configurations)
+  - [ ] Edge-to-cloud sync (telemetry, events)
+  - [ ] Sync event types and priorities
+  - [ ] Conflict resolution strategies
+  - [ ] Sync queue management
+  - [ ] Bandwidth optimization
+
+  ### Rule Chain Templates
+  - [ ] Edge rule chain concept
+  - [ ] Root chain requirements
+  - [ ] Supported vs unsupported nodes
+  - [ ] Local vs cloud execution
+  - [ ] Rule chain sync behavior
+
+  ### Offline Operation
+  - [ ] Offline capabilities and limitations
+  - [ ] Local data buffering
+  - [ ] Alarm handling offline
+  - [ ] Device RPC offline
+  - [ ] Data retention during offline
+  - [ ] Sync behavior on reconnection
+
+  ### Data Routing
+  - [ ] Telemetry routing options
+  - [ ] Attribute synchronization
+  - [ ] Alarm propagation
+  - [ ] Event routing decisions
+
+  ### Operations
+  - [ ] Edge installation and setup
+  - [ ] Edge upgrade procedures
+  - [ ] Monitoring edge instances
+  - [ ] Troubleshooting connectivity
+  - [ ] Backup and restore
+  - [ ] Edge decommissioning
+
+  ### Security
+  - [ ] Edge-cloud communication security
+  - [ ] Local authentication
+  - [ ] Certificate management
+  - [ ] Access control on edge
+
+  ## Output Format
+  After completing updates, provide a summary table:
+
+  | File | Changes Made | Gaps Filled | Diagrams Added | Skills Used |
+  |------|--------------|-------------|----------------|-------------|
+  | ... | ... | ... | ... | ... |
+
+  ## Success Criteria
+  - [ ] All files reviewed against official docs
+  - [ ] Relevant skills used to validate accuracy
+  - [ ] Each file contains at least one Mermaid diagram
+  - [ ] Each file has a "Common Pitfalls" section
+  - [ ] Language is technology-agnostic throughout
+  - [ ] Cross-references are valid
+  - [ ] Edge-cloud architecture clearly explained
+  - [ ] Entity assignment process documented
+  - [ ] Synchronization mechanisms detailed
+  - [ ] Offline operation capabilities clear
+  - [ ] Rule chain templates explained
+  - [ ] Operational procedures included
+
