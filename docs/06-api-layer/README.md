@@ -13,6 +13,7 @@ The API layer exposes platform functionality through REST APIs, WebSocket connec
 | [Device API](./device-api.md) | Device-facing endpoints for telemetry, attributes, and RPC |
 | [WebSocket Overview](./websocket-overview.md) | Real-time subscriptions for telemetry and alarm updates |
 | [Subscription Model](./subscription-model.md) | Entity data subscriptions, pagination, and update streaming |
+| [Notifications](./notifications.md) | Notification center, templates, rules, and delivery channels |
 
 ## Key Concepts
 

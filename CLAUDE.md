@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 This is a ThingsBoard documentation project containing:
-- **docs/** - Internal documentation (89 markdown files) derived from source code analysis
+- **docs/** - Internal documentation (111 markdown files) derived from source code analysis
 - **ref/thingsboard-master** - ThingsBoard platform source code (Java 17/Spring Boot 3.4.10 backend, Angular 18 frontend)
 - **ref/thingsboard.github.io-master** - Official ThingsBoard documentation website (Jekyll)
 - **.claude/skills/** - 38 specialized Claude Code skills for development workflows
@@ -17,20 +17,23 @@ Documentation is organized in numbered sections for logical progression:
 | Section | Topic | Files |
 |---------|-------|-------|
 | 01-architecture | System design, topology, multi-tenancy | 3 |
-| 02-core-concepts | Entities, data models, identity | 9 |
+| 02-core-concepts | Entities, data models, identity, provisioning, OTA, profiles, claiming | 13 |
 | 03-actor-system | Concurrency, message-driven architecture | 4 |
-| 04-rule-engine | Processing pipelines, node types, node reference | 11 |
-| 05-transport-layer | Device protocols (MQTT, CoAP, HTTP, LWM2M, SNMP) | 7 |
-| 06-api-layer | REST, WebSocket, authentication | 6 |
+| 04-rule-engine | Processing pipelines, node types, node reference, TBEL, queues, analytics | 14 |
+| 05-transport-layer | Device protocols (MQTT, CoAP, HTTP, LWM2M, SNMP), Gateway, SSL/TLS | 9 |
+| 06-api-layer | REST, WebSocket, authentication, notifications | 7 |
 | 07-data-persistence | Cassandra, PostgreSQL, caching | 6 |
 | 08-message-queue | Kafka configuration, partitioning | 4 |
-| 09-security | Auth, authorization, tenant isolation | 3 |
+| 09-security | Auth, authorization, tenant isolation, rate limiting | 4 |
 | 10-frontend | Angular architecture, widget system | 2 |
 | 11-microservices | Service types, EDQS, JS Executor | 7 |
 | 12-edge | Edge computing, cloud sync, rule templates | 4 |
 | 13-iot-gateway | Gateway architecture, protocol connectors | 3 |
 | 14-integrations | Cloud, LoRaWAN, messaging platform integrations | 4 |
 | 15-tbmq | MQTT broker architecture, protocol features | 3 |
+| 16-trendz | Analytics platform, visualizations, predictions, anomaly detection | 4 |
+| 17-mobile-app | Flutter mobile app, customization, development, release | 3 |
+| 18-deployment | Installation, configuration, monitoring, operations | 4 |
 
 `docs/GLOSSARY.md` contains comprehensive terminology with Mermaid diagrams showing concept relationships.
 

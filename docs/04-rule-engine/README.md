@@ -683,4 +683,6 @@ graph TB
 - [Message Flow (TbMsg)](./message-flow.md) - Message routing details
 - [Node Categories](./node-categories.md) - All built-in nodes
 - [Node Development Contract](./node-development-contract.md) - Custom node development
+- [TBEL Language](./tbel.md) - ThingsBoard Expression Language for scripts
+- [Queues](./queues.md) - Queue configuration and processing strategies
 - [Actor System](../03-actor-system/README.md) - Underlying actor model

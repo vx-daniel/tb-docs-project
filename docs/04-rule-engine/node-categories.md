@@ -59,6 +59,7 @@ graph TB
 | ACTION | Perform database operations and system actions | 20+ | [Action Nodes](./nodes/action-nodes.md) |
 | EXTERNAL | Integrate with external systems and services | 14 | [External Nodes](./nodes/external-nodes.md) |
 | FLOW | Control rule chain execution and message routing | 4 | [Flow Nodes](./nodes/flow-nodes.md) |
+| ANALYTICS (PE) | Statistical aggregation and calculations | 4 | [Analytics Nodes](./nodes/analytics-nodes.md) |
 
 ## Filter Nodes
 

@@ -75,12 +75,17 @@ Makes HTTP requests to external REST endpoints.
 ### URL Pattern Variables
 
 Patterns support `${...}` syntax resolved from metadata and message:
+
 - `${metadata.deviceId}` - Metadata value
 - `${msg.sensorId}` - Message payload value
 
 ### Processing Flow
 
 ```mermaid
+---
+config:
+  theme: 'forest'
+---
 graph LR
     MSG[Message] --> URL[Resolve URL pattern]
     URL --> HEADERS[Add headers]
@@ -172,6 +177,7 @@ Publishes messages to Apache Kafka topics.
 ### Kafka Headers
 
 When `addMetadataKeyValuesAsKafkaHeaders` is enabled:
+
 - Headers are prefixed with `tb_msg_md_`
 - Example: `tb_msg_md_deviceName`, `tb_msg_md_deviceType`
 

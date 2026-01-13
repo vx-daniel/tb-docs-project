@@ -11,6 +11,7 @@ ThingsBoard implements a comprehensive security model with multi-layered authent
 | [Authentication](./authentication.md) | JWT tokens, OAuth2, 2FA, device credentials, and session management |
 | [Authorization](./authorization.md) | Role-based access control, user authorities, and permission model |
 | [Tenant Isolation](./tenant-isolation.md) | Multi-layer isolation, data separation, and boundary enforcement |
+| [Rate Limiting](./rate-limiting.md) | API limits, rate controls, and usage quotas |
 
 ## Key Concepts
 

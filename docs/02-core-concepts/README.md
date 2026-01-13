@@ -11,6 +11,10 @@ This section defines the fundamental building blocks of the ThingsBoard platform
 | [Entities](./entities/) | Core entity types: devices, assets, tenants, customers, dashboards, alarms, and relations |
 | [Data Model](./data-model/) | Data types: telemetry, attributes, RPC commands, and calculated fields |
 | [Identity](./identity/) | Entity identification and UUID-based addressing |
+| [Device Provisioning](./device-provisioning.md) | Automatic device registration and credential management |
+| [OTA Updates](./ota-updates.md) | Over-the-air firmware and software distribution |
+| [Device Profiles](./device-profiles.md) | Centralized device configuration and alarm rules |
+| [Device Claiming](./device-claiming.md) | Customer device ownership transfer |
 
 ## Key Concepts
 

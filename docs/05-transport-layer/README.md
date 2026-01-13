@@ -10,10 +10,12 @@ The transport layer handles device connectivity across multiple IoT protocols. E
 |----------|-------------|
 | [Transport Contract](./transport-contract.md) | Common abstraction, message routing, and transport lifecycle |
 | [MQTT](./mqtt.md) | MQTT 3.1.1/5.0 support, topics, QoS, and session management |
+| [Gateway MQTT](./gateway-mqtt.md) | Multi-device gateway API for MQTT bridges |
 | [HTTP](./http.md) | REST-based device API for telemetry and attributes |
 | [CoAP](./coap.md) | Constrained Application Protocol for low-power devices |
 | [LwM2M](./lwm2m.md) | Lightweight M2M for device management and firmware updates |
 | [SNMP](./snmp.md) | Simple Network Management Protocol for network equipment |
+| [SSL/TLS Configuration](./ssl-configuration.md) | Certificate setup, DTLS, and secure transport configuration |
 
 ## Key Concepts
 
@@ -22,6 +24,7 @@ The transport layer handles device connectivity across multiple IoT protocols. E
 - **Session Management**: Connection state, keep-alive, and reconnection handling
 - **Message Routing**: Transport → Queue → Rule Engine flow
 - **Rate Limiting**: Per-device and per-tenant throttling
+- **Transport Security**: SSL/TLS for TCP protocols, DTLS for UDP protocols
 
 ## Transport Architecture
 
