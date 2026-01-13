@@ -51,14 +51,14 @@ graph TB
     end
 ```
 
-| Category | Purpose | Count |
-|----------|---------|-------|
-| FILTER | Route messages based on conditions | 12 |
-| ENRICHMENT | Add data from external sources to messages | 11 |
-| TRANSFORMATION | Modify message payload, metadata, or originator | 9 |
-| ACTION | Perform database operations and system actions | 20+ |
-| EXTERNAL | Integrate with external systems and services | 14 |
-| FLOW | Control rule chain execution and message routing | 4 |
+| Category | Purpose | Count | Reference |
+|----------|---------|-------|-----------|
+| FILTER | Route messages based on conditions | 12 | [Filter Nodes](./nodes/filter-nodes.md) |
+| ENRICHMENT | Add data from external sources to messages | 11 | [Enrichment Nodes](./nodes/enrichment-nodes.md) |
+| TRANSFORMATION | Modify message payload, metadata, or originator | 9 | [Transformation Nodes](./nodes/transformation-nodes.md) |
+| ACTION | Perform database operations and system actions | 20+ | [Action Nodes](./nodes/action-nodes.md) |
+| EXTERNAL | Integrate with external systems and services | 14 | [External Nodes](./nodes/external-nodes.md) |
+| FLOW | Control rule chain execution and message routing | 4 | [Flow Nodes](./nodes/flow-nodes.md) |
 
 ## Filter Nodes
 

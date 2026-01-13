@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 This is a ThingsBoard documentation project containing:
-- **docs/** - Internal documentation (80 markdown files) derived from source code analysis
+- **docs/** - Internal documentation (89 markdown files) derived from source code analysis
 - **ref/thingsboard-master** - ThingsBoard platform source code (Java 17/Spring Boot 3.4.10 backend, Angular 18 frontend)
 - **ref/thingsboard.github.io-master** - Official ThingsBoard documentation website (Jekyll)
 - **.claude/skills/** - 38 specialized Claude Code skills for development workflows
@@ -19,7 +19,7 @@ Documentation is organized in numbered sections for logical progression:
 | 01-architecture | System design, topology, multi-tenancy | 3 |
 | 02-core-concepts | Entities, data models, identity | 9 |
 | 03-actor-system | Concurrency, message-driven architecture | 4 |
-| 04-rule-engine | Processing pipelines, node types | 5 |
+| 04-rule-engine | Processing pipelines, node types, node reference | 11 |
 | 05-transport-layer | Device protocols (MQTT, CoAP, HTTP, LWM2M, SNMP) | 7 |
 | 06-api-layer | REST, WebSocket, authentication | 6 |
 | 07-data-persistence | Cassandra, PostgreSQL, caching | 6 |
@@ -29,6 +29,8 @@ Documentation is organized in numbered sections for logical progression:
 | 11-microservices | Service types, EDQS, JS Executor | 7 |
 | 12-edge | Edge computing, cloud sync, rule templates | 4 |
 | 13-iot-gateway | Gateway architecture, protocol connectors | 3 |
+| 14-integrations | Cloud, LoRaWAN, messaging platform integrations | 4 |
+| 15-tbmq | MQTT broker architecture, protocol features | 3 |
 
 `docs/GLOSSARY.md` contains comprehensive terminology with Mermaid diagrams showing concept relationships.
 
