@@ -632,6 +632,58 @@ cache:
     maxSize: 100000
 ```
 
+## Common Pitfalls
+
+### Direction Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Confusing FROM and TO directions** | Queries return empty results | Draw diagram first; FROM = "what does this entity point to" |
+| **Bidirectional query assuming single direction** | Miss half the relationships | Query both directions when relationship is conceptually bidirectional |
+| **Creating relation with swapped FROM/TO** | Hierarchy inverted; traversal broken | Verify source vs destination before creation |
+
+### Query Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **maxLevel too high** | Query timeout (20s default), high memory usage | Start with low maxLevel; increase only if needed |
+| **Missing entity type filter** | Returns unexpected entity types | Use `entityTypes` filter in queries |
+| **Querying wrong typeGroup** | Empty results even though relation exists | Verify relation's typeGroup; COMMON is default |
+| **fetchLastLevelOnly misunderstanding** | Intermediate results unexpectedly missing | Use false if you need full path traversal |
+
+### Type Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Case-sensitive relation types** | "Contains" ≠ "contains" | Establish conventions; use constants |
+| **Custom type conflicts with built-in** | Unexpected behavior | Review built-in types; prefix custom types |
+| **Inconsistent naming across codebase** | Hard to query, maintenance burden | Define relation type constants; enforce in code review |
+
+### Performance Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Deep recursive queries without caching** | Repeated database hits | Leverage built-in relation cache; avoid frequent full traversals |
+| **High fan-out relations** | Slow traversal, memory pressure | Consider intermediate aggregation entities |
+| **Frequent relation updates** | Cache invalidation overhead | Batch relation changes; minimize churn |
+
+### Lifecycle Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Entity deletion without relation cleanup** | Orphaned relations in database | Call `deleteEntityRelations()` before entity deletion |
+| **Circular relations** | Potential infinite loops in traversal | Design acyclic hierarchies; queries have depth limits as safeguard |
+| **Concurrent relation modifications** | Version conflict, inconsistent state | Implement retry logic; use optimistic locking |
+| **Bulk import without relation validation** | Invalid references to non-existent entities | Validate entity existence before creating relations |
+
+### Type Group Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Using COMMON for dashboard-specific relations** | Dashboard queries return non-dashboard data | Use DASHBOARD typeGroup for dashboard-entity bindings |
+| **Deleting COMMON relations, expecting all relations removed** | Other typeGroup relations persist | Specify typeGroup in deletion; or use `deleteEntityRelations()` for all |
+| **Cross-typeGroup queries** | Must query each typeGroup separately | Design consistent typeGroup strategy upfront |
+
 ## See Also
 
 - [Asset Entity](./asset.md) - Common relation source

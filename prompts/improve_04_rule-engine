@@ -1,0 +1,241 @@
+# Task: Review and Update Rule Engine Documentation
+
+## Context
+
+- **Docs to update:** `docs/04-rule-engine/`
+- **Reference source:** `ref/thingsboard.github.io-master/`
+- **Live code reference:** `ref/thingsboard-master/rule-engine/` and `ref/thingsboard-master/common/rule-engine/`
+
+## Skills to Use
+
+  Invoke these skills during execution for specialized expertise:
+
+  | Skill | Purpose |
+  |-------|---------|
+  | `/workflow-orchestrator` | Rule chain design, message routing, node orchestration, error compensation |
+  | `/spring-boot-expert` | Rule engine service integration, lifecycle management, configuration |
+  | `/java-patterns` | Node implementation patterns, message transformation, filter logic |
+  | `/grpc-expert` | Inter-service rule engine communication, message serialization |
+  | `/iot-engineer` | IoT data processing patterns, telemetry transformation, alerting |
+
+  Use skills to **understand** rule engine implementation deeply, then **translate** findings into technology-agnostic documentation.
+
+## Execution Steps
+
+### Phase 1: Discovery
+
+  1. Read all files in `docs/04-rule-engine/` to understand current coverage
+  2. Search `ref/thingsboard.github.io-master/` for rule engine content:
+     - Search patterns: `rule-engine`, `rule-chain`, `rule-node`, `TBEL`, `message`, `originator`, `metadata`, `filter`, `enrichment`, `transformation`, `action`, `analytics`
+     - Check directories: `docs/user-guide/rule-engine-2-0/`, `docs/pe/user-guide/`, `docs/reference/`
+  3. Use `/workflow-orchestrator` to analyze:
+     - Rule chain execution flow
+     - Node connection patterns (Success, Failure, custom relations)
+     - Sub-chain invocation and return
+     - Error handling and compensation
+  4. Use `/java-patterns` to understand node architecture in `ref/thingsboard-master/rule-engine/`:
+     - Node interface contracts
+     - Message transformation patterns
+     - Async processing patterns
+  5. Use `/iot-engineer` to understand:
+     - Telemetry processing pipelines
+     - Alarm generation patterns
+     - Device action triggers
+  6. Create a gap analysis: what's missing, outdated, or incomplete
+
+### Phase 2: Update Each Document
+
+  For each file in `docs/04-rule-engine/`:
+
+  1. **Cross-reference** with official docs for accuracy
+  2. **Use `/workflow-orchestrator`** to validate processing flow descriptions
+  3. **Add missing content** from official source
+  4. **Ensure required sections exist:**
+     - Overview (what + why)
+     - Mermaid diagram (message flow, node relationships, or chain structure)
+     - Configuration examples
+     - Common Pitfalls section
+     - See Also cross-references
+  5. **Apply style rules:**
+     - Technology-agnostic (behavior/contracts, not Java specifics)
+     - Junior developer audience
+     - Clear, concise language
+
+### Phase 3: Rule Engine-Specific Pitfalls Analysis
+
+  Use `/workflow-orchestrator` and `/java-patterns` to identify and document common pitfalls:
+
+  **Message Structure Pitfalls:**
+
+- Metadata vs payload confusion
+- Originator changes during enrichment
+- Message type routing expectations
+- Immutability and cloning requirements
+- Large payload memory implications
+
+  **Rule Chain Design Pitfalls:**
+
+- Circular chain references
+- Missing failure path handling
+- Root chain selection errors
+- Sub-chain return behavior
+- Chain versioning during updates
+
+  **Node Configuration Pitfalls:**
+
+- Filter node boolean vs relation routing
+- Script node timeout handling
+- Enrichment node blocking behavior
+- External node retry configuration
+- Generator node scheduling accuracy
+
+  **TBEL Scripting Pitfalls:**
+
+- Null pointer handling in expressions
+- Date/time parsing format strings
+- JSON path navigation errors
+- String concatenation performance
+- Variable scope in multi-statement scripts
+
+  **Queue & Processing Pitfalls:**
+
+- Queue assignment vs processing order
+- Partition key selection impact
+- Consumer group scaling effects
+- Message acknowledgment timing
+- Reprocessing duplicate handling
+
+  **Debug Mode Pitfalls:**
+
+- Performance impact in production
+- Debug event storage limits
+- Sensitive data exposure
+- Debug vs actual processing differences
+
+  **Analytics Pitfalls (PE):**
+
+- Aggregation window boundaries
+- Late-arriving data handling
+- State persistence across restarts
+- Memory usage with large windows
+
+  Translate these into **generic concepts** for documentation:
+  Java-specific: "TbNode interface requires process(TbContext ctx, TbMsg msg) implementation"
+  Technology-agnostic: "Each rule node receives a message and context, then routes output to connected nodes"
+
+  Implementation-specific: "TbMsgMetaData stores Map<String, String> copied via new TbMsgMetaData(original)"
+  Technology-agnostic: "Message metadata contains string key-value pairs; modifications require explicit copying"
+
+  Code-specific: "RuleChainService.saveRuleChain validates node connections via RuleChainValidator"
+  Technology-agnostic: "Rule chains are validated for connection integrity before saving"
+
+  TBEL-specific: "TbUtils.toFlatMap() converts nested JSON using dot notation keys"
+  Technology-agnostic: "TBEL provides utilities to flatten nested objects for easier attribute mapping"
+
+  Queue-specific: "TbRuleEngineSubmitStrategy partitions by originator EntityId hash"
+  Technology-agnostic: "Messages from the same device are processed in order through consistent queue assignment"
+
+### Phase 4: Validation
+
+  1. Verify each document has a Mermaid diagram
+  2. Confirm Common Pitfalls section exists in each
+  3. Check cross-references point to valid files
+  4. Use `/workflow-orchestrator` to verify flow descriptions accuracy
+  5. Ensure TBEL documentation includes practical examples
+
+## Style Guide
+
+  DO: "Rule nodes process messages and route them to connected nodes based on relation type (Success, Failure, custom)"
+  DON'T: "TbNodeCallback.onSuccess() propagates TbMsg to downstream TbActorRef via tellNext()"
+
+  DO: "Messages contain three parts: metadata (string key-values), payload (JSON data), and originator (source entity)"
+  DON'T: "TbMsg holds TbMsgMetaData map, JsonNode data, and EntityId originator with UUID msgId"
+
+  DO: "Filter nodes evaluate conditions and route to 'True' or 'False' outputs"
+  DON'T: "TbFilterNode extends TbAbstractNode and returns Boolean via TbNodeRelationType"
+
+  DO: "Enrichment nodes add data to messages by querying external sources or entity attributes"
+  DON'T: "TbGetAttributesNode uses AttributeService.find() with ListenableFuture callback"
+
+  DO: "TBEL scripts access message data through 'msg' variable and metadata through 'metadata' variable"
+  DON'T: "ScriptEngine binds TbMsg.getData() to 'msg' and TbMsgMetaData.getData() to 'metadata'"
+
+  DO: "Sub-chains process messages independently and return results to the calling chain"
+  DON'T: "RuleChainInputNode forwards TbMsg to target RuleChainActor via TbActorSystem"
+
+  DO: "Debug mode captures message snapshots at each node for troubleshooting"
+  DON'T: "DebugTbRateLimits controls TbMsgCallback event emission to DebugService"
+
+## Rule Engine Specific Content Checklist
+
+  Ensure documentation covers:
+
+### Core Concepts
+
+- [ ] Rule chain structure (nodes, connections, relations)
+- [ ] Message anatomy (type, originator, metadata, payload, timestamp)
+- [ ] Root vs non-root chains
+- [ ] Message routing (relation types, success/failure paths)
+
+### Node Categories
+
+- [ ] Filter nodes (script filter, message type filter, switch, etc.)
+- [ ] Enrichment nodes (originator/related attributes, customer/tenant attributes)
+- [ ] Transformation nodes (script, change originator, to email, etc.)
+- [ ] Action nodes (create alarm, clear alarm, RPC, save telemetry, etc.)
+- [ ] External nodes (REST API, Kafka, MQTT, email, SMS, etc.)
+- [ ] Flow nodes (checkpoint, acknowledge, rule chain, etc.)
+- [ ] Analytics nodes (PE: aggregate, calculate delta, etc.)
+
+### TBEL Scripting
+
+- [ ] Syntax basics and variable access
+- [ ] Built-in functions and utilities
+- [ ] Date/time manipulation
+- [ ] JSON navigation and transformation
+- [ ] Error handling in scripts
+
+### Queue Management
+
+- [ ] Queue types and purposes
+- [ ] Partition strategies
+- [ ] Processing guarantees
+- [ ] Queue assignment per rule chain
+
+### Operations
+
+- [ ] Debug mode usage and limitations
+- [ ] Rule chain import/export
+- [ ] Version management
+- [ ] Performance monitoring
+- [ ] Error tracking and recovery
+
+### Advanced Topics
+
+- [ ] Generator nodes for scheduled events
+- [ ] RPC request/response handling
+- [ ] Alarm lifecycle management
+- [ ] Integration with external systems
+- [ ] Edge rule chains
+
+## Output Format
+
+  After completing updates, provide a summary table:
+
+  | File | Changes Made | Gaps Filled | Diagrams Added | Skills Used |
+  |------|--------------|-------------|----------------|-------------|
+  | ... | ... | ... | ... | ... |
+
+## Success Criteria
+
+- [ ] All files reviewed against official docs
+- [ ] Relevant skills used to validate accuracy
+- [ ] Each file contains at least one Mermaid diagram
+- [ ] Each file has a "Common Pitfalls" section
+- [ ] Language is technology-agnostic throughout
+- [ ] Cross-references are valid
+- [ ] All node categories documented with examples
+- [ ] TBEL scripting basics covered with practical examples
+- [ ] Message structure clearly explained
+- [ ] Queue behavior and guarantees documented
+- [ ] Debug mode properly documented with caveats

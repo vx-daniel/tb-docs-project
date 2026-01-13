@@ -448,6 +448,43 @@ Assets are cached for performance:
 - **Invalidation**: Event-driven on create/update/delete
 - **Benefits**: Fast lookups, reduced database load
 
+## Common Pitfalls
+
+### Asset Management Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Duplicate asset names** | Creation fails with conflict error | Use UNIQUIFY strategy or check uniqueness before creation |
+| **Confusing assets with devices** | Attempting to send telemetry to assets directly | Assets receive data via relations or rule chain processing, not direct connectivity |
+| **Deep relation hierarchies** | Slow relation queries, timeout on traversal | Limit hierarchy depth; use `maxLevel` appropriately in queries |
+| **Orphaned assets after deletion** | Child assets lose parent reference | Delete relations explicitly or use cascading cleanup logic |
+| **Profile changes during operation** | Messages route to unexpected rule chains | Plan profile migrations during maintenance windows |
+
+### Relation Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Circular relations** | Infinite loops in traversal queries | Design hierarchies carefully; queries have depth limits but cycles waste resources |
+| **Wrong relation direction** | Queries return empty results | Verify FROM vs TO direction matches your hierarchy model |
+| **Missing relation type filter** | Returns unrelated entities | Always specify `relationType` in queries |
+| **Case-sensitive relation types** | "Contains" ≠ "contains" | Use consistent casing; define constants for relation types |
+
+### Data Aggregation Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Aggregating without child devices** | Empty or null calculated values | Handle missing data gracefully in aggregation logic |
+| **Stale aggregations after device removal** | Aggregates include deleted device's last value | Trigger recalculation when relations change |
+| **High fan-out aggregation** | Performance degradation with many children | Consider pre-aggregation at intermediate levels |
+
+### Customer Assignment Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Unassigning asset without cascading** | Child entities remain visible to old customer | Explicitly unassign all related entities |
+| **Assigning asset to wrong customer** | Data access violation | Verify customer belongs to same tenant |
+| **Concurrent assignment changes** | Version conflict errors | Implement retry logic with version checking |
+
 ## See Also
 
 - [Device Entity](./device.md) - Connected entities that send telemetry

@@ -1,0 +1,233 @@
+# Task: Review and Update Core Concepts Documentation
+
+## Context
+
+- **Docs to update:** `docs/02-core-concepts/`
+- **Reference source:** `ref/thingsboard.github.io-master/`
+- **Live code reference:** `ref/thingsboard-master/common/data/` and `ref/thingsboard-master/dao/`
+
+## Skills to Use
+
+  Invoke these skills during execution for specialized expertise:
+
+  | Skill | Purpose |
+  |-------|---------|
+  | `/iot-engineer` | Device lifecycle, provisioning patterns, OTA updates, IoT data models |
+  | `/spring-boot-expert` | Entity management, data access patterns, service layer concepts |
+  | `/java-patterns` | Entity design patterns, inheritance hierarchies, data modeling |
+  | `/workflow-orchestrator` | Provisioning workflows, state transitions, lifecycle management |
+  | `/grpc-protobuf` | Service contracts, entity serialization, API definitions |
+
+  Use skills to **understand** entity models and workflows deeply, then **translate** findings into technology-agnostic documentation.
+
+## Execution Steps
+
+### Phase 1: Discovery
+
+  1. Read all files in `docs/02-core-concepts/` to understand current coverage
+  2. Search `ref/thingsboard.github.io-master/` for core concept content:
+     - Search patterns: `entity`, `device`, `asset`, `tenant`, `customer`, `telemetry`, `attribute`, `relation`, `provisioning`, `claiming`, `ota`, `profile`, `dashboard`, `alarm`
+     - Check directories: `docs/user-guide/`, `docs/reference/`, `docs/getting-started-guides/`
+  3. Use `/iot-engineer` to analyze:
+     - Device provisioning strategies
+     - OTA update mechanisms
+     - Device claiming workflows
+     - Profile-based configuration
+  4. Use `/java-patterns` to understand entity design in `ref/thingsboard-master/common/data/`:
+     - Entity inheritance hierarchy
+     - ID types and generation
+     - Relationship modeling
+  5. Use `/workflow-orchestrator` to map:
+     - Device lifecycle states
+     - Provisioning state machines
+     - Claiming approval flows
+  6. Create a gap analysis: what's missing, outdated, or incomplete
+
+### Phase 2: Update Each Document
+
+  For each file in `docs/02-core-concepts/`:
+
+  1. **Cross-reference** with official docs for accuracy
+  2. **Use appropriate skill** to validate technical details
+  3. **Add missing content** from official source
+  4. **Ensure required sections exist:**
+     - Overview (what + why)
+     - Mermaid diagram (entity relationships, lifecycle states, or data flow)
+     - Configuration examples
+     - Common Pitfalls section
+     - See Also cross-references
+  5. **Apply style rules:**
+     - Technology-agnostic (behavior/contracts, not implementation specifics)
+     - Junior developer audience
+     - Clear, concise language
+
+### Phase 3: Domain-Specific Pitfalls Analysis
+
+  Use `/iot-engineer` and `/workflow-orchestrator` to identify and document common pitfalls:
+
+  **Entity Management Pitfalls:**
+
+- Tenant vs Customer scope confusion
+- Entity ID immutability after creation
+- Circular relation prevention
+- Entity deletion cascading effects
+- Name uniqueness constraints per scope
+
+  **Data Model Pitfalls:**
+
+- Telemetry vs attribute selection criteria
+- Server-side vs client-side vs shared attributes
+- Time-series data retention implications
+- Attribute key naming conventions
+- Data type coercion and validation
+
+  **Provisioning Pitfalls:**
+
+- Provisioning key security and rotation
+- Device name collision handling
+- Bulk provisioning rate limits
+- Gateway sub-device provisioning
+- Credential type selection
+
+  **Profile Pitfalls:**
+
+- Default profile assignment behavior
+- Profile change propagation timing
+- Rule chain association requirements
+- Alarm rule inheritance
+- Transport configuration conflicts
+
+  **OTA Update Pitfalls:**
+
+- Firmware checksum verification
+- Update state tracking requirements
+- Rollback strategy planning
+- Bandwidth considerations for fleets
+- Version compatibility validation
+
+  **Claiming Pitfalls:**
+
+- Claiming data expiration
+- Pre-provisioned vs dynamic claiming
+- Customer assignment during claiming
+- Reclaiming previously claimed devices
+
+  Translate these into **generic concepts** for documentation:
+  Java-specific: "TenantId extends UUIDBased implements EntityId with entityType TENANT"
+  Technology-agnostic: "Each entity has a unique identifier scoped to its type (tenant, customer, device, etc.)"
+
+  Implementation-specific: "DeviceProfile contains RuleChainId and DashboardId foreign keys"
+  Technology-agnostic: "Device profiles link devices to their default rule chain and dashboard"
+
+  Code-specific: "ProvisionRequest validates credentialsType enum (ACCESS_TOKEN, X509_CERTIFICATE, MQTT_BASIC)"
+  Technology-agnostic: "Provisioning supports multiple credential types: access tokens, certificates, or username/password"
+
+  DAO-specific: "DeviceDao.findDevicesByTenantIdAndCustomerId uses JPA Specification"
+  Technology-agnostic: "Devices can be queried by tenant and optionally filtered by customer assignment"
+
+### Phase 4: Validation
+
+  1. Verify each document has a Mermaid diagram
+  2. Confirm Common Pitfalls section exists in each
+  3. Check cross-references point to valid files
+  4. Use `/iot-engineer` to verify IoT concepts are accurately described
+  5. Ensure entity relationships are correctly documented
+
+## Style Guide
+
+  DO: "Tenants are the top-level isolation unit; all entities belong to exactly one tenant"
+  DON'T: "TenantEntity extends BaseSqlEntity with @ManyToOne CustomerEntity relation"
+
+  DO: "Attributes store device metadata as key-value pairs with three scopes: client, server, and shared"
+  DON'T: "AttributeKvEntity uses @EmbeddedId with AttributeKvCompositeKey containing entityType"
+
+  DO: "Relations create typed connections between any two entities (e.g., 'Contains', 'Manages')"
+  DON'T: "RelationDao persists EntityRelation with from/to EntityId and relationType String"
+
+  DO: "Device profiles define default configuration, rule chain, and alarm rules for device groups"
+  DON'T: "DeviceProfileData contains JsonNode transportConfiguration and List"
+
+  DO: "Provisioning enables devices to self-register using a pre-shared key or certificate"
+  DON'T: "ProvisionDeviceRequest implements ToTransportMsg with ProvisionDeviceCredentials"
+
+  DO: "Telemetry captures time-series measurements; attributes store configuration and state"
+  DON'T: "TsKvRepository extends JpaRepository<TsKvEntity, TsKvCompositeKey> for time-series"
+
+  DO: "OTA updates distribute firmware packages to devices with progress tracking and verification"
+  DON'T: "OtaPackageService.saveOtaPackageData stores byte[] with ChecksumAlgorithm validation"
+
+## Core Concepts Specific Content Checklist
+
+  Ensure documentation covers:
+
+### Entity Hierarchy
+
+- [ ] Tenant (isolation boundary)
+- [ ] Customer (sub-tenant grouping)
+- [ ] User (authentication identity)
+- [ ] Device (IoT endpoint)
+- [ ] Asset (logical grouping)
+- [ ] Entity View (filtered projection)
+- [ ] Dashboard (visualization container)
+- [ ] Entity Groups (PE feature)
+
+### Data Models
+
+- [ ] Telemetry (time-series data)
+- [ ] Attributes (client, server, shared scopes)
+- [ ] Relations (entity connections)
+- [ ] Alarms (state-based alerts)
+
+### Identity & Authentication
+
+- [ ] User authentication methods
+- [ ] Device credential types
+- [ ] API tokens and scopes
+- [ ] Multi-tenancy isolation
+
+### Device Lifecycle
+
+- [ ] Device provisioning strategies (manual, bulk, auto)
+- [ ] Credential types and rotation
+- [ ] Device claiming workflow
+- [ ] Device inactivity and state
+
+### Profiles
+
+- [ ] Device profiles (transport, alarms, rule chain)
+- [ ] Asset profiles
+- [ ] Profile inheritance and defaults
+
+### OTA Updates
+
+- [ ] Firmware vs software packages
+- [ ] Update assignment strategies
+- [ ] Progress tracking and states
+- [ ] Checksum verification
+
+### Advanced Concepts
+
+- [ ] Entity views and filtering
+- [ ] Edge assignment and sync
+- [ ] Audit logging
+
+## Output Format
+
+  After completing updates, provide a summary table:
+
+  | File | Changes Made | Gaps Filled | Diagrams Added | Skills Used |
+  |------|--------------|-------------|----------------|-------------|
+  | ... | ... | ... | ... | ... |
+
+## Success Criteria
+
+- [ ] All files reviewed against official docs
+- [ ] Relevant skills used to validate accuracy
+- [ ] Each file contains at least one Mermaid diagram
+- [ ] Each file has a "Common Pitfalls" section
+- [ ] Language is technology-agnostic throughout
+- [ ] Cross-references are valid
+- [ ] All major entity types documented
+- [ ] Data model concepts (telemetry, attributes, relations) clearly explained
+- [ ] Device lifecycle fully documented (provisioning, claiming, OTA)
+- [ ] Multi-tenancy boundaries clearly articulated

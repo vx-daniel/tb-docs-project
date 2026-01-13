@@ -1,0 +1,126 @@
+  # Task: Review and Update Actor System Documentation
+
+  ## Context
+  - **Docs to update:** `docs/03-actor-system/`
+  - **Reference source:** `ref/thingsboard.github.io-master/`
+  - **Live code reference:** `ref/thingsboard-master/common/actor/` and `ref/thingsboard-master/application/src/main/java/org/thingsboard/server/actors/`
+
+  ## Skills to Use
+  Invoke these skills during execution for specialized expertise:
+
+  | Skill | Purpose |
+  |-------|---------|
+  | `/spring-boot-expert` | Understand how actor system integrates with Spring Boot lifecycle and dependency injection |
+  | `/java-patterns` | Identify concurrency patterns, message handling, and design patterns in actor implementation |
+  | `/workflow-orchestrator` | Understand state machine patterns, message routing, and process orchestration |
+  | `/grpc-expert` | Analyze inter-service actor communication and message serialization |
+
+  Use skills to **understand** implementation deeply, then **translate** findings into technology-agnostic documentation.
+
+  ## Execution Steps
+
+  ### Phase 1: Discovery
+  1. Read all files in `docs/03-actor-system/` to understand current coverage
+  2. Search `ref/thingsboard.github.io-master/` for actor system content:
+     - Search patterns: `actor`, `message`, `mailbox`, `queue`, `async`, `concurrent`, `dispatcher`
+     - Check directories: `docs/reference/`, `docs/user-guide/`
+  3. Use `/java-patterns` to analyze `ref/thingsboard-master/common/actor/`:
+     - Identify actor hierarchy and supervision patterns
+     - Map message flow and routing logic
+     - Understand mailbox and dispatcher mechanisms
+  4. Use `/spring-boot-expert` to understand:
+     - Actor system initialization and lifecycle
+     - Integration with Spring context
+     - Configuration and dependency management
+  5. Create a gap analysis: what's missing, outdated, or incomplete
+
+  ### Phase 2: Update Each Document
+  For each file in `docs/03-actor-system/`:
+
+  1. **Cross-reference** with official docs for accuracy
+  2. **Use `/workflow-orchestrator`** to validate message flow and state handling descriptions
+  3. **Add missing content** from official source
+  4. **Ensure required sections exist:**
+     - Overview (what + why)
+     - Mermaid diagram (actor hierarchy, message flow, or lifecycle)
+     - Configuration examples
+     - Common Pitfalls section
+     - See Also cross-references
+  5. **Apply style rules:**
+     - Technology-agnostic (behavior/contracts, not Java specifics)
+     - Junior developer audience
+     - Clear, concise language
+
+  ### Phase 3: Concurrency Pitfalls Analysis
+  Use `/java-patterns` and `/workflow-orchestrator` to identify and document common pitfalls:
+  - Message ordering guarantees and violations
+  - Deadlock scenarios in actor communication
+  - Mailbox overflow and backpressure handling
+  - Actor lifecycle and resource cleanup
+  - State consistency across distributed actors
+  - Error propagation and supervision strategies
+
+  Translate these into **generic concepts** for documentation:
+  Java-specific: "TbActorRef uses CompletableFuture with timeout for ask pattern"
+  Technology-agnostic: "Request-response communication between actors uses timeouts to prevent indefinite blocking"
+
+  Java-specific: "ActorSystemContext maintains ConcurrentHashMap for actor registry"
+  Technology-agnostic: "The actor registry provides thread-safe lookup for actor references"
+
+  Java-specific: "TbActorMailbox processes messages sequentially via single-threaded dispatcher"
+  Technology-agnostic: "Each actor's mailbox guarantees sequential message processing, eliminating internal race conditions"
+
+  ### Phase 4: Validation
+  1. Verify each document has a Mermaid diagram
+  2. Confirm Common Pitfalls section exists in each
+  3. Check cross-references point to valid files
+  4. Use `/java-patterns` to verify concurrency descriptions are accurate
+
+  ## Style Guide
+
+  DO: "Actors process messages sequentially from their mailbox, ensuring thread safety without explicit locks"
+  DON'T: "TbActorMailbox extends AbstractActor and uses ReentrantLock for synchronization"
+
+  DO: "Parent actors supervise children and decide how to handle failures (restart, stop, escalate)"
+  DON'T: "ActorContext.watch() registers DeathWatch and SupervisorStrategy handles Throwable"
+
+  DO: "Messages are immutable data objects routed to actors by type and destination"
+  DON'T: "TbActorMsg implements Serializable with EntityId for routing via ActorRef.tell()"
+
+  DO: "The dispatcher assigns actors to threads from a pool, balancing load across available resources"
+  DON'T: "TbActorSystem uses ForkJoinPool with ExecutorServiceDispatcher configuration"
+
+  DO: "Actors maintain isolated state that persists across message handling"
+  DON'T: "AbstractTbActor holds state in volatile field"
+
+  ## Actor System Specific Content Checklist
+  Ensure documentation covers:
+  - [ ] Actor model fundamentals (isolation, message passing, location transparency)
+  - [ ] Actor hierarchy and supervision trees
+  - [ ] Message types and routing mechanisms
+  - [ ] Mailbox behavior and message ordering
+  - [ ] Dispatcher and thread pool concepts
+  - [ ] Actor lifecycle (creation, restart, termination)
+  - [ ] Request-response patterns (ask vs tell)
+  - [ ] Error handling and supervision strategies
+  - [ ] Backpressure and flow control
+  - [ ] Actor discovery and addressing
+  - [ ] Distributed actor considerations
+  - [ ] Integration with external systems (queues, databases)
+
+  ## Output Format
+  After completing updates, provide a summary table:
+
+  | File | Changes Made | Gaps Filled | Diagrams Added | Skills Used |
+  |------|--------------|-------------|----------------|-------------|
+  | ... | ... | ... | ... | ... |
+
+  ## Success Criteria
+  - [ ] All files reviewed against official docs
+  - [ ] Relevant skills used to validate technical accuracy
+  - [ ] Each file contains at least one Mermaid diagram
+  - [ ] Each file has a "Common Pitfalls" section
+  - [ ] Language is technology-agnostic throughout
+  - [ ] Cross-references are valid
+  - [ ] Actor system specific checklist items are covered across docs
+  - [ ] Concurrency concepts explained without implementation details

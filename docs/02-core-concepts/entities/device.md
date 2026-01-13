@@ -457,6 +457,45 @@ cache:
     maxSize: 100000
 ```
 
+## Common Pitfalls
+
+### Device Management Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Duplicate device names** | Creation fails with conflict error | Check name uniqueness before creation or use bulk import with UNIQUIFY strategy |
+| **Changing device profile transport type** | Device may lose connectivity if reconfigured incorrectly | Plan transport migration carefully; device firmware may need updating |
+| **Credential rotation without coordination** | Active sessions disconnected immediately | Coordinate credential changes with device reconnection strategy |
+| **Assuming device activity = connectivity** | Inactivity timeout is configurable per profile, not connection-based | Use actual connection status from transport layer for real-time connectivity |
+| **Deleting device with active alarms** | Orphaned alarms may persist | Clear or acknowledge alarms before device deletion |
+| **Gateway device limit exhaustion** | Child devices rejected after limit reached | Monitor child device count; increase limits in gateway profile if needed |
+
+### Provisioning Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Provision key reuse** | Multiple devices share identity | Use unique provision keys per device or per batch |
+| **CHECK_PRE_PROVISIONED without device pre-creation** | Provisioning fails with "device not found" | Pre-create device entries before deployment |
+| **ALLOW_CREATE without rate limiting** | Malicious provisioning floods tenant | Configure device count limits in tenant profile |
+| **X.509 certificate expiration** | Devices lose connectivity silently | Monitor certificate expiration; implement rotation |
+
+### OTA Update Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Assigning firmware without checksum validation** | Corrupted updates brick devices | Always configure checksum verification |
+| **Large firmware packages without chunking** | Network timeouts during download | Use chunked transfer for large packages |
+| **Missing fw_state telemetry handling** | Unable to track update progress | Implement full state machine in device firmware |
+| **Updating during low battery** | Device bricks mid-update | Check battery level before initiating OTA |
+
+### Data Handling Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Posting telemetry with future timestamps** | Data appears in wrong time windows | Validate timestamps before submission; use server time |
+| **Using server-scope attributes for device config** | Device cannot read server attributes | Use SHARED_SCOPE for device-readable configuration |
+| **High-cardinality telemetry keys** | Index bloat, slow queries | Limit unique key names; use structured JSON for variable data |
+
 ## See Also
 
 - [Telemetry](../data-model/telemetry.md) - Device data model

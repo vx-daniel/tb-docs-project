@@ -487,6 +487,43 @@ graph TD
 3. **Customer Isolation**: Use customers to segment end-user access
 4. **Audit Trail**: Review entity events for suspicious activity
 
+## Common Pitfalls
+
+### Tenant Profile Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Setting unlimited quotas** | Single tenant can exhaust platform resources | Always configure reasonable limits; use tiered profiles |
+| **Profile change during high load** | Sudden quota enforcement disrupts operations | Schedule profile changes during low-activity periods |
+| **Missing isolatedTbRuleEngine for high-throughput tenants** | Tenant starves other tenants in shared queue | Enable isolated rule engine for tenants with >10K msg/sec |
+| **Rate limits too aggressive** | Legitimate traffic rejected during bursts | Use dual limits: `"1000:1,20000:60"` allows bursts within minute window |
+
+### Quota Management Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Ignoring 80% warning notifications** | Service disruption when quota exhausted | Configure alerts and monitoring for quota warnings |
+| **TTL settings misaligned with billing** | Data deleted before billing period ends | Align storage TTL with billing cycle |
+| **Not monitoring API usage state** | Surprise quota exhaustion | Poll `/api/usage` regularly; set up dashboards |
+
+### Tenant Administration Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Creating too many TENANT_ADMIN users** | Security audit complexity, potential data exposure | Limit admin accounts; use role-based access where possible |
+| **Deleting tenant without data backup** | Cascade deletion removes all entities permanently | Always backup before deletion; implement soft-delete workflow |
+| **Missing contact email** | Cannot send quota warnings or notifications | Require valid email during tenant creation |
+| **Cross-tenant resource sharing attempts** | API errors, potential security violations | Resources are strictly isolated; use separate tenants per organization |
+
+### Multi-Tenancy Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Assuming tenant ID from context** | Security vulnerability if ID not validated | Always validate tenant ID in service layer |
+| **Shared queue without tenant filtering** | Messages potentially visible across tenants | Tenant ID included in all message headers; never remove |
+| **System tenant operations from tenant admin** | Permission denied errors | System operations require SYS_ADMIN authority |
+| **Tenant deletion with active edge connections** | Edge devices orphaned, fail to sync | Unassign edges before tenant deletion |
+
 ## See Also
 
 - [Customer Entity](./customer.md) - Tenant's sub-organizations

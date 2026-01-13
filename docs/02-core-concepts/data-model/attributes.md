@@ -487,6 +487,59 @@ String attribute keys are mapped to integer IDs via `KeyDictionaryDao`:
 - Example: "Alert if temperature > threshold attribute"
 - Dynamic thresholds based on device config
 
+## Common Pitfalls
+
+### Scope Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Using SERVER_SCOPE for device config** | Device cannot read server attributes | Use SHARED_SCOPE for device-readable configuration |
+| **Device writing to SHARED_SCOPE** | Permission denied; device can only read shared | Device writes CLIENT_SCOPE; server writes SHARED_SCOPE |
+| **Same key in multiple scopes** | Ambiguous; queries must specify scope | Use distinct key names or always specify scope in queries |
+| **Moving attribute between scopes** | Cannot move; must delete and recreate | Delete from old scope, create in new; triggers separate events |
+
+### Synchronization Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Expecting immediate device sync** | Device may be offline; sync happens on reconnect | Design for eventual consistency; track sync status |
+| **MQTT disconnect before attribute request response** | Device never receives requested attributes | Implement retry logic with request timeout |
+| **Large shared attribute payloads** | Slow sync; may exceed transport limits | Keep shared attributes small; use OTA for large configs |
+| **Frequent shared attribute updates** | Push storms to connected devices | Batch related changes; throttle updates |
+
+### Data Type Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Large STRING values** | 10KB limit exceeded | Use TB_RESOURCE for large files; store reference in attribute |
+| **Binary data in attributes** | Not supported directly | Base64 encode or use TB_RESOURCE |
+| **Changing type for existing key** | Old value type preserved until overwritten | Delete and recreate if type change needed |
+| **JSON too deeply nested** | Parse complexity; storage overhead | Flatten structure or store key parts separately |
+
+### Caching Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Expecting immediate cache invalidation** | Cluster propagation has latency | Design for eventual consistency; use versioned reads |
+| **High-frequency attribute updates** | Cache thrashing, increased DB load | Batch updates; consider if telemetry is more appropriate |
+| **Cache miss storms after restart** | Sudden DB load spike | Implement warm-up or gradual traffic increase |
+
+### Rule Engine Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Originator attributes node on wrong entity** | Attributes not found | Verify originator matches expected entity type |
+| **Attribute update triggering infinite loop** | Rule chain repeatedly fires on own updates | Use filter nodes to break update cycles |
+| **Confusing POST_ATTRIBUTES_REQUEST and ATTRIBUTES_UPDATED** | Wrong message type handled | POST_ATTRIBUTES_REQUEST = device post; ATTRIBUTES_UPDATED = server update |
+
+### API Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Querying without specifying scope** | Returns only one scope (scope-dependent) | Always specify scope in API calls |
+| **Bulk delete deleting wrong scope** | Attributes deleted from unexpected scope | Verify scope parameter in delete operations |
+| **Version conflict on concurrent updates** | Update rejected with conflict error | Implement retry with fresh version fetch |
+
 ## See Also
 
 - [Telemetry](./telemetry.md) - Time-series data model

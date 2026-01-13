@@ -768,6 +768,151 @@ graph TB
 - Enable debug mode for troubleshooting
 - Archive old messages
 
+## Common Pitfalls and Gotchas
+
+### Node Execution Limit Exceeded
+
+Messages have a maximum rule node execution count. Exceeding this limit causes immediate message rejection, even if processing was valid.
+
+```mermaid
+flowchart TD
+    MSG[Message] --> N1[Node 1]
+    N1 --> N2[Node 2]
+    N2 --> N3[...]
+    N3 --> LIMIT[Node N]
+    LIMIT --> CHECK{Count < Max?}
+    CHECK -->|No| REJECT[Message rejected]
+
+    style REJECT fill:#ffcdd2
+```
+
+**Impact:** Complex chains with many nodes may hit this limit.
+
+**Mitigation:** Simplify chains; use sub-chains to reset count; increase limit if necessary.
+
+### Fan-Out Callback Failure Propagation
+
+When routing to multiple targets, a single failure immediately propagates to the original callback, even if other branches succeed.
+
+```mermaid
+sequenceDiagram
+    participant RC as Rule Chain
+    participant A as Node A
+    participant B as Node B
+    participant C as Node C
+    participant CB as Callback
+
+    RC->>A: Send copy
+    RC->>B: Send copy
+    RC->>C: Send copy
+
+    A-->>RC: Success
+    B-->>RC: FAILURE
+    RC->>CB: onFailure() immediately
+    Note over C: Still processing...
+```
+
+**Impact:** One failing branch causes entire fan-out to report failure.
+
+**Mitigation:** Use separate error handling for critical branches.
+
+### Sub-Chain Stack Overflow
+
+Deeply nested sub-chain calls accumulate on the message's processing stack. Very deep nesting can exhaust stack memory.
+
+| Nesting Depth | Risk |
+|---------------|------|
+| 1-10 | Safe |
+| 10-50 | Monitor |
+| 50+ | Potential issues |
+
+**Mitigation:** Flatten chain hierarchies; avoid recursive sub-chain patterns.
+
+### Hot Reload Node State Loss
+
+When a rule node's configuration changes, the node actor is destroyed and recreated. Any in-memory state accumulated by the node is lost.
+
+```mermaid
+sequenceDiagram
+    participant Admin as Admin UI
+    participant RC as Rule Chain
+    participant Node as Node Actor
+
+    Node->>Node: Accumulate state
+    Admin->>RC: Update node config
+    RC->>Node: Destroy
+    Note over Node: State lost!
+    RC->>RC: Create new node
+```
+
+**Impact:** Stateful nodes (counters, buffers) lose data on configuration changes.
+
+**Mitigation:** Use external state storage for critical state; design nodes to be stateless.
+
+### Message TTL During Sub-Chain Processing
+
+Message TTL continues expiring during sub-chain processing. Long sub-chain execution can cause messages to expire mid-processing.
+
+```mermaid
+flowchart LR
+    START[Message TTL: 10s] --> SC1[Sub-chain 1: 4s]
+    SC1 --> SC2[Sub-chain 2: 4s]
+    SC2 --> SC3[Sub-chain 3: 3s]
+    SC3 --> EXPIRED[TTL Exceeded!]
+
+    style EXPIRED fill:#ffcdd2
+```
+
+**Mitigation:** Set TTL appropriate for total expected processing time.
+
+### Partition Routing Latency
+
+When a message needs to be routed to a different cluster node (different partition owner), it goes through the message queue, adding latency.
+
+| Routing Type | Latency |
+|--------------|---------|
+| Local (same partition) | Microseconds |
+| Remote (queue) | Milliseconds |
+
+**Impact:** Chains spanning multiple partitions have higher latency.
+
+**Mitigation:** Design chains to minimize cross-partition routing.
+
+### First Node Assumption
+
+Messages entering a rule chain always start at the "first node" unless explicitly directed elsewhere. If the first node is incorrectly configured or removed, all messages fail.
+
+**Impact:** Deleting or misconfiguring the first node breaks the entire chain.
+
+**Mitigation:** Validate first node configuration; test changes before production.
+
+### Output Without Stack Returns to Queue
+
+Calling `output()` when the message stack is empty doesn't fail—it simply acknowledges the message and processing ends. This can silently complete chains that expected to continue.
+
+```mermaid
+flowchart TD
+    CALL[context.output] --> CHECK{Stack empty?}
+    CHECK -->|Yes| ACK[Acknowledge message]
+    CHECK -->|No| ROUTE[Route to parent]
+
+    style ACK fill:#e8f5e9
+```
+
+**Mitigation:** Design chains with clear termination points; avoid unnecessary `output()` calls.
+
+### Relation Type Case Insensitivity Surprise
+
+Relation type matching is case-insensitive. `Success`, `SUCCESS`, and `success` all match the same routes. This can cause unexpected routing if different cases are used inconsistently.
+
+| Configured Route | Message Relation | Match? |
+|------------------|------------------|--------|
+| SUCCESS | Success | Yes |
+| Success | SUCCESS | Yes |
+| success | SUCCESS | Yes |
+
+**Best Practice:** Use consistent casing for relation types (conventionally uppercase).
+
 ## See Also
 
 - [Actor System Overview](./README.md) - Actor hierarchy

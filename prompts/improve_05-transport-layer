@@ -1,0 +1,199 @@
+# Task: Review and Update Transport Layer Documentation
+
+## Context
+
+- **Docs to update:** `docs/05-transport-layer/`
+- **Reference source:** `ref/thingsboard.github.io-master/`
+- **Live code reference:** `ref/thingsboard-master/common/transport/` and `ref/thingsboard-master/transport/`
+
+## Skills to Use
+
+  Invoke these skills during execution for specialized expertise:
+
+  | Skill | Purpose |
+  |-------|---------|
+  | `/mqtt-expert` | Deep understanding of MQTT protocol, QoS levels, topic hierarchies, and broker patterns |
+  | `/iot-engineer` | IoT architecture patterns, device communication, edge computing concepts |
+  | `/websocket-engineer` | Real-time bidirectional communication, connection management |
+  | `/grpc-expert` | Protocol buffer serialization, service-to-service transport |
+  | `/spring-boot-expert` | Transport service configuration, lifecycle, and Spring integration |
+
+  Use skills to **understand** protocol implementations deeply, then **translate** findings into technology-agnostic documentation.
+
+## Execution Steps
+
+### Phase 1: Discovery
+
+  1. Read all files in `docs/05-transport-layer/` to understand current coverage
+  2. Search `ref/thingsboard.github.io-master/` for transport content:
+     - Search patterns: `mqtt`, `coap`, `http`, `lwm2m`, `snmp`, `transport`, `gateway`, `ssl`, `tls`, `device-api`
+     - Check directories: `docs/reference/`, `docs/user-guide/`, `docs/iot-gateway/`
+  3. Use `/mqtt-expert` to analyze MQTT transport:
+     - Topic structure and naming conventions
+     - QoS level handling and guarantees
+     - Session management and persistence
+     - Authentication mechanisms
+  4. Use `/iot-engineer` to understand:
+     - Protocol selection criteria
+     - Device provisioning flows
+     - Constrained device considerations (CoAP, LWM2M)
+  5. Use `/websocket-engineer` to analyze:
+     - WebSocket transport implementation
+     - Connection lifecycle and reconnection
+  6. Create a gap analysis: what's missing, outdated, or incomplete
+
+### Phase 2: Update Each Document
+
+  For each file in `docs/05-transport-layer/`:
+
+  1. **Cross-reference** with official docs for accuracy
+  2. **Use appropriate protocol skill** to validate technical details
+  3. **Add missing content** from official source
+  4. **Ensure required sections exist:**
+     - Overview (what + why)
+     - Mermaid diagram (protocol flow, connection lifecycle, or message path)
+     - Configuration examples
+     - Common Pitfalls section
+     - See Also cross-references
+  5. **Apply style rules:**
+     - Technology-agnostic (behavior/contracts, not implementation specifics)
+     - Junior developer audience
+     - Clear, concise language
+
+### Phase 3: Protocol-Specific Pitfalls Analysis
+
+  Use `/mqtt-expert` and `/iot-engineer` to identify and document common pitfalls:
+
+  **MQTT Pitfalls:**
+
+- QoS level mismatches between publisher and subscriber
+- Topic wildcard security implications
+- Clean session vs persistent session trade-offs
+- Keep-alive timeout tuning
+- Message size limits and fragmentation
+
+  **CoAP Pitfalls:**
+
+- Confirmable vs non-confirmable message selection
+- Observe pattern subscription management
+- Block-wise transfer for large payloads
+- DTLS handshake overhead
+
+  **LWM2M Pitfalls:**
+
+- Object model registration requirements
+- Bootstrap vs direct device management
+- Firmware update sequencing
+- Observation token management
+
+  **General Transport Pitfalls:**
+
+- SSL/TLS certificate chain validation
+- Connection pooling and resource exhaustion
+- Protocol version compatibility
+- Firewall and NAT traversal
+
+  Translate these into **generic concepts** for documentation:
+  MQTT-specific: "MqttTransportHandler uses Netty ChannelInboundHandler with MqttDecoder"
+  Technology-agnostic: "The MQTT transport processes incoming connections through a pipeline that decodes protocol messages"
+
+  Implementation-specific: "CoapTransportResource extends CoapResource with californium library"
+  Technology-agnostic: "CoAP endpoints expose resources that devices can GET, PUT, POST, or OBSERVE"
+
+  Java-specific: "LwM2mTransportService registers ObjectModel with Leshan server"
+  Technology-agnostic: "LWM2M transport maintains a registry of device object models for management operations"
+
+  Code-specific: "SslHandler wraps socket with SSLEngine from KeyManagerFactory"
+  Technology-agnostic: "TLS termination encrypts device connections using configured certificates"
+
+### Phase 4: Validation
+
+  1. Verify each document has a Mermaid diagram
+  2. Confirm Common Pitfalls section exists in each
+  3. Check cross-references point to valid files
+  4. Use `/mqtt-expert` to verify MQTT documentation accuracy
+  5. Use `/iot-engineer` to validate IoT best practices
+
+## Style Guide
+
+  DO: "MQTT uses three QoS levels: at-most-once (0), at-least-once (1), and exactly-once (2)"
+  DON'T: "MqttQoS enum defines AT_MOST_ONCE, AT_LEAST_ONCE, EXACTLY_ONCE mapped to int values"
+
+  DO: "Devices publish telemetry to a topic pattern: v1/devices/me/telemetry"
+  DON'T: "TransportApiService.process() handles TbProtoQueueMsg"
+
+  DO: "CoAP conserves bandwidth using compact binary headers and UDP transport"
+  DON'T: "CoapServer binds DatagramSocket with CoapEndpoint.Builder configuration"
+
+  DO: "The gateway multiplexes multiple device connections over a single transport session"
+  DON'T: "GatewaySessionHandler maintains ConcurrentHashMap<String, DeviceSessionCtx>"
+
+  DO: "LWM2M enables remote device management through standardized object models"
+  DON'T: "Registration implements LwM2mServer with SecurityStore and ModelProvider"
+
+  DO: "TLS secures transport connections using certificate-based authentication"
+  DON'T: "SslContextFactory loads PKCS12 keystore with KeyManagerFactory.getInstance()"
+
+## Transport Layer Specific Content Checklist
+
+  Ensure documentation covers:
+
+### Protocol Coverage
+
+- [ ] MQTT (v3.1.1 and v5.0 differences)
+- [ ] CoAP (with DTLS security)
+- [ ] HTTP/HTTPS REST API
+- [ ] LWM2M (Bootstrap and Device Management)
+- [ ] SNMP (polling and traps)
+- [ ] WebSocket transport
+
+### Core Concepts
+
+- [ ] Protocol selection criteria (when to use which)
+- [ ] Connection lifecycle (connect, authenticate, communicate, disconnect)
+- [ ] Message formats and encoding (JSON, Protobuf)
+- [ ] Topic/endpoint structure conventions
+- [ ] QoS and delivery guarantees per protocol
+- [ ] Session management (persistent vs transient)
+
+### Security
+
+- [ ] SSL/TLS configuration
+- [ ] Certificate-based authentication
+- [ ] Access token authentication
+- [ ] X.509 certificate authentication
+- [ ] Device credentials provisioning
+
+### Gateway
+
+- [ ] Gateway architecture and purpose
+- [ ] Device multiplexing
+- [ ] Gateway API vs Device API
+- [ ] Connector types and configuration
+
+### Operations
+
+- [ ] Rate limiting per transport
+- [ ] Connection limits and pooling
+- [ ] Monitoring and metrics
+- [ ] Troubleshooting connectivity issues
+
+## Output Format
+
+  After completing updates, provide a summary table:
+
+  | File | Changes Made | Gaps Filled | Diagrams Added | Skills Used |
+  |------|--------------|-------------|----------------|-------------|
+  | ... | ... | ... | ... | ... |
+
+## Success Criteria
+
+- [ ] All files reviewed against official docs
+- [ ] Protocol-specific skills used to validate accuracy
+- [ ] Each file contains at least one Mermaid diagram
+- [ ] Each file has a "Common Pitfalls" section
+- [ ] Language is technology-agnostic throughout
+- [ ] Cross-references are valid
+- [ ] All major protocols documented (MQTT, CoAP, HTTP, LWM2M, SNMP)
+- [ ] Security configuration documented for each protocol
+- [ ] Gateway functionality clearly explained

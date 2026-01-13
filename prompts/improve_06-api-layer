@@ -1,0 +1,239 @@
+ # Task: Review and Update API Layer Documentation
+
+  ## Context
+  - **Docs to update:** `docs/06-api-layer/`
+  - **Reference source:** `ref/thingsboard.github.io-master/`
+  - **Live code reference:** `ref/thingsboard-master/application/src/main/java/org/thingsboard/server/controller/` and `ref/thingsboard-master/common/transport/`
+
+  ## Skills to Use
+  Invoke these skills during execution for specialized expertise:
+
+  | Skill | Purpose |
+  |-------|---------|
+  | `/spring-boot-expert` | REST controller patterns, Spring Security, request handling, validation |
+  | `/websocket-engineer` | Real-time subscriptions, connection management, message protocols |
+  | `/jwt-expert` | Token authentication, JWT structure, refresh mechanisms, security |
+  | `/grpc-expert` | Internal service communication, RPC patterns, protocol buffers |
+  | `/iot-engineer` | Device RPC, telemetry APIs, IoT-specific endpoint patterns |
+
+  Use skills to **understand** API implementation deeply, then **translate** findings into technology-agnostic documentation.
+
+  ## Execution Steps
+
+  ### Phase 1: Discovery
+  1. Read all files in `docs/06-api-layer/` to understand current coverage
+  2. Search `ref/thingsboard.github.io-master/` for API content:
+     - Search patterns: `rest-api`, `websocket`, `authentication`, `jwt`, `rpc`, `alarm`, `notification`, `swagger`, `api-usage`, `rate-limit`
+     - Check directories: `docs/reference/rest-api/`, `docs/user-guide/`, `docs/api/`
+  3. Use `/spring-boot-expert` to analyze:
+     - Controller organization and patterns
+     - Request/response handling
+     - Validation and error responses
+     - Security filter chain
+  4. Use `/websocket-engineer` to understand:
+     - Subscription mechanisms
+     - Real-time telemetry streaming
+     - Connection lifecycle
+  5. Use `/jwt-expert` to analyze:
+     - Token generation and validation
+     - Refresh token flow
+     - Token claims and permissions
+  6. Create a gap analysis: what's missing, outdated, or incomplete
+
+  ### Phase 2: Update Each Document
+  For each file in `docs/06-api-layer/`:
+
+  1. **Cross-reference** with official docs for accuracy
+  2. **Use appropriate skill** to validate technical details
+  3. **Add missing content** from official source
+  4. **Ensure required sections exist:**
+     - Overview (what + why)
+     - Mermaid diagram (request flow, auth sequence, or subscription lifecycle)
+     - Configuration examples
+     - Common Pitfalls section
+     - See Also cross-references
+  5. **Apply style rules:**
+     - Technology-agnostic (behavior/contracts, not implementation specifics)
+     - Junior developer audience
+     - Clear, concise language
+
+  ### Phase 3: API-Specific Pitfalls Analysis
+  Use `/spring-boot-expert`, `/jwt-expert`, and `/websocket-engineer` to identify and document common pitfalls:
+
+  **Authentication Pitfalls:**
+  - Access token vs refresh token usage
+  - Token expiration handling
+  - Missing Authorization header format
+  - Token refresh race conditions
+  - Logout and token invalidation
+  - Multi-device session management
+
+  **REST API Pitfalls:**
+  - Pagination parameter defaults and limits
+  - Sort order syntax requirements
+  - Time range query formats
+  - Entity ID format validation
+  - Batch operation limits
+  - Content-Type header requirements
+
+  **WebSocket Pitfalls:**
+  - Subscription command structure
+  - Entity alias resolution timing
+  - Connection keep-alive requirements
+  - Reconnection with subscription restore
+  - Message ordering guarantees
+  - Binary vs text frame handling
+
+  **RPC Pitfalls:**
+  - One-way vs two-way RPC selection
+  - RPC timeout configuration
+  - Device offline handling
+  - Response payload size limits
+  - Concurrent RPC limits per device
+  - RPC to gateway sub-devices
+
+  **Alarm API Pitfalls:**
+  - Alarm lifecycle state transitions
+  - Acknowledge vs clear semantics
+  - Alarm propagation to parent entities
+  - Alarm query filter syntax
+  - Alarm count vs alarm list endpoints
+
+  **Notification Pitfalls:**
+  - Notification target configuration
+  - Delivery method precedence
+  - Template variable resolution
+  - Rate limiting per recipient
+  - Notification rule vs direct send
+
+  **Rate Limiting Pitfalls:**
+  - Per-tenant vs per-user limits
+  - WebSocket message limits
+  - Entity creation limits
+  - API call counting methodology
+  - Rate limit response headers
+
+  Translate these into **generic concepts** for documentation:
+  Spring-specific: "JwtTokenFactory creates tokens with Claims containing userId and scopes"
+  Technology-agnostic: "Access tokens contain user identity and permission scopes as embedded claims"
+
+  Implementation-specific: "@PreAuthorize('hasAuthority(TENANT_ADMIN)') guards controller methods"
+  Technology-agnostic: "API endpoints require specific permissions; tenant admin endpoints reject customer users"
+
+  WebSocket-specific: "TelemetryWebSocketService handles WsSubscriptionCmd with cmdId for multiplexing"
+  Technology-agnostic: "WebSocket subscriptions use command IDs to multiplex multiple data streams over one connection"
+
+  Code-specific: "DeviceRpcController.handleOneWayDeviceRPCRequest validates RpcRequest JSON schema"
+  Technology-agnostic: "RPC requests require a method name and optional parameters in JSON format"
+
+  Controller-specific: "PageLink.builder().page(0).pageSize(100).sortOrder() constructs query"
+  Technology-agnostic: "Paginated endpoints accept page number, page size, and optional sort parameters"
+
+  ### Phase 4: Validation
+  1. Verify each document has a Mermaid diagram
+  2. Confirm Common Pitfalls section exists in each
+  3. Check cross-references point to valid files
+  4. Use `/jwt-expert` to verify authentication flow accuracy
+  5. Use `/websocket-engineer` to validate real-time API descriptions
+
+  ## Style Guide
+
+  DO: "Authentication returns an access token (short-lived) and refresh token (long-lived)"
+  DON'T: "JwtTokenFactory.createAccessJwtToken() returns JwtToken with configurable expiration"
+
+  DO: "Include the access token in the Authorization header: 'Bearer '"
+  DON'T: "JwtAuthenticationFilter extracts token via HttpServletRequest.getHeader(AUTHORIZATION)"
+
+  DO: "WebSocket subscriptions receive real-time updates when entity telemetry changes"
+  DON'T: "TelemetrySubscriptionService uses SubscriptionCallback with TsData wrapper"
+
+  DO: "RPC calls send commands to devices and optionally wait for responses"
+  DON'T: "RpcService.sendRpcRequestToDevice() returns ListenableFuture"
+
+  DO: "Paginated responses include totalPages, totalElements, and hasNext indicators"
+  DON'T: "PageData wraps List with PageImpl metadata from Spring Data"
+
+  DO: "Alarms transition through states: active → acknowledged → cleared"
+  DON'T: "AlarmService.ackAlarm() updates AlarmStatus enum via AlarmDao.save()"
+
+  DO: "Rate limits return HTTP 429 with a Retry-After header when exceeded"
+  DON'T: "TbRateLimits uses Bucket4j RateLimiter with RefillStrategy.intervally()"
+
+  ## API Layer Specific Content Checklist
+  Ensure documentation covers:
+
+  ### Authentication & Authorization
+  - [ ] Login endpoint and token retrieval
+  - [ ] Access token vs refresh token lifecycle
+  - [ ] Token refresh flow
+  - [ ] Password reset flow
+  - [ ] OAuth2 integration (if applicable)
+  - [ ] Permission model and authorities
+  - [ ] API key authentication
+
+  ### REST API
+  - [ ] Endpoint organization and naming conventions
+  - [ ] Request/response formats (JSON)
+  - [ ] Pagination patterns (PageLink, PageData)
+  - [ ] Sorting and filtering syntax
+  - [ ] Error response format and codes
+  - [ ] Swagger/OpenAPI documentation access
+  - [ ] Batch operations
+
+  ### WebSocket API
+  - [ ] Connection establishment
+  - [ ] Authentication over WebSocket
+  - [ ] Subscription commands (subscribe, unsubscribe)
+  - [ ] Telemetry subscriptions
+  - [ ] Alarm subscriptions
+  - [ ] Entity data subscriptions
+  - [ ] Command/response multiplexing
+  - [ ] Reconnection handling
+
+  ### Device RPC
+  - [ ] One-way RPC (fire and forget)
+  - [ ] Two-way RPC (request-response)
+  - [ ] RPC timeout handling
+  - [ ] Server-side RPC vs client-side RPC
+  - [ ] RPC to gateway devices
+
+  ### Alarm API
+  - [ ] Alarm creation and propagation
+  - [ ] Alarm state transitions
+  - [ ] Acknowledge and clear operations
+  - [ ] Alarm queries and filtering
+  - [ ] Alarm comments and assignments
+
+  ### Notification API
+  - [ ] Notification targets and recipients
+  - [ ] Delivery methods (web, email, SMS, Slack)
+  - [ ] Notification templates
+  - [ ] Notification rules
+  - [ ] Notification center queries
+
+  ### Operations
+  - [ ] Rate limiting behavior and headers
+  - [ ] API usage statistics
+  - [ ] Request tracing and debugging
+  - [ ] CORS configuration
+
+  ## Output Format
+  After completing updates, provide a summary table:
+
+  | File | Changes Made | Gaps Filled | Diagrams Added | Skills Used |
+  |------|--------------|-------------|----------------|-------------|
+  | ... | ... | ... | ... | ... |
+
+  ## Success Criteria
+  - [ ] All files reviewed against official docs
+  - [ ] Relevant skills used to validate accuracy
+  - [ ] Each file contains at least one Mermaid diagram
+  - [ ] Each file has a "Common Pitfalls" section
+  - [ ] Language is technology-agnostic throughout
+  - [ ] Cross-references are valid
+  - [ ] Authentication flow completely documented
+  - [ ] REST API patterns with pagination explained
+  - [ ] WebSocket subscription lifecycle documented
+  - [ ] RPC mechanisms clearly differentiated
+  - [ ] Alarm state machine documented
+  - [ ] Rate limiting behavior documented

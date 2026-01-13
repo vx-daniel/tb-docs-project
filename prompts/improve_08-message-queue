@@ -1,0 +1,246 @@
+ # Task: Review and Update Message Queue Documentation
+
+  ## Context
+  - **Docs to update:** `docs/08-message-queue/`
+  - **Reference source:** `ref/thingsboard.github.io-master/`
+  - **Live code reference:** `ref/thingsboard-master/common/queue/` and `ref/thingsboard-master/common/message/`
+
+  ## Skills to Use
+  Invoke these skills during execution for specialized expertise:
+
+  | Skill | Purpose |
+  |-------|---------|
+  | `/spring-boot-expert` | Spring Kafka integration, message listeners, producer configuration |
+  | `/java-patterns` | Producer/consumer patterns, message serialization, async processing |
+  | `/workflow-orchestrator` | Message routing, queue orchestration, flow control patterns |
+  | `/grpc-protobuf` | Message serialization formats, protocol buffer definitions |
+  | `/iot-engineer` | IoT message patterns, high-throughput ingestion, device telemetry flow |
+
+  Use skills to **understand** queue implementation deeply, then **translate** findings into technology-agnostic documentation.
+
+  ## Execution Steps
+
+  ### Phase 1: Discovery
+  1. Read all files in `docs/08-message-queue/` to understand current coverage
+  2. Search `ref/thingsboard.github.io-master/` for queue content:
+     - Search patterns: `kafka`, `queue`, `message-queue`, `partition`, `consumer`, `producer`, `topic`, `pubsub`, `rabbitmq`, `aws-sqs`, `service-bus`, `in-memory`
+     - Check directories: `docs/reference/`, `docs/user-guide/install/`, `docs/user-guide/`
+  3. Use `/workflow-orchestrator` to analyze:
+     - Message routing between services
+     - Queue topology and flow
+     - Error handling and dead-letter patterns
+     - Ordering guarantees
+  4. Use `/java-patterns` to understand:
+     - Producer/consumer abstractions in `ref/thingsboard-master/common/queue/`
+     - Message wrapper patterns
+     - Serialization strategies
+  5. Use `/iot-engineer` to understand:
+     - High-volume telemetry message handling
+     - Device-to-rule-engine message flow
+     - Transport-to-core message routing
+  6. Create a gap analysis: what's missing, outdated, or incomplete
+
+  ### Phase 2: Update Each Document
+  For each file in `docs/08-message-queue/`:
+
+  1. **Cross-reference** with official docs for accuracy
+  2. **Use appropriate skill** to validate technical details
+  3. **Add missing content** from official source
+  4. **Ensure required sections exist:**
+     - Overview (what + why)
+     - Mermaid diagram (message flow, queue topology, or partition strategy)
+     - Configuration examples
+     - Common Pitfalls section
+     - See Also cross-references
+  5. **Apply style rules:**
+     - Technology-agnostic (behavior/contracts, not implementation specifics)
+     - Junior developer audience
+     - Clear, concise language
+
+  ### Phase 3: Queue-Specific Pitfalls Analysis
+  Use `/workflow-orchestrator` and `/java-patterns` to identify and document common pitfalls:
+
+  **Kafka Configuration Pitfalls:**
+  - Broker connection string format errors
+  - Replication factor exceeding broker count
+  - Log retention vs compaction confusion
+  - Auto topic creation side effects
+  - SASL/SSL configuration complexity
+  - Zookeeper vs KRaft mode differences
+
+  **Partitioning Pitfalls:**
+  - Partition count changes breaking ordering
+  - Hot partition from skewed keys
+  - Partition assignment during rebalance
+  - Consumer count exceeding partition count
+  - Key null behavior (round-robin)
+  - Partition strategy selection criteria
+
+  **Consumer Pitfalls:**
+  - Consumer group ID collisions across services
+  - Offset commit timing (before vs after processing)
+  - Rebalance storms from frequent restarts
+  - Max poll records vs processing time
+  - Session timeout vs heartbeat interval
+  - Dead consumer detection lag
+
+  **Producer Pitfalls:**
+  - Acks configuration trade-offs (0, 1, all)
+  - Batch size vs latency balance
+  - Linger.ms impact on throughput
+  - Buffer memory exhaustion
+  - Retry and idempotence interaction
+  - Key serialization consistency
+
+  **Message Ordering Pitfalls:**
+  - Cross-partition ordering impossibility
+  - Retry breaking within-partition order
+  - Consumer parallelism vs ordering
+  - Time-based ordering assumptions
+  - Message timestamp types (create vs log append)
+
+  **Alternative Queue Pitfalls:**
+  - In-memory queue persistence loss on restart
+  - RabbitMQ queue length limits
+  - AWS SQS visibility timeout tuning
+  - Azure Service Bus session ordering
+  - Pub/Sub acknowledgment deadlines
+
+  **Operational Pitfalls:**
+  - Topic deletion data loss
+  - Under-replicated partition alerts
+  - Consumer lag monitoring gaps
+  - Broker disk space exhaustion
+  - Network partition split-brain
+  - Schema evolution compatibility
+
+  Translate these into **generic concepts** for documentation:
+  Kafka-specific: "KafkaProducer.send() uses ProducerRecord with partition key for routing"
+  Technology-agnostic: "Messages with the same key are routed to the same partition for ordering"
+
+  Implementation-specific: "TbKafkaConsumerTemplate polls with ConsumerRecords batch processing"
+  Technology-agnostic: "Consumers retrieve messages in batches for efficient processing"
+
+  Code-specific: "TbQueueProducer.send(TopicPartitionInfo, TbProtoQueueMsg, callback)"
+  Technology-agnostic: "Producers send messages to specific topics with optional completion callbacks"
+
+  Config-specific: "queue.kafka.replication-factor=1 in thingsboard.yml"
+  Technology-agnostic: "Replication factor controls how many copies of each message are stored for durability"
+
+  Pattern-specific: "TbRuleEngineConsumerContext uses SubmitStrategy for partition assignment"
+  Technology-agnostic: "Messages are distributed across consumers using configurable assignment strategies"
+
+  ### Phase 4: Validation
+  1. Verify each document has a Mermaid diagram
+  2. Confirm Common Pitfalls section exists in each
+  3. Check cross-references point to valid files
+  4. Use `/workflow-orchestrator` to verify message flow accuracy
+  5. Ensure queue selection criteria are clearly documented
+
+  ## Style Guide
+
+  DO: "Messages are grouped into topics; each topic is divided into partitions for parallelism"
+  DON'T: "TopicPartition wraps String topic and int partition used by KafkaConsumer.assign()"
+
+  DO: "Partitions ensure messages with the same key are processed in order by one consumer"
+  DON'T: "DefaultPartitioner.partition() computes murmur2 hash of key bytes modulo partition count"
+
+  DO: "Consumers in the same group share partitions; each partition is assigned to one consumer"
+  DON'T: "ConsumerRebalanceListener.onPartitionsAssigned() triggers after GroupCoordinator rebalance"
+
+  DO: "Producers can wait for acknowledgment: none (fastest), leader only, or all replicas (safest)"
+  DON'T: "ProducerConfig.ACKS_CONFIG accepts '0', '1', or 'all' with Callback for async confirmation"
+
+  DO: "Consumer lag measures how far behind a consumer is from the latest produced message"
+  DON'T: "AdminClient.listConsumerGroupOffsets() returns OffsetAndMetadata compared to endOffsets()"
+
+  DO: "Dead-letter queues capture messages that fail processing after retry exhaustion"
+  DON'T: "TbQueueCallback.onFailure() routes TbProtoQueueMsg to DLQ topic via error handler"
+
+  DO: "In-memory queues are suitable for development but lose messages on service restart"
+  DON'T: "InMemoryTbQueueProducer uses ConcurrentHashMap<TopicPartitionInfo, BlockingQueue>"
+
+  ## Message Queue Specific Content Checklist
+  Ensure documentation covers:
+
+  ### Queue Providers
+  - [ ] Apache Kafka (primary, production-recommended)
+  - [ ] In-Memory (development only)
+  - [ ] RabbitMQ (alternative)
+  - [ ] AWS SQS (cloud alternative)
+  - [ ] Azure Service Bus (cloud alternative)
+  - [ ] Google Pub/Sub (cloud alternative)
+  - [ ] Provider selection criteria
+
+  ### Core Concepts
+  - [ ] Topics and their purposes in ThingsBoard
+  - [ ] Partitions and parallelism
+  - [ ] Consumer groups
+  - [ ] Message keys and routing
+  - [ ] Offsets and position tracking
+  - [ ] Message serialization (Protobuf)
+
+  ### ThingsBoard Queue Topics
+  - [ ] Transport API queues
+  - [ ] Rule engine queues (main, high priority, sequential)
+  - [ ] Core queues
+  - [ ] Notification queues
+  - [ ] Analytics queues (PE)
+  - [ ] Version control queues (PE)
+
+  ### Partitioning Strategies
+  - [ ] Entity ID-based partitioning
+  - [ ] Tenant-based partitioning
+  - [ ] Custom partition strategies
+  - [ ] Partition count guidelines
+
+  ### Delivery Guarantees
+  - [ ] At-least-once delivery
+  - [ ] At-most-once delivery
+  - [ ] Exactly-once semantics (where applicable)
+  - [ ] Ordering guarantees scope
+  - [ ] Idempotency requirements
+
+  ### Configuration
+  - [ ] Broker connection settings
+  - [ ] Topic auto-creation settings
+  - [ ] Replication and durability
+  - [ ] Consumer group configuration
+  - [ ] Batch and buffer sizing
+  - [ ] Timeout and retry settings
+
+  ### Operations
+  - [ ] Monitoring consumer lag
+  - [ ] Scaling consumers
+  - [ ] Topic management
+  - [ ] Broker health monitoring
+  - [ ] Performance tuning
+  - [ ] Troubleshooting common issues
+
+  ### High Availability
+  - [ ] Broker cluster configuration
+  - [ ] Replication factor guidelines
+  - [ ] Failover behavior
+  - [ ] Data durability guarantees
+
+  ## Output Format
+  After completing updates, provide a summary table:
+
+  | File | Changes Made | Gaps Filled | Diagrams Added | Skills Used |
+  |------|--------------|-------------|----------------|-------------|
+  | ... | ... | ... | ... | ... |
+
+  ## Success Criteria
+  - [ ] All files reviewed against official docs
+  - [ ] Relevant skills used to validate accuracy
+  - [ ] Each file contains at least one Mermaid diagram
+  - [ ] Each file has a "Common Pitfalls" section
+  - [ ] Language is technology-agnostic throughout
+  - [ ] Cross-references are valid
+  - [ ] All queue providers documented with selection criteria
+  - [ ] Partitioning strategies clearly explained
+  - [ ] ThingsBoard-specific topics documented
+  - [ ] Delivery guarantees explained per scenario
+  - [ ] Configuration guidance included
+  - [ ] Operational monitoring documented
+

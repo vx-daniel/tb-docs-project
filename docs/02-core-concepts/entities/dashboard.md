@@ -549,6 +549,44 @@ Dashboard titles are cached for performance:
 - **Eviction**: On save, delete
 - **Method**: `findDashboardTitleById()` uses cache
 
+## Common Pitfalls
+
+### Dashboard Design Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Too many widgets on single dashboard** | Slow load times, browser memory issues | Split into multiple dashboards or use states for different views |
+| **Hardcoded entity IDs in aliases** | Dashboard breaks when entities deleted | Use dynamic filters (entity type, relations) instead of entity lists |
+| **Circular state navigation** | Users get lost in dashboard navigation | Design clear state hierarchy; use breadcrumbs |
+| **Missing mobile settings** | Dashboard unusable on mobile devices | Test mobile view; set appropriate mobileHide and mobileOrder |
+
+### Entity Alias Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Empty entity list alias** | Widgets show no data without error | Validate aliases before deployment; handle empty results gracefully |
+| **Alias referencing deleted entity** | Widget errors or empty data | Use filters over lists; aliases auto-update with filter changes |
+| **Wrong entity type in filter** | Returns unexpected entities | Verify entity type matches intended data sources |
+| **Case-sensitive key names** | Telemetry/attribute keys not found | Use exact key casing; keys are case-sensitive |
+
+### Customer Assignment Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Forgetting to assign dashboard** | Customer users see empty dashboard list | Explicitly assign after dashboard creation |
+| **Public dashboard with sensitive widgets** | Data exposure to anonymous users | Audit widget data sources before making public |
+| **Multiple customer assignments not visible** | UI may show first customer only | Use API to verify all assignments |
+| **Dashboard deletion with profile references** | Delete fails due to profile constraint | Unassign from device/asset profiles before deletion |
+
+### Performance Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Unbounded time-series queries** | Slow widget loading, high memory usage | Always set appropriate time windows and limits |
+| **Real-time subscriptions for large entity sets** | WebSocket overload, browser slowdown | Limit subscription scope; use aggregation for overview |
+| **Complex TBEL in widget settings** | Slow rendering per data point | Pre-calculate in rule engine; use simpler widget config |
+| **Large dashboard configurations** | Slow dashboard load and save | Split complex dashboards; lazy-load widget bundles |
+
 ## See Also
 
 - [Widget System](../../10-frontend/widget-system.md) - Widget types and bundles

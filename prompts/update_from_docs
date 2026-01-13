@@ -1,0 +1,15 @@
+can you do the same with this prompt as well mention the use of any skills that would help in completing the task effectively? here is the prompt:
+
+Review the documentation generated in `/docs/03-actor-system` and update it based on the official ThingsBoard documentation website source.
+
+Current status:
+- Official ThingsBoard documentation website source: ref/thingsboard.github.io-master
+
+Guidelines:
+- Technology-agnostic language (behavior/contracts, not Java specifics)
+- Include mermaid diagrams in every document
+- Target audience: junior developers
+- Ensure clarity and conciseness
+- Focus on core concepts, features, and functionalities 
+- This documentation should serve as a comprehensive guide for junior developers to recreate this project from scratch.
+- document any gotchas or common pitfalls

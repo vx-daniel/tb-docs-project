@@ -761,6 +761,128 @@ sequenceDiagram
 - Configure submission strategy based on device capabilities
 - Enable persistent RPC for reliable command delivery
 
+## Common Pitfalls and Gotchas
+
+### Session Limit Silent Eviction
+
+When a device exceeds the maximum concurrent sessions limit (default: 100), the oldest session is silently evicted without warning to the device.
+
+```mermaid
+sequenceDiagram
+    participant D as Device
+    participant DA as Device Actor
+    participant Old as Oldest Session
+
+    D->>DA: Open session 101
+    DA->>DA: Check limit (100)
+    DA->>Old: Close (evicted)
+    Note over Old: No warning sent!
+    DA->>D: Session accepted
+```
+
+**Impact:** Legitimate connections may be dropped without explicit error.
+
+**Mitigation:** Monitor session counts; increase limit for multi-gateway deployments.
+
+### RPC Delivery Without Subscription
+
+Sending RPC commands to a device that hasn't subscribed to RPC results in immediate `NO_ACTIVE_CONNECTION` error, even if the device has an active session.
+
+| Session State | RPC Subscription | Result |
+|---------------|------------------|--------|
+| Connected | Subscribed | Delivered |
+| Connected | Not subscribed | `NO_ACTIVE_CONNECTION` |
+| Disconnected | N/A | `NO_ACTIVE_CONNECTION` |
+
+**Mitigation:** Ensure devices subscribe to RPC topic on connect.
+
+### Persistent RPC Retry Amplification
+
+Persistent RPC retries on failure. If the device repeatedly fails to process commands, the retry count accumulates and may exhaust the retry limit for legitimate requests.
+
+```mermaid
+flowchart TD
+    FAIL[Device fails RPC] --> RETRY[Retry queued]
+    RETRY --> FAIL
+    FAIL --> EXHAUST[Max retries reached]
+    EXHAUST --> LOST[Subsequent RPCs rejected]
+
+    style LOST fill:#ffcdd2
+```
+
+**Mitigation:** Fix device-side issues; monitor RPC failure rates.
+
+### Edge Device RPC Routing Bypass
+
+For devices associated with an Edge instance, RPC commands are routed to the Edge queue rather than directly to the device. If the Edge is offline, commands accumulate in the queue but don't fail immediately.
+
+**Impact:** No immediate feedback that device is unreachable via Edge.
+
+**Mitigation:** Monitor Edge connectivity; set appropriate RPC timeouts.
+
+### Credential Update Session Cascade
+
+Updating device credentials triggers closure of ALL active sessions. In deployments with multiple gateways, this causes a reconnection storm.
+
+```mermaid
+graph TB
+    CREDS[Credentials Updated] --> CLOSE[Close all sessions]
+    CLOSE --> S1[Session 1 disconnected]
+    CLOSE --> S2[Session 2 disconnected]
+    CLOSE --> SN[Session N disconnected]
+
+    S1 --> RECON[Reconnection storm]
+    S2 --> RECON
+    SN --> RECON
+
+    style RECON fill:#fff3e0
+```
+
+**Mitigation:** Schedule credential updates during low-activity periods.
+
+### Activity Timeout vs Inactivity Event
+
+The session inactivity timeout and the rule engine INACTIVITY_EVENT are separate mechanisms. A device may have active sessions but still receive an INACTIVITY_EVENT if no messages are processed.
+
+| Mechanism | Trigger | Scope |
+|-----------|---------|-------|
+| Session timeout | No transport activity | Single session |
+| INACTIVITY_EVENT | No telemetry/attributes | Entire device |
+
+**Impact:** Session remains open but device appears "inactive" in dashboards.
+
+### Sequential RPC Strategy Blocking
+
+When using `SEQUENTIAL_ON_ACK` or `SEQUENTIAL_ON_RESPONSE` submission strategies, a single unresponsive RPC blocks all subsequent commands to that device.
+
+```mermaid
+sequenceDiagram
+    participant API as API
+    participant DA as Device Actor
+    participant D as Device
+
+    API->>DA: RPC 1
+    DA->>D: Send RPC 1
+    Note over D: Device unresponsive
+
+    API->>DA: RPC 2
+    Note over DA: Blocked waiting for RPC 1
+
+    API->>DA: RPC 3
+    Note over DA: Also blocked
+```
+
+**Mitigation:** Use `BURST` strategy for non-critical commands; set appropriate timeouts.
+
+### LwM2M Special Handling
+
+LwM2M devices receive credential update notifications differently—sessions are NOT closed. This exception can cause confusion when mixing LwM2M and other protocol devices.
+
+| Protocol | On Credential Update |
+|----------|---------------------|
+| MQTT, HTTP, CoAP | All sessions closed |
+| LwM2M | Notification only |
+
 ## See Also
 
 - [Actor System Overview](./README.md) - Actor hierarchy

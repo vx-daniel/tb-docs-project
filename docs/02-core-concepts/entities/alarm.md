@@ -624,6 +624,51 @@ alarm:
   max_details_length: 50000
 ```
 
+## Common Pitfalls
+
+### Alarm Rule Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Missing clear condition** | Alarms never auto-clear, accumulate indefinitely | Always define clear rules alongside create rules |
+| **Threshold too sensitive** | Alarm noise from normal fluctuations | Use DURATION or REPEATING conditions instead of SIMPLE |
+| **Duplicate alarm type per originator** | Second alarm updates existing instead of creating new | Use unique alarm types for distinct conditions |
+| **Clear threshold equals create threshold** | Rapid alarm flapping | Add hysteresis gap between create/clear thresholds |
+
+### Severity Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **All alarms set to CRITICAL** | Operator fatigue, real emergencies missed | Reserve CRITICAL for true emergencies; use severity hierarchy |
+| **Severity upgrade without notification** | Escalation goes unnoticed | Configure notifications for severity changes |
+| **INDETERMINATE overuse** | Cannot prioritize unknown-severity alarms | Reserve for truly undetermined cases; default to WARNING |
+
+### Propagation Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **propagateToTenant on all alarms** | Tenant dashboard overwhelmed | Use targeted propagation; consider asset hierarchy instead |
+| **Propagated alarms cleared independently** | Inconsistent alarm state across hierarchy | Design clear propagation strategy; consider automatic cascade |
+| **Missing propagateRelationTypes filter** | Alarms propagate via unintended relations | Explicitly specify relation types (e.g., only "Contains") |
+| **Deep propagation depth** | Performance degradation, alarm explosion | Limit hierarchy depth; aggregate at intermediate levels |
+
+### Lifecycle Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Acknowledging without investigating** | Alarms auto-cleared but issue persists | Implement workflow requiring action before acknowledgment |
+| **Assigning to deleted user** | System auto-unassigns; audit trail incomplete | Validate assignee exists; handle user deletion events |
+| **Querying without time filters** | Returns all historical alarms; slow response | Always specify startTime/endTime for queries |
+| **High alarm volume without TTL** | Database growth, slow queries | Configure alarm TTL; archive old alarms |
+
+### Integration Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Notification on every alarm update** | Notification spam during alarm flapping | Throttle notifications; notify on state transitions only |
+| **WebSocket subscription without filters** | Client overwhelmed by alarm updates | Filter by severity, status, or entity scope |
+| **External system creating duplicate alarms** | Deduplication updates existing alarm unexpectedly | Understand deduplication rules; use unique types for external alarms |
+
 ## See Also
 
 - [Device Entity](./device.md) - Primary alarm originators

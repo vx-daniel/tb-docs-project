@@ -617,6 +617,138 @@ Actors share thread pools (dispatchers):
 - Device dispatcher for device actors
 - Separate pools prevent one actor type from starving others
 
+## Common Pitfalls and Gotchas
+
+### Unbounded Message Queues
+
+Actor mailboxes use unbounded queues. If message production exceeds processing capacity, memory will grow without limit.
+
+```mermaid
+graph LR
+    PROD[High Producer Rate] --> MB[Mailbox Queue]
+    MB --> |Processing bottleneck| GROW[Unbounded Growth]
+    GROW --> OOM[Out of Memory]
+
+    style OOM fill:#ffcdd2
+```
+
+**Mitigation:**
+- Apply backpressure at the source (queue layer, rate limiting)
+- Monitor mailbox sizes in production
+- Scale horizontally by adding processing nodes
+
+### Message Loss During Actor Shutdown
+
+Messages enqueued during actor destruction may be lost unless they implement the stop callback.
+
+```mermaid
+sequenceDiagram
+    participant Sender
+    participant Mailbox as Actor Mailbox
+    participant Actor
+
+    Sender->>Mailbox: enqueue(msg1)
+    Note over Mailbox: Actor begins destruction
+    Mailbox->>Actor: destroy()
+    Sender->>Mailbox: enqueue(msg2)
+    Note over Mailbox: msg2 lost without callback!
+```
+
+**Impact:** Fire-and-forget messages sent during actor teardown are silently dropped.
+
+**Mitigation:** Critical messages should use callbacks to detect delivery failure.
+
+### Throughput Starvation
+
+The configurable `throughput` limit (default: 5 messages per cycle) prevents single actors from monopolizing threads. However, this can cause latency issues for high-volume actors.
+
+| Scenario | Problem |
+|----------|---------|
+| Single high-volume actor | Must yield after 5 messages, waits for rescheduling |
+| Many low-volume actors | Each gets fair share, but high-volume actor delayed |
+
+**Mitigation:** Assign high-volume actors to dedicated dispatchers with more threads.
+
+### Parent Reference Staleness
+
+The parent actor reference is stored at actor creation time. If the parent actor is replaced (stopped and recreated), child actors retain the stale reference.
+
+**Impact:** Messages sent to parent may fail or reach wrong actor.
+
+**Mitigation:** Design hierarchies to avoid runtime parent replacement.
+
+### Broadcast Silent Failures
+
+When broadcasting to children, actors removed between the snapshot and actual send are silently ignored. No error is reported for messages not delivered.
+
+```mermaid
+flowchart TD
+    BC[broadcastToChildren] --> SNAP[Get children snapshot]
+    SNAP --> LOOP[Send to each child]
+    LOOP --> CHECK{Child still exists?}
+    CHECK -->|Yes| SEND[Deliver message]
+    CHECK -->|No| SKIP[Silent skip]
+
+    style SKIP fill:#fff3e0
+```
+
+**Impact:** Some children may not receive broadcast messages.
+
+### No Graceful Dispatcher Shutdown
+
+Dispatcher shutdown immediately cancels in-flight tasks. Messages being processed when shutdown occurs are terminated without completion.
+
+**Mitigation:** Implement application-level draining before shutdown.
+
+### Init Retry Without Wall-Clock Timeout
+
+Actor initialization retries continue until max attempts or success—there's no wall-clock timeout. A slow-responding dependency can cause retries to span hours.
+
+```
+Retry 1: 5 seconds
+Retry 2: 10 seconds
+Retry 3: 15 seconds
+...
+Retry 10: 50 seconds
+Total: Minutes to hours with slow dependencies
+```
+
+**Mitigation:** Configure reasonable max attempts; monitor init failures.
+
+### Single-Threaded Processing Assumption
+
+All state mutations within an actor are safe without synchronization. However, if actor code spawns separate threads or uses async callbacks, race conditions can occur.
+
+| Pattern | Safety |
+|---------|--------|
+| Direct state access in `process()` | Safe - single-threaded |
+| State access in external callback | **Unsafe** - different thread |
+| State access after `await` | **Unsafe** - may be different thread |
+
+**Best Practice:** Keep all state access within the actor's message processing flow.
+
+### Message Ordering Between Actors
+
+Messages from a single sender to a single receiver are ordered. Messages between different sender-receiver pairs have no ordering guarantee.
+
+```mermaid
+graph TB
+    subgraph "Ordered"
+        A1[Actor A] -->|1,2,3| B1[Actor B]
+    end
+
+    subgraph "No Guarantee"
+        A2[Actor A] -->|1| B2[Actor B]
+        A3[Actor C] -->|2| B2
+    end
+```
+
+| Scenario | Ordering |
+|----------|----------|
+| Same sender → Same receiver | Guaranteed |
+| Different senders → Same receiver | No guarantee |
+| Same sender → Different receivers | No guarantee |
+
 ## See Also
 
 - [System Overview](../01-architecture/system-overview.md) - How actors fit in overall architecture

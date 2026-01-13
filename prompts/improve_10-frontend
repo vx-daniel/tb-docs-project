@@ -1,0 +1,125 @@
+---
+
+# Task: Review and Update Frontend Documentation
+
+## Context
+
+- **Docs to update:** `docs/10-frontend/`
+- **Reference source:** `ref/thingsboard.github.io-master/`
+- **Live code reference:** `ref/thingsboard-master/ui-ngx/` (for architecture understanding)
+
+## Skills to Use
+
+  Invoke these skills during execution for Angular expertise:
+
+- `/angular-architect` - For understanding component hierarchy, state management patterns, and module structure
+- `/angular-expert` - For identifying best practices, performance patterns, and modern Angular features
+
+  Use skills to **understand** the codebase deeply, then **translate** findings into technology-agnostic documentation.
+
+## Execution Steps
+
+### Phase 1: Discovery
+
+  1. Read all files in `docs/10-frontend/` to understand current coverage
+  2. Search `ref/thingsboard.github.io-master/` for frontend content:
+     - Search patterns: `widget`, `dashboard`, `custom-widget`, `widget-type`, `widget-bundle`, `ui-ngx`, `angular`
+     - Check directories: `docs/user-guide/`, `docs/user-guide/contribution/`, `docs/pe/user-guide/`
+  3. Use `/angular-architect` to analyze `ref/thingsboard-master/ui-ngx/src/app/`:
+     - Identify core module structure
+     - Map component hierarchy
+     - Understand state management approach
+     - Document widget lifecycle patterns
+  4. Create a gap analysis: what's missing, outdated, or incomplete
+
+### Phase 2: Update Each Document
+
+  For each file in `docs/10-frontend/`:
+
+  1. **Cross-reference** with official docs for accuracy
+  2. **Use `/angular-expert`** to validate technical accuracy of Angular concepts
+  3. **Add missing content** from official source
+  4. **Ensure required sections exist:**
+     - Overview (what + why)
+     - Mermaid diagram (component hierarchy, data flow, or widget lifecycle)
+     - Configuration/customization examples
+     - Common Pitfalls section (use Angular skills to identify framework-specific gotchas)
+     - See Also cross-references
+  5. **Apply style rules:**
+     - Technology-agnostic (behavior/contracts, not Angular specifics)
+     - Junior developer audience
+     - Clear, concise language
+
+### Phase 3: Angular-Informed Pitfalls
+
+  Use `/angular-expert` to identify and document common pitfalls:
+
+- Change detection issues with widgets
+- Memory leaks from unsubscribed observables
+- Lazy loading considerations
+- Zone.js performance impacts
+- Server-side rendering limitations
+
+  Translate these into **generic concepts** for documentation:
+  Angular-specific: "OnPush change detection requires manual markForCheck()"
+  Technology-agnostic: "Widgets using optimized rendering need explicit refresh triggers when data changes externally"
+
+### Phase 4: Validation
+
+  1. Verify each document has a Mermaid diagram
+  2. Confirm Common Pitfalls section exists in each
+  3. Check cross-references point to valid files
+  4. Use `/angular-architect` to verify architectural descriptions are accurate
+
+## Style Guide
+
+  DO: "Widgets receive data through a subscription mechanism that updates on telemetry changes"
+  DON'T: "WidgetComponent injects WidgetContext and subscribes via rxjs Observable"
+
+  DO: "The dashboard layout uses a responsive grid system with draggable widgets"
+  DON'T: "GridsterModule handles drag-drop with GridsterItemComponent bindings"
+
+  DO: "Custom widgets define their settings schema, data sources, and rendering logic"
+  DON'T: "Extend WidgetConfig interface and implement IDynamicWidgetComponent"
+
+  DO: "State management flows from dashboards to widgets through a context object"
+  DON'T: "DashboardState uses NgRx selectors with DashboardContext injection"
+
+  DO: "Components are organized into feature modules for lazy loading"
+  DON'T: "NgModules use loadChildren with dynamic imports for code splitting"
+
+## Frontend Specific Content Checklist
+
+  Ensure documentation covers:
+
+- [ ] Dashboard structure (layouts, states, aliases)
+- [ ] Widget system (types, bundles, lifecycle)
+- [ ] Widget categories (charts, cards, controls, maps, etc.)
+- [ ] Custom widget development workflow
+- [ ] Data binding (entity aliases, data sources, subscriptions)
+- [ ] Theming and styling approach
+- [ ] Internationalization (i18n) support
+- [ ] Mobile responsiveness considerations
+- [ ] Widget actions and navigation
+- [ ] Settings schema definition
+- [ ] Module organization and lazy loading strategy
+- [ ] State management patterns
+- [ ] Component communication patterns
+
+## Output Format
+
+  After completing updates, provide a summary table:
+
+  | File | Changes Made | Gaps Filled | Diagrams Added | Skills Used |
+  |------|--------------|-------------|----------------|-------------|
+  | ... | ... | ... | ... | ... |
+
+## Success Criteria
+
+- [ ] All files reviewed against official docs
+- [ ] Angular skills used to validate architectural accuracy
+- [ ] Each file contains at least one Mermaid diagram
+- [ ] Each file has a "Common Pitfalls" section
+- [ ] Language is technology-agnostic throughout
+- [ ] Cross-references are valid
+- [ ] Frontend specific checklist items are covered across docs

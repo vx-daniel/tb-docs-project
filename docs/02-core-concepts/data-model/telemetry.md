@@ -598,6 +598,53 @@ sequenceDiagram
 - Millisecond precision
 - Clock skew can affect ordering
 
+## Common Pitfalls
+
+### Write Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Timestamps in the future** | Data appears in wrong time windows; latest value incorrect | Validate timestamps before submission; use server time for unreliable clocks |
+| **Inconsistent timestamps in batch** | Data scattered across partitions inefficiently | Batch data with same or similar timestamps together |
+| **High-cardinality keys** | Index bloat, slow queries, storage overhead | Limit unique key names; use structured JSON for variable data |
+| **Type changes for same key** | Mixed types returned in queries; client must handle | Stick to consistent types per key; document type contracts |
+| **Missing timestamp in payload** | Server assigns current time; clock drift issues | Explicitly set timestamps when device time is accurate |
+
+### Query Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Unbounded time range queries** | Slow response, high memory usage, possible timeout | Always set reasonable startTs/endTs; use pagination |
+| **Aggregation without limit** | Returns all buckets; may exceed maxTsIntervals (700) | Set appropriate limit; adjust interval size |
+| **Querying raw data for long periods** | Millions of rows returned | Use aggregation (AVG, MAX, MIN) for periods > 1 day |
+| **Wrong aggregation type** | Meaningless results (e.g., SUM of temperatures) | Match aggregation to metric semantics |
+| **Ignoring timezone in aggregation** | Buckets misaligned with business hours | Specify timezone in IntervalType for calendar-aligned buckets |
+
+### Storage Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **TTL too short** | Data lost before analysis period ends | Align TTL with reporting requirements |
+| **TTL not set (infinite retention)** | Storage grows unbounded | Configure appropriate TTL at profile or system level |
+| **Cassandra partition too wide** | Query performance degradation | Use shorter partition interval (HOURS instead of DAYS) |
+| **Large JSON/STRING values** | Increased data points billing; storage overhead | Keep string values under 512 characters; compress large payloads |
+
+### Latest Value Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Out-of-order updates** | Latest cache shows older value than historical data | Latest updates only if timestamp > current latest timestamp |
+| **Expecting historical update to change latest** | Backfilled data doesn't appear in dashboard | Latest is separate from historical; design dashboards accordingly |
+| **Stale latest after long offline period** | Dashboard shows outdated values without indication | Show "last updated" timestamp alongside values |
+
+### Rule Engine Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Save telemetry before filtering** | Invalid data persisted | Place Save Telemetry node AFTER filter nodes |
+| **High-frequency telemetry overwhelming rule chain** | Message queue backlog, processing delays | Use sampling or pre-aggregation at device level |
+| **Telemetry and attribute confusion** | Wrong message type processed | Check message type (POST_TELEMETRY_REQUEST vs POST_ATTRIBUTES_REQUEST) |
+
 ## See Also
 
 - [Attributes](./attributes.md) - Device configuration data

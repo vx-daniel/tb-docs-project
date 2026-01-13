@@ -464,6 +464,42 @@ sequenceDiagram
 - Entity views can be assigned to customers
 - Provide limited attribute/telemetry access
 
+## Common Pitfalls
+
+### Customer Management Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Duplicate customer titles** | Creation fails with conflict error | Use UNIQUIFY policy or check uniqueness before creation |
+| **Missing email for non-public customers** | Validation error on creation | Always provide email for regular customers |
+| **Deleting public customer** | Operation rejected; public customer is protected | Public customer cannot be deleted; unassign dashboards instead |
+| **Customer deletion cascade confusion** | Devices unassigned (not deleted), users deleted | Understand cascade behavior: devices remain, users removed |
+
+### Assignment Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Assigning device already assigned to another customer** | Silent reassignment, previous customer loses access | Check current assignment before reassigning |
+| **Bulk unassignment performance** | Slow for large device counts | Use batch operations; schedule during off-hours |
+| **Forgetting to assign dashboard** | Customer users cannot view expected dashboard | Verify all required resources assigned after customer creation |
+| **Mixed assignment levels** | Confusion about who can access what | Design clear assignment strategy: tenant-level vs customer-level |
+
+### Access Control Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Customer user trying tenant operations** | Permission denied errors | Understand CUSTOMER_USER limitations; use TENANT_ADMIN for management |
+| **Creating customer user without customer assignment** | User created but cannot access anything | Always set customerId when creating CUSTOMER_USER |
+| **Assuming customer inherits tenant permissions** | Customer users have stricter access than expected | Design permission model explicitly; test access patterns |
+
+### Public Dashboard Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Exposing sensitive data in public dashboards** | Data visible to anyone with link | Review dashboard data sources before making public |
+| **Multiple dashboards assigned to public customer** | Confusion about which dashboards are public | Track public dashboard assignments explicitly |
+| **Public dashboard widget with authentication-required API calls** | Widget errors for anonymous users | Ensure public dashboards only use publicly accessible data |
+
 ## See Also
 
 - [Tenant Entity](./tenant.md) - Parent organization

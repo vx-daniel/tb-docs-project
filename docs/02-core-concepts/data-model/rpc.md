@@ -595,6 +595,60 @@ transport.client_side_rpc:
   timeout: 60000ms  # Device-to-server RPC
 ```
 
+## Common Pitfalls
+
+### Timeout Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Timeout too short (< 5s)** | RPC fails before device can respond | Minimum 5000ms enforced; set realistic timeouts |
+| **Timeout too long** | API calls block indefinitely | Set reasonable upper bound; use async patterns for long operations |
+| **Ignoring expirationTime vs timeout** | RPC expires at unexpected time | expirationTime is absolute; timeout is relative from request time |
+| **Stale RPC response after timeout** | Response received but callback already removed | Design for idempotent operations; log late responses |
+
+### Connectivity Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **RPC to offline device (non-persistent)** | Immediate 504 NO_ACTIVE_CONNECTION | Check device connectivity before RPC; or use persistent RPC |
+| **Device not subscribed to RPC topic** | RPC times out silently | Verify device firmware subscribes to RPC request topics |
+| **RPC response to wrong topic** | Response lost; timeout triggered | Ensure response topic includes correct requestId |
+| **Gateway RPC without device name** | RPC delivered to gateway, not child device | Include deviceName in gateway RPC payload |
+
+### One-Way vs Two-Way Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **One-way expecting confirmation** | No way to know if device received | Use two-way for commands requiring acknowledgment |
+| **Two-way for fire-and-forget** | Unnecessary wait and overhead | Use one-way for logging, metrics push |
+| **Two-way timeout misinterpreted as failure** | Command may have executed but response lost | Design idempotent commands; implement device-side confirmation |
+
+### Persistent RPC Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **Persistent RPC without cleanup** | Database fills with old RPC records | Configure RPC TTL; implement TTL cleanup job |
+| **Excessive retries** | Device overwhelmed when online | Set reasonable retry limit (3-5); implement backoff |
+| **Not monitoring RPC status** | Unaware of failed critical operations | Query pending RPC status; alert on failures |
+| **Persistent RPC for high-frequency commands** | Database write overhead | Reserve persistent for critical, audit-required operations |
+
+### Device Implementation Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **No response to RPC** | Two-way RPC always times out | Device firmware must publish to response topic |
+| **Wrong requestId in response** | Response doesn't match request; ignored | Echo requestId exactly from request to response |
+| **Long-running operation in RPC handler** | Device blocks on single RPC | Return acknowledgment immediately; send completion separately |
+| **Device method case mismatch** | Method not found; RPC fails | Method names are case-sensitive; document exact names |
+
+### Rule Engine RPC Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| **RPC node without success/failure handling** | Lost track of RPC outcome | Always connect success and failure outputs |
+| **Client-side RPC without reply node** | Device never receives response | Use RPC Reply node to send response to device |
+| **RPC in loop without rate limiting** | Device flooded with RPCs | Add delay or condition to prevent RPC storms |
+
 ## See Also
 
 - [Device Entity](../entities/device.md) - RPC target

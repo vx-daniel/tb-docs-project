@@ -11,6 +11,8 @@ The API layer exposes platform functionality through REST APIs, WebSocket connec
 | [REST API Overview](./rest-api-overview.md) | Controller organization, endpoints, pagination, and error handling |
 | [Authentication](./authentication.md) | JWT tokens, API keys, OAuth2, and request authentication flow |
 | [Device API](./device-api.md) | Device-facing endpoints for telemetry, attributes, and RPC |
+| [RPC API](./rpc-api.md) | Remote Procedure Calls - client-side and server-side RPC |
+| [Alarm API](./alarm-api.md) | Alarm management, creation, acknowledgment, and propagation |
 | [WebSocket Overview](./websocket-overview.md) | Real-time subscriptions for telemetry and alarm updates |
 | [Subscription Model](./subscription-model.md) | Entity data subscriptions, pagination, and update streaming |
 | [Notifications](./notifications.md) | Notification center, templates, rules, and delivery channels |

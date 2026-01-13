@@ -346,6 +346,104 @@ flowchart TD
 | RETRY_TIMED_OUT | Skip | Retry | Skip | Medium |
 | RETRY_FAILED_AND_TIMED_OUT | Retry | Retry | Skip | High |
 
+## Critical Warnings and Gotchas
+
+### Queue Blocking with Retry Strategies
+
+When using any retry strategy (`RETRY_ALL`, `RETRY_FAILED`, `RETRY_TIMED_OUT`, `RETRY_FAILED_AND_TIMED_OUT`), a single failing rule node can block the entire queue:
+
+```mermaid
+graph TB
+    subgraph "Blocked Queue"
+        MSG1[Message 1] --> REST[REST API Call]
+        REST --> |External service down| FAIL[Retry...]
+        MSG2[Message 2<br/>Waiting] -.-> REST
+        MSG3[Message 3<br/>Waiting] -.-> REST
+        MSG4[Message N<br/>Waiting] -.-> REST
+    end
+
+    style FAIL fill:#ffcdd2
+    style MSG2 fill:#fff3e0
+    style MSG3 fill:#fff3e0
+    style MSG4 fill:#fff3e0
+```
+
+**Impact:** All messages in the queue wait for the failing message to succeed or exhaust retries.
+
+**Mitigation Strategies:**
+1. **Handle Failure outputs**: Connect the Failure output of external nodes (REST API, Kafka, MQTT) to logging or fallback logic
+2. **Use dedicated queues**: Isolate unstable integrations in separate queues
+3. **Configure failure percentage**: Stop retrying when failure rate exceeds threshold
+4. **Use Device Profiles**: Automatically route messages by device type to appropriate queues
+
+### Message Amplification with RETRY_ALL
+
+The `RETRY_ALL` strategy reprocesses the **entire message pack**, not just failed messages:
+
+```mermaid
+graph LR
+    subgraph "Message Pack (100 messages)"
+        M1[99 Successful]
+        M2[1 Failed]
+    end
+
+    subgraph "Retry Result"
+        R1[100 Reprocessed]
+    end
+
+    M1 & M2 --> |RETRY_ALL| R1
+
+    style M2 fill:#ffcdd2
+    style R1 fill:#fff3e0
+```
+
+**Impact:** Processing load multiplies during failures. If 1 of 100 messages fails, all 100 are resubmitted.
+
+**Recommendation:** Use `RETRY_FAILED_AND_TIMED_OUT` to retry only problematic messages.
+
+### Data Loss with Skip Strategies
+
+The **Main** queue uses `SKIP_ALL_FAILURES` by default for backward compatibility:
+
+| Strategy | Failure Behavior | Risk |
+|----------|-----------------|------|
+| SKIP_ALL_FAILURES | Messages marked "acknowledged" and deleted | Data lost if DB down |
+| SKIP_ALL_FAILURES_AND_TIMED_OUT | Both failed and timed-out deleted | Higher data loss risk |
+
+**Important:** Timed-out messages already submitted to rule chains are:
+- **SKIP_ALL_FAILURES**: NOT canceled—rule engine still processes them
+- **SKIP_ALL_FAILURES_AND_TIMED_OUT**: Canceled—rule nodes won't start processing
+
+### Message Cancellation Behavior
+
+When retry strategies resubmit messages, previous submissions are canceled:
+
+```mermaid
+sequenceDiagram
+    participant Q as Queue
+    participant RE as Rule Engine
+    participant Node as Rule Node
+
+    Q->>RE: Submit Message 1 (attempt 1)
+    RE->>Node: Start processing
+    Note over Node: Processing in progress...
+
+    Q->>RE: Timeout! Resubmit Message 1 (attempt 2)
+    RE->>RE: Cancel previous submission
+
+    Note over Node: Still processing!<br/>Not interrupted
+
+    Node-->>RE: Complete (ignored)
+    RE->>Node: Start processing (attempt 2)
+```
+
+**Key behaviors:**
+1. **Canceled messages**: Rule nodes will NOT start processing canceled messages
+2. **In-flight messages**: Rule nodes already processing are NOT interrupted
+3. **Binary copies**: Retried messages are exact copies of originals
+
+**Risk:** Partial execution if node completes work after cancellation (e.g., external API called but response ignored).
+
 ## Retry Configuration
 
 ### Retry Parameters

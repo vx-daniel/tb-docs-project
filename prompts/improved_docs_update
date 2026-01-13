@@ -1,0 +1,40 @@
+  # Task: Review and Update Documentation
+
+  ## Objective
+  Review the documentation in `/docs/08-message-queue/` and enhance it using the official ThingsBoard documentation as the authoritative reference source.
+
+  ## Source Materials
+  - **Current docs to update:** `docs/08-message-queue/`
+  - **Official reference:** `ref/thingsboard.github.io-master/` 
+
+  ## Review Process
+  1. **Audit current docs** - Identify gaps, inaccuracies, or outdated information
+  2. **Cross-reference** - Compare against official docs for completeness
+  3. **Update** - Revise content while preserving accurate existing material
+
+  ## Content Requirements
+
+  ### Style & Tone
+  - Use technology-agnostic language (describe behavior/contracts, avoid Java-specific implementation details)
+  - Write for junior developers with basic distributed systems knowledge
+  - Be clear and concise; prefer shorter sentences
+
+  ### Structure (each document must include)
+  - Overview section explaining the "what" and "why"
+  - At least one Mermaid diagram illustrating architecture or data flow
+  - Practical examples with configuration snippets
+  - "Common Pitfalls" section documenting gotchas
+  - Cross-references to related documentation sections
+
+  ### Content Depth
+  This documentation should enable a junior developer to:
+  - Understand how ThingsBoard's message queue system works conceptually
+  - Configure queue settings for common use cases
+  - Troubleshoot typical queue-related issues
+  - Make informed decisions about queue topology for different deployment scenarios
+
+  ## Output Expectations
+  For each file updated, briefly note:
+  - What was added/changed
+  - What gaps were filled from official docs
+  - Any remaining questions or areas needing clarification

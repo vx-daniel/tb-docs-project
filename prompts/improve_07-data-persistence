@@ -1,0 +1,241 @@
+ # Task: Review and Update Data Persistence Documentation
+
+  ## Context
+  - **Docs to update:** `docs/07-data-persistence/`
+  - **Reference source:** `ref/thingsboard.github.io-master/`
+  - **Live code reference:** `ref/thingsboard-master/dao/` and `ref/thingsboard-master/common/dao-api/`
+
+  ## Skills to Use
+  Invoke these skills during execution for specialized expertise:
+
+  | Skill | Purpose |
+  |-------|---------|
+  | `/spring-boot-expert` | Spring Data JPA, repository patterns, transaction management, connection pooling |
+  | `/java-patterns` | DAO patterns, entity design, caching strategies, data access abstractions |
+  | `/workflow-orchestrator` | Data flow patterns, write-behind strategies, async persistence |
+  | `/iot-engineer` | Time-series data patterns, telemetry storage optimization, IoT data lifecycle |
+
+  Use skills to **understand** persistence implementation deeply, then **translate** findings into technology-agnostic documentation.
+
+  ## Execution Steps
+
+  ### Phase 1: Discovery
+  1. Read all files in `docs/07-data-persistence/` to understand current coverage
+  2. Search `ref/thingsboard.github.io-master/` for persistence content:
+     - Search patterns: `cassandra`, `postgresql`, `postgres`, `timescale`, `timescaledb`, `hybrid`, `cache`, `redis`, `database`, `storage`, `time-series`, `retention`, `ttl`, `partition`
+     - Check directories: `docs/user-guide/install/`, `docs/reference/`, `docs/user-guide/`
+  3. Use `/spring-boot-expert` to analyze:
+     - Repository and DAO layer structure
+     - Transaction boundaries and isolation
+     - Connection pool configuration
+     - Entity mapping patterns
+  4. Use `/java-patterns` to understand:
+     - Data access abstractions in `ref/thingsboard-master/dao/`
+     - Caching layer implementation
+     - Read/write separation patterns
+  5. Use `/iot-engineer` to understand:
+     - Time-series storage optimization
+     - Telemetry data lifecycle
+     - High-throughput ingestion patterns
+  6. Create a gap analysis: what's missing, outdated, or incomplete
+
+  ### Phase 2: Update Each Document
+  For each file in `docs/07-data-persistence/`:
+
+  1. **Cross-reference** with official docs for accuracy
+  2. **Use appropriate skill** to validate technical details
+  3. **Add missing content** from official source
+  4. **Ensure required sections exist:**
+     - Overview (what + why)
+     - Mermaid diagram (data flow, storage architecture, or caching layers)
+     - Configuration examples
+     - Common Pitfalls section
+     - See Also cross-references
+  5. **Apply style rules:**
+     - Technology-agnostic (behavior/contracts, not implementation specifics)
+     - Junior developer audience
+     - Clear, concise language
+
+  ### Phase 3: Persistence-Specific Pitfalls Analysis
+  Use `/spring-boot-expert` and `/java-patterns` to identify and document common pitfalls:
+
+  **PostgreSQL Pitfalls:**
+  - Connection pool exhaustion under load
+  - Long-running transactions blocking writes
+  - Index bloat from frequent updates
+  - VACUUM scheduling for time-series tables
+  - Sequence gaps after failed inserts
+  - JSON column query performance
+
+  **Cassandra Pitfalls:**
+  - Partition key design and hot spots
+  - Tombstone accumulation from deletes
+  - Consistency level trade-offs
+  - Compaction strategy selection
+  - Wide partition performance degradation
+  - Lightweight transaction overhead
+
+  **TimescaleDB Pitfalls:**
+  - Chunk interval sizing
+  - Continuous aggregate refresh lag
+  - Compression policy timing
+  - Hypertable vs regular table selection
+  - Data retention policy interaction with foreign keys
+  - Query planner chunk exclusion
+
+  **Hybrid Storage Pitfalls:**
+  - Entity vs time-series storage routing
+  - Consistency between storage backends
+  - Migration between storage modes
+  - Backup coordination across databases
+  - Query routing for historical data
+  - Schema synchronization
+
+  **Caching Pitfalls:**
+  - Cache invalidation timing
+  - Stale data after direct DB updates
+  - Cache stampede during cold start
+  - Memory sizing for entity caches
+  - Distributed cache consistency
+  - Cache key collision across tenants
+
+  **Data Retention Pitfalls:**
+  - TTL configuration granularity
+  - Retention policy execution timing
+  - Data loss from aggressive TTL
+  - Archive before delete strategies
+  - Partition pruning with retention
+  - Audit requirements vs retention
+
+  **Performance Pitfalls:**
+  - N+1 query patterns in entity loading
+  - Batch insert sizing
+  - Read replica lag tolerance
+  - Connection timeout tuning
+  - Prepared statement caching
+  - Large result set memory pressure
+
+  Translate these into **generic concepts** for documentation:
+  Spring-specific: "JpaRepository.saveAll() uses batch inserts with hibernate.jdbc.batch_size"
+  Technology-agnostic: "Batch inserts group multiple records into single database operations for efficiency"
+
+  Implementation-specific: "CassandraBaseTimeseriesDao partitions by entity_id and partition timestamp"
+  Technology-agnostic: "Time-series data is partitioned by device and time window for query efficiency"
+
+  Code-specific: "TbCaffeine<K,V> wraps Caffeine cache with TenantId namespace isolation"
+  Technology-agnostic: "Entity caches isolate data by tenant to prevent cross-tenant data leakage"
+
+  DAO-specific: "TimeseriesService.findAllLatest() queries ts_kv_latest table for O(1) lookup"
+  Technology-agnostic: "Latest telemetry values are stored separately for fast retrieval without scanning history"
+
+  Config-specific: "spring.datasource.hikari.maximum-pool-size controls concurrent connections"
+  Technology-agnostic: "Connection pools limit concurrent database connections to prevent resource exhaustion"
+
+  ### Phase 4: Validation
+  1. Verify each document has a Mermaid diagram
+  2. Confirm Common Pitfalls section exists in each
+  3. Check cross-references point to valid files
+  4. Use `/spring-boot-expert` to verify data access patterns
+  5. Ensure storage selection criteria are clearly documented
+
+  ## Style Guide
+
+  DO: "PostgreSQL stores entities and their relationships in relational tables"
+  DON'T: "JpaRepository<DeviceEntity, UUID> extends BaseRepository with @Transactional methods"
+
+  DO: "Cassandra excels at high-volume time-series writes with tunable consistency"
+  DON'T: "CassandraCluster.Builder configures ConsistencyLevel.LOCAL_QUORUM for reads"
+
+  DO: "TimescaleDB extends PostgreSQL with automatic time-based partitioning for telemetry"
+  DON'T: "create_hypertable() converts ts_kv to chunked storage with chunk_time_interval"
+
+  DO: "Hybrid mode uses PostgreSQL for entities and Cassandra/TimescaleDB for time-series"
+  DON'T: "TsLatestDaoConfig conditionally loads CassandraTsLatestDao or SqlTsLatestDao"
+
+  DO: "Caching reduces database load by storing frequently accessed entities in memory"
+  DON'T: "CacheManager uses Caffeine with expireAfterWrite and maximumSize configuration"
+
+  DO: "Data retention automatically removes telemetry older than the configured threshold"
+  DON'T: "TsKvCleanUpService schedules ScheduledFuture with tsKvTtl from application.yml"
+
+  DO: "Connection pooling reuses database connections to avoid connection setup overhead"
+  DON'T: "HikariDataSource maintains minimumIdle connections with maxLifetime rotation"
+
+  ## Data Persistence Specific Content Checklist
+  Ensure documentation covers:
+
+  ### Database Options
+  - [ ] PostgreSQL (entities, relations, and optionally time-series)
+  - [ ] Cassandra (time-series optimized)
+  - [ ] TimescaleDB (PostgreSQL extension for time-series)
+  - [ ] Hybrid configurations
+
+  ### Storage Architecture
+  - [ ] Entity storage (devices, assets, users, dashboards)
+  - [ ] Time-series storage (telemetry, attributes history)
+  - [ ] Latest values optimization
+  - [ ] Attribute storage (client, server, shared)
+  - [ ] Relation storage
+  - [ ] Audit log storage
+  - [ ] Event storage
+
+  ### Data Partitioning
+  - [ ] Time-based partitioning strategies
+  - [ ] Partition key design principles
+  - [ ] Partition sizing guidelines
+  - [ ] Query optimization with partitions
+
+  ### Caching
+  - [ ] Entity cache layers
+  - [ ] Cache invalidation strategies
+  - [ ] Distributed caching (Redis)
+  - [ ] Cache configuration tuning
+  - [ ] Cache warm-up strategies
+
+  ### Data Lifecycle
+  - [ ] TTL (Time-To-Live) configuration
+  - [ ] Data retention policies
+  - [ ] Data cleanup jobs
+  - [ ] Archive strategies
+  - [ ] Data migration paths
+
+  ### Performance
+  - [ ] Connection pooling configuration
+  - [ ] Batch operations
+  - [ ] Read replicas and load balancing
+  - [ ] Query optimization techniques
+  - [ ] Index management
+
+  ### Operations
+  - [ ] Backup strategies per database
+  - [ ] Recovery procedures
+  - [ ] Schema migrations
+  - [ ] Monitoring and metrics
+  - [ ] Scaling considerations
+
+  ### High Availability
+  - [ ] PostgreSQL replication
+  - [ ] Cassandra cluster topology
+  - [ ] TimescaleDB multi-node
+  - [ ] Failover behavior
+
+  ## Output Format
+  After completing updates, provide a summary table:
+
+  | File | Changes Made | Gaps Filled | Diagrams Added | Skills Used |
+  |------|--------------|-------------|----------------|-------------|
+  | ... | ... | ... | ... | ... |
+
+  ## Success Criteria
+  - [ ] All files reviewed against official docs
+  - [ ] Relevant skills used to validate accuracy
+  - [ ] Each file contains at least one Mermaid diagram
+  - [ ] Each file has a "Common Pitfalls" section
+  - [ ] Language is technology-agnostic throughout
+  - [ ] Cross-references are valid
+  - [ ] All three database options documented (PostgreSQL, Cassandra, TimescaleDB)
+  - [ ] Hybrid storage clearly explained with decision criteria
+  - [ ] Caching layers documented
+  - [ ] Data retention/TTL mechanisms explained
+  - [ ] Performance tuning guidance included
+  - [ ] Storage selection criteria provided

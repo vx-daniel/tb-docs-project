@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 This is a ThingsBoard documentation project containing:
-- **docs/** - Internal documentation (111 markdown files) derived from source code analysis
+- **docs/** - Internal documentation (115 markdown files) derived from source code analysis
 - **ref/thingsboard-master** - ThingsBoard platform source code (Java 17/Spring Boot 3.4.10 backend, Angular 18 frontend)
 - **ref/thingsboard.github.io-master** - Official ThingsBoard documentation website (Jekyll)
 - **.claude/skills/** - 38 specialized Claude Code skills for development workflows
@@ -21,8 +21,8 @@ Documentation is organized in numbered sections for logical progression:
 | 03-actor-system | Concurrency, message-driven architecture | 4 |
 | 04-rule-engine | Processing pipelines, node types, node reference, TBEL, queues, analytics | 14 |
 | 05-transport-layer | Device protocols (MQTT, CoAP, HTTP, LWM2M, SNMP), Gateway, SSL/TLS | 9 |
-| 06-api-layer | REST, WebSocket, authentication, notifications | 7 |
-| 07-data-persistence | Cassandra, PostgreSQL, caching | 6 |
+| 06-api-layer | REST, WebSocket, authentication, RPC, alarms, notifications | 9 |
+| 07-data-persistence | Cassandra, PostgreSQL, TimescaleDB, hybrid storage, caching | 8 |
 | 08-message-queue | Kafka configuration, partitioning | 4 |
 | 09-security | Auth, authorization, tenant isolation, rate limiting | 4 |
 | 10-frontend | Angular architecture, widget system | 2 |

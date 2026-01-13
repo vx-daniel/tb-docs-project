@@ -628,6 +628,98 @@ sequenceDiagram
 - Handle "Other" connection for unexpected types
 - Log unhandled message types
 
+## Common Pitfalls and Gotchas
+
+### Message Type Case Sensitivity
+
+Message type strings are case-sensitive. Using `post_telemetry_request` instead of `POST_TELEMETRY_REQUEST` will route to the wrong handler.
+
+```mermaid
+graph LR
+    M1["POST_TELEMETRY_REQUEST"] --> P1["Post telemetry handler"]
+    M2["post_telemetry_request"] --> OTHER["Other (unhandled)"]
+
+    style OTHER fill:#ffcdd2
+```
+
+**Best Practice:** Always use uppercase constants for message types.
+
+### Missing Originator
+
+Messages without a valid originator entity cannot be properly routed or associated with devices. The rule engine may reject or misroute such messages.
+
+| Originator State | Result |
+|------------------|--------|
+| Valid EntityId | Normal routing |
+| Null or invalid | Routing failure or exception |
+
+### Metadata Key Conflicts
+
+Some metadata keys are reserved by the system. Overwriting them causes unexpected behavior:
+
+| Reserved Key | Purpose | Risk if Overwritten |
+|--------------|---------|---------------------|
+| `deviceName` | Device identification | Wrong device association |
+| `deviceType` | Device classification | Incorrect type-based routing |
+| `ts` | Timestamp | Time-series storage issues |
+
+**Best Practice:** Prefix custom metadata keys to avoid conflicts (e.g., `custom_temperature`).
+
+### Self-Messages Not Routed
+
+Self-messages (like `GENERATOR_NODE_SELF_MSG`) are internal to their originating actor and are NOT routed through the rule engine input node. Configuring rule chain routing for self-messages has no effect.
+
+### Message TTL Expiration
+
+Messages carry a time-to-live value. Expired messages are silently dropped without processing:
+
+```mermaid
+flowchart TD
+    MSG[Message arrives] --> CHECK{TTL expired?}
+    CHECK -->|Yes| DROP[Drop silently]
+    CHECK -->|No| PROCESS[Process normally]
+
+    style DROP fill:#ffcdd2
+```
+
+**Impact:** Delayed messages (due to queue backup or slow processing) may never execute.
+
+**Mitigation:** Monitor queue lag; set appropriate TTL for your workload.
+
+### Lifecycle Event Timing
+
+Lifecycle events (CONNECT, DISCONNECT, ACTIVITY, INACTIVITY) are generated based on transport-level events, not rule engine processing. A device may appear "online" in the device actor but messages haven't yet reached the rule engine.
+
+```mermaid
+sequenceDiagram
+    participant D as Device
+    participant T as Transport
+    participant DA as Device Actor
+    participant RE as Rule Engine
+
+    D->>T: Connect
+    T->>DA: Session open
+    DA->>DA: Mark online
+    Note over DA,RE: Delay possible here
+    DA->>RE: CONNECT_EVENT
+```
+
+### Alarm Message Ordering
+
+Multiple alarm state changes in quick succession may arrive out of order at the rule engine. Don't assume `ALARM_CREATED` always precedes `ALARM_UPDATED`.
+
+**Mitigation:** Use alarm metadata (timestamps, sequence) to determine true state.
+
+### Data Type Mismatch
+
+The `dataType` field must match the actual `data` content. Setting `JSON` type with malformed JSON causes downstream parsing failures:
+
+| dataType | data Content | Result |
+|----------|--------------|--------|
+| JSON | `{"valid": true}` | Success |
+| JSON | `not json` | Parse error in downstream nodes |
+| TEXT | `any string` | Success |
+
 ## See Also
 
 - [Actor System Overview](./README.md) - Actor hierarchy
