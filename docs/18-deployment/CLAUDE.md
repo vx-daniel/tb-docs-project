@@ -112,9 +112,9 @@ Focus on deployment patterns, not internal implementation:
 
 When updating this section, cross-reference:
 
-- `ref/thingsboard.github.io-master/docs/user-guide/install/` - Installation guides
-- `ref/thingsboard-master/application/src/main/resources/` - Configuration files
-- `ref/thingsboard-master/msa/` - Microservice configurations
+- `~/work/viaanix/thingsboard.github.io-master/docs/user-guide/install/` - Installation guides
+- `~/work/viaanix/thingsboard-master/application/src/main/resources/` - Configuration files
+- `~/work/viaanix/thingsboard-master/msa/` - Microservice configurations
 
 ## Related Sections
 

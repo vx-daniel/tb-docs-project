@@ -79,6 +79,7 @@ return {
 | Pitfall | Impact | Solution |
 |---------|--------|----------|
 | ... | ... | ... |
+
 ```
 
 ### Terminology
@@ -115,8 +116,8 @@ Focus on integration behavior, not implementation:
 
 When updating this section, cross-reference:
 
-- `ref/thingsboard.github.io-master/docs/user-guide/integrations/` - Official Integration docs
-- `ref/thingsboard-master/application/src/main/java/org/thingsboard/server/service/integration/` - Integration services
+- `~/work/viaanix/thingsboard.github.io-master/docs/user-guide/integrations/` - Official Integration docs
+- `~/work/viaanix/thingsboard-master/application/src/main/java/org/thingsboard/server/service/integration/` - Integration services
 
 ## Related Sections
 

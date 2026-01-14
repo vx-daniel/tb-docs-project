@@ -138,10 +138,10 @@ Focus on API contracts, not implementation:
 
 When updating this section, cross-reference:
 
-- `ref/thingsboard.github.io-master/docs/api/` - Official API documentation
-- `ref/thingsboard-master/application/src/main/java/org/thingsboard/server/controller/` - REST controllers
-- `ref/thingsboard-master/application/src/main/java/org/thingsboard/server/service/ws/` - WebSocket handlers
-- `ref/thingsboard-master/dao/src/main/java/org/thingsboard/server/dao/model/` - Data models
+- `~/work/viaanix/thingsboard.github.io-master/docs/api/` - Official API documentation
+- `~/work/viaanix/thingsboard-master/application/src/main/java/org/thingsboard/server/controller/` - REST controllers
+- `~/work/viaanix/thingsboard-master/application/src/main/java/org/thingsboard/server/service/ws/` - WebSocket handlers
+- `~/work/viaanix/thingsboard-master/dao/src/main/java/org/thingsboard/server/dao/model/` - Data models
 
 ## Related Sections
 

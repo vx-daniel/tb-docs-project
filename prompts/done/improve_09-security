@@ -3,8 +3,8 @@
 ## Context
 
 - **Docs to update:** `docs/09-security/`
-- **Reference source:** `ref/thingsboard.github.io-master/`
-- **Live code reference:** `ref/thingsboard-master/application/src/main/java/org/thingsboard/server/service/security/` and `ref/thingsboard-master/common/dao-api/src/main/java/org/thingsboard/server/dao/`
+- **Reference source:** `~/work/viaanix/thingsboard.github.io-master/`
+- **Live code reference:** `~/work/viaanix/thingsboard-master/application/src/main/java/org/thingsboard/server/service/security/` and `~/work/viaanix/thingsboard-master/common/dao-api/src/main/java/org/thingsboard/server/dao/`
 
 ## Skills to Use
 
@@ -25,7 +25,7 @@
 ### Phase 1: Discovery
 
   1. Read all files in `docs/09-security/` to understand current coverage
-  2. Search `ref/thingsboard.github.io-master/` for security content:
+  2. Search `~/work/viaanix/thingsboard.github.io-master/` for security content:
      - Search patterns: `security`, `authentication`, `authorization`, `jwt`, `oauth`, `saml`, `ldap`, `permission`, `role`, `tenant`, `isolation`, `rate-limit`, `2fa`, `mfa`, `audit`, `ssl`, `tls`, `certificate`, `x509`
      - Check directories: `docs/user-guide/`, `docs/reference/`, `docs/pe/user-guide/`
   3. Use `/jwt-expert` to analyze:

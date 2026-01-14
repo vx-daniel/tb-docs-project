@@ -135,13 +135,13 @@ When documenting, help readers choose the right protocol:
 
 When updating this section, cross-reference:
 
-- `ref/thingsboard.github.io-master/docs/reference/` - Official protocol docs
-- `ref/thingsboard-master/common/transport/` - Transport abstractions
-- `ref/thingsboard-master/transport/mqtt/` - MQTT implementation
-- `ref/thingsboard-master/transport/http/` - HTTP implementation
-- `ref/thingsboard-master/transport/coap/` - CoAP implementation
-- `ref/thingsboard-master/transport/lwm2m/` - LwM2M implementation
-- `ref/thingsboard-master/transport/snmp/` - SNMP implementation
+- `~/work/viaanix/thingsboard.github.io-master/docs/reference/` - Official protocol docs
+- `~/work/viaanix/thingsboard-master/common/transport/` - Transport abstractions
+- `~/work/viaanix/thingsboard-master/transport/mqtt/` - MQTT implementation
+- `~/work/viaanix/thingsboard-master/transport/http/` - HTTP implementation
+- `~/work/viaanix/thingsboard-master/transport/coap/` - CoAP implementation
+- `~/work/viaanix/thingsboard-master/transport/lwm2m/` - LwM2M implementation
+- `~/work/viaanix/thingsboard-master/transport/snmp/` - SNMP implementation
 
 ## Related Sections
 
@@ -163,7 +163,7 @@ When updating this section, cross-reference:
 
 ### Updating Authentication Documentation
 
-1. Verify against source in `ref/thingsboard-master/`
+1. Verify against source in `~/work/viaanix/thingsboard-master/`
 2. Test authentication flow with real credentials
 3. Document all supported credential types
 4. Include troubleshooting for common auth errors

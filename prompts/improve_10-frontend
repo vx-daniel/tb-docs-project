@@ -5,8 +5,8 @@
 ## Context
 
 - **Docs to update:** `docs/10-frontend/`
-- **Reference source:** `ref/thingsboard.github.io-master/`
-- **Live code reference:** `ref/thingsboard-master/ui-ngx/` (for architecture understanding)
+- **Reference source:** `~/work/viaanix/thingsboard.github.io-master/`
+- **Live code reference:** `~/work/viaanix/thingsboard-master/ui-ngx/` (for architecture understanding)
 
 ## Skills to Use
 
@@ -22,10 +22,10 @@
 ### Phase 1: Discovery
 
   1. Read all files in `docs/10-frontend/` to understand current coverage
-  2. Search `ref/thingsboard.github.io-master/` for frontend content:
+  2. Search `~/work/viaanix/thingsboard.github.io-master/` for frontend content:
      - Search patterns: `widget`, `dashboard`, `custom-widget`, `widget-type`, `widget-bundle`, `ui-ngx`, `angular`
      - Check directories: `docs/user-guide/`, `docs/user-guide/contribution/`, `docs/pe/user-guide/`
-  3. Use `/angular-architect` to analyze `ref/thingsboard-master/ui-ngx/src/app/`:
+  3. Use `/angular-architect` to analyze `~/work/viaanix/thingsboard-master/ui-ngx/src/app/`:
      - Identify core module structure
      - Map component hierarchy
      - Understand state management approach

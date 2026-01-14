@@ -135,9 +135,9 @@ When documenting, help readers choose:
 
 When updating this section, cross-reference:
 
-- `ref/thingsboard.github.io-master/docs/user-guide/install/` - Installation guides
-- `ref/thingsboard-master/dao/` - Data access implementations
-- `ref/thingsboard-master/application/src/main/resources/` - Configuration files
+- `~/work/viaanix/thingsboard.github.io-master/docs/user-guide/install/` - Installation guides
+- `~/work/viaanix/thingsboard-master/dao/` - Data access implementations
+- `~/work/viaanix/thingsboard-master/application/src/main/resources/` - Configuration files
 
 ## Related Sections
 
@@ -150,7 +150,7 @@ When updating this section, cross-reference:
 
 ### Documenting Configuration Changes
 
-1. Verify against source in `ref/thingsboard-master/`
+1. Verify against source in `~/work/viaanix/thingsboard-master/`
 2. Show YAML configuration examples
 3. Document environment variable alternatives
 4. Include default values and valid ranges

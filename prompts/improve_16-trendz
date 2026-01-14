@@ -2,7 +2,7 @@
 
   ## Context
   - **Docs to update:** `docs/16-trendz/`
-  - **Reference source:** `ref/thingsboard.github.io-master/`
+  - **Reference source:** `~/work/viaanix/thingsboard.github.io-master/`
   - **Trendz reference:** Trendz is a separate product; reference official docs at `docs/trendz/`
 
   ## Skills to Use
@@ -21,7 +21,7 @@
 
   ### Phase 1: Discovery
   1. Read all files in `docs/16-trendz/` to understand current coverage
-  2. Search `ref/thingsboard.github.io-master/` for Trendz content:
+  2. Search `~/work/viaanix/thingsboard.github.io-master/` for Trendz content:
      - Search patterns: `trendz`, `analytics`, `visualization`, `prediction`, `forecast`, `anomaly`, `machine-learning`, `ml`, `aggregation`, `calculated-field`, `view`, `dashboard`, `report`, `state`
      - Check directories: `docs/trendz/`, `docs/trendz/user-guide/`
   3. Use `/iot-engineer` to analyze:

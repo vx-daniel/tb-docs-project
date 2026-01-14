@@ -103,7 +103,7 @@ Focus on gateway behavior, not implementation:
 
 When updating this section, cross-reference:
 
-- `ref/thingsboard.github.io-master/docs/iot-gateway/` - Official Gateway documentation
+- `~/work/viaanix/thingsboard.github.io-master/docs/iot-gateway/` - Official Gateway documentation
 - ThingsBoard IoT Gateway GitHub repository (Python source)
 
 ## Related Sections

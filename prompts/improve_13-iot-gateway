@@ -2,7 +2,7 @@
 
   ## Context
   - **Docs to update:** `docs/13-iot-gateway/`
-  - **Reference source:** `ref/thingsboard.github.io-master/`
+  - **Reference source:** `~/work/viaanix/thingsboard.github.io-master/`
   - **Gateway code reference:** ThingsBoard IoT Gateway is a separate Python project; reference official docs primarily
 
   ## Skills to Use
@@ -21,7 +21,7 @@
 
   ### Phase 1: Discovery
   1. Read all files in `docs/13-iot-gateway/` to understand current coverage
-  2. Search `ref/thingsboard.github.io-master/` for gateway content:
+  2. Search `~/work/viaanix/thingsboard.github.io-master/` for gateway content:
      - Search patterns: `iot-gateway`, `gateway`, `connector`, `modbus`, `opc-ua`, `opcua`, `ble`, `bluetooth`, `bacnet`, `can`, `odbc`, `request`, `mqtt-connector`, `converter`, `extension`
      - Check directories: `docs/iot-gateway/`, `docs/user-guide/`
   3. Use `/iot-engineer` to analyze:

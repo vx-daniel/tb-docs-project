@@ -70,10 +70,10 @@ Focus on architectural concepts, not implementation details:
 
 When updating this section, cross-reference:
 
-- `ref/thingsboard.github.io-master/docs/reference/` - Official architecture docs
-- `ref/thingsboard-master/application/` - Core application structure
-- `ref/thingsboard-master/common/` - Shared components
-- `ref/thingsboard-master/msa/` - Microservices definitions
+- `~/work/viaanix/thingsboard.github.io-master/docs/reference/` - Official architecture docs
+- `~/work/viaanix/thingsboard-master/application/` - Core application structure
+- `~/work/viaanix/thingsboard-master/common/` - Shared components
+- `~/work/viaanix/thingsboard-master/msa/` - Microservices definitions
 
 ## Related Sections
 
@@ -87,7 +87,7 @@ When updating this section, cross-reference:
 
 ### Updating System Overview
 
-1. Verify changes against source in `ref/thingsboard-master/`
+1. Verify changes against source in `~/work/viaanix/thingsboard-master/`
 2. Ensure technology stack versions are current (check `pom.xml`, `package.json`)
 3. Update component diagrams if responsibilities change
 4. Cross-check with `11-microservices/` for consistency

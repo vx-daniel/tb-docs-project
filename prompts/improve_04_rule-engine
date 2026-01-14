@@ -3,8 +3,8 @@
 ## Context
 
 - **Docs to update:** `docs/04-rule-engine/`
-- **Reference source:** `ref/thingsboard.github.io-master/`
-- **Live code reference:** `ref/thingsboard-master/rule-engine/` and `ref/thingsboard-master/common/rule-engine/`
+- **Reference source:** `~/work/viaanix/thingsboard.github.io-master/`
+- **Live code reference:** `~/work/viaanix/thingsboard-master/rule-engine/` and `~/work/viaanix/thingsboard-master/common/rule-engine/`
 
 ## Skills to Use
 
@@ -25,7 +25,7 @@
 ### Phase 1: Discovery
 
   1. Read all files in `docs/04-rule-engine/` to understand current coverage
-  2. Search `ref/thingsboard.github.io-master/` for rule engine content:
+  2. Search `~/work/viaanix/thingsboard.github.io-master/` for rule engine content:
      - Search patterns: `rule-engine`, `rule-chain`, `rule-node`, `TBEL`, `message`, `originator`, `metadata`, `filter`, `enrichment`, `transformation`, `action`, `analytics`
      - Check directories: `docs/user-guide/rule-engine-2-0/`, `docs/pe/user-guide/`, `docs/reference/`
   3. Use `/workflow-orchestrator` to analyze:
@@ -33,7 +33,7 @@
      - Node connection patterns (Success, Failure, custom relations)
      - Sub-chain invocation and return
      - Error handling and compensation
-  4. Use `/java-patterns` to understand node architecture in `ref/thingsboard-master/rule-engine/`:
+  4. Use `/java-patterns` to understand node architecture in `~/work/viaanix/thingsboard-master/rule-engine/`:
      - Node interface contracts
      - Message transformation patterns
      - Async processing patterns

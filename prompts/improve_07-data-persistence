@@ -2,8 +2,8 @@
 
   ## Context
   - **Docs to update:** `docs/07-data-persistence/`
-  - **Reference source:** `ref/thingsboard.github.io-master/`
-  - **Live code reference:** `ref/thingsboard-master/dao/` and `ref/thingsboard-master/common/dao-api/`
+  - **Reference source:** `~/work/viaanix/thingsboard.github.io-master/`
+  - **Live code reference:** `~/work/viaanix/thingsboard-master/dao/` and `~/work/viaanix/thingsboard-master/common/dao-api/`
 
   ## Skills to Use
   Invoke these skills during execution for specialized expertise:
@@ -21,7 +21,7 @@
 
   ### Phase 1: Discovery
   1. Read all files in `docs/07-data-persistence/` to understand current coverage
-  2. Search `ref/thingsboard.github.io-master/` for persistence content:
+  2. Search `~/work/viaanix/thingsboard.github.io-master/` for persistence content:
      - Search patterns: `cassandra`, `postgresql`, `postgres`, `timescale`, `timescaledb`, `hybrid`, `cache`, `redis`, `database`, `storage`, `time-series`, `retention`, `ttl`, `partition`
      - Check directories: `docs/user-guide/install/`, `docs/reference/`, `docs/user-guide/`
   3. Use `/spring-boot-expert` to analyze:
@@ -30,7 +30,7 @@
      - Connection pool configuration
      - Entity mapping patterns
   4. Use `/java-patterns` to understand:
-     - Data access abstractions in `ref/thingsboard-master/dao/`
+     - Data access abstractions in `~/work/viaanix/thingsboard-master/dao/`
      - Caching layer implementation
      - Read/write separation patterns
   5. Use `/iot-engineer` to understand:

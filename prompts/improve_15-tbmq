@@ -3,7 +3,7 @@
 ## Context
 
 - **Docs to update:** `docs/15-tbmq/`
-- **Reference source:** `ref/thingsboard.github.io-master/`
+- **Reference source:** `~/work/viaanix/thingsboard.github.io-master/`
 - **TBMQ code reference:** TBMQ is a separate project; reference official docs at `docs/mqtt-broker/`
 
 ## Skills to Use
@@ -25,7 +25,7 @@
 ### Phase 1: Discovery
 
   1. Read all files in `docs/15-tbmq/` to understand current coverage
-  2. Search `ref/thingsboard.github.io-master/` for TBMQ content:
+  2. Search `~/work/viaanix/thingsboard.github.io-master/` for TBMQ content:
      - Search patterns: `tbmq`, `mqtt-broker`, `mqtt5`, `mqtt-3`, `qos`, `session`, `persistent`, `shared-subscription`, `retain`, `will`, `topic-filter`, `client-credentials`, `kafka`, `broker`
      - Check directories: `docs/mqtt-broker/`, `docs/mqtt-broker/user-guide/`
   3. Use `/mqtt-expert` to analyze:

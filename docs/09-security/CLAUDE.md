@@ -109,10 +109,10 @@ Focus on security concepts and configuration, not implementation:
 
 When updating this section, cross-reference:
 
-- `ref/thingsboard.github.io-master/docs/user-guide/oauth-2-support/` - OAuth2 documentation
-- `ref/thingsboard-master/application/src/main/java/org/thingsboard/server/service/security/` - Security services
-- `ref/thingsboard-master/common/data/src/main/java/org/thingsboard/server/common/data/security/` - Security models
-- `ref/thingsboard-master/dao/src/main/java/org/thingsboard/server/dao/user/` - User data access
+- `~/work/viaanix/thingsboard.github.io-master/docs/user-guide/oauth-2-support/` - OAuth2 documentation
+- `~/work/viaanix/thingsboard-master/application/src/main/java/org/thingsboard/server/service/security/` - Security services
+- `~/work/viaanix/thingsboard-master/common/data/src/main/java/org/thingsboard/server/common/data/security/` - Security models
+- `~/work/viaanix/thingsboard-master/dao/src/main/java/org/thingsboard/server/dao/user/` - User data access
 
 ## Related Sections
 

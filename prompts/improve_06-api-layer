@@ -2,8 +2,8 @@
 
   ## Context
   - **Docs to update:** `docs/06-api-layer/`
-  - **Reference source:** `ref/thingsboard.github.io-master/`
-  - **Live code reference:** `ref/thingsboard-master/application/src/main/java/org/thingsboard/server/controller/` and `ref/thingsboard-master/common/transport/`
+  - **Reference source:** `~/work/viaanix/thingsboard.github.io-master/`
+  - **Live code reference:** `~/work/viaanix/thingsboard-master/application/src/main/java/org/thingsboard/server/controller/` and `~/work/viaanix/thingsboard-master/common/transport/`
 
   ## Skills to Use
   Invoke these skills during execution for specialized expertise:
@@ -22,7 +22,7 @@
 
   ### Phase 1: Discovery
   1. Read all files in `docs/06-api-layer/` to understand current coverage
-  2. Search `ref/thingsboard.github.io-master/` for API content:
+  2. Search `~/work/viaanix/thingsboard.github.io-master/` for API content:
      - Search patterns: `rest-api`, `websocket`, `authentication`, `jwt`, `rpc`, `alarm`, `notification`, `swagger`, `api-usage`, `rate-limit`
      - Check directories: `docs/reference/rest-api/`, `docs/user-guide/`, `docs/api/`
   3. Use `/spring-boot-expert` to analyze:

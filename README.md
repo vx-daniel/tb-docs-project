@@ -46,21 +46,25 @@ The documentation is organized into 18 sections for logical progression from arc
 Start with these key documents based on your role:
 
 **For Platform Understanding:**
+
 1. [Architecture Overview](docs/01-architecture/system-overview.md) - High-level system design
 2. [Multi-Tenancy](docs/01-architecture/multi-tenancy.md) - Tenant isolation model
 3. [Data Model](docs/02-core-concepts/data-model/) - Entity relationships
 
 **For Device Development:**
+
 1. [Device Provisioning](docs/02-core-concepts/device-provisioning.md) - How devices join
 2. [Transport Layer](docs/05-transport-layer/) - MQTT, CoAP, HTTP protocols
 3. [Device API](docs/06-api-layer/device-api.md) - Telemetry and RPC
 
 **For Backend Development:**
+
 1. [Rule Engine](docs/04-rule-engine/) - Data processing pipelines
 2. [Actor System](docs/03-actor-system/) - Concurrency model
 3. [Data Persistence](docs/07-data-persistence/) - Database configuration
 
 **For Operations:**
+
 1. [Deployment](docs/18-deployment/) - Installation guides
 2. [Security](docs/09-security/) - Authentication and rate limiting
 3. [Hybrid Storage](docs/07-data-persistence/hybrid-storage.md) - Scaling decisions
@@ -87,11 +91,11 @@ See [GLOSSARY.md](docs/GLOSSARY.md) for comprehensive terminology with Mermaid d
 The `ref/` directory contains source code for analysis:
 
 ```bash
-ref/thingsboard-master/       # Platform source (Java/Angular)
-ref/thingsboard.github.io-master/  # Official docs (Jekyll)
+~/work/viaanix/thingsboard-master/       # Platform source (Java/Angular)
+~/work/viaanix/thingsboard.github.io-master/  # Official docs (Jekyll)
 ```
 
-**Building ThingsBoard (from ref/thingsboard-master):**
+**Building ThingsBoard (from ~/work/viaanix/thingsboard-master):**
 
 ```bash
 # Full backend build
@@ -115,6 +119,7 @@ npm start     # Dev server at localhost:4200
 ### Cross-References
 
 Each section README includes:
+
 - Contents table with descriptions
 - Key concepts summary
 - See Also links to related sections
@@ -122,6 +127,7 @@ Each section README includes:
 ### Target Audience
 
 This documentation targets **junior to mid-level developers** who need to:
+
 - Understand ThingsBoard's architecture
 - Extend platform functionality
 - Deploy and operate ThingsBoard
@@ -156,6 +162,7 @@ Update `CLAUDE.md` when adding/removing documentation files.
 ### Claude Code Skills
 
 The `.claude/skills/` directory contains 38 specialized skills for:
+
 - IoT development (`mqtt-expert`, `grpc-expert`)
 - Documentation (`docs-write`, `docs-review`)
 - Planning (`create-plan`, `brainstorming`)
@@ -172,5 +179,3 @@ This documentation project is for internal use. ThingsBoard is licensed under Ap
 - [ThingsBoard Official Docs](https://thingsboard.io/docs/)
 - [ThingsBoard GitHub](https://github.com/thingsboard/thingsboard)
 - [ThingsBoard Community](https://github.com/thingsboard/thingsboard/discussions)
-
-

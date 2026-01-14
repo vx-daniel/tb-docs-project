@@ -129,9 +129,9 @@ Focus on behavior and configuration, not implementation:
 
 When updating this section, cross-reference:
 
-- `ref/thingsboard.github.io-master/docs/user-guide/rule-engine-2-0/` - Official rule engine docs
-- `ref/thingsboard-master/rule-engine/rule-engine-components/` - Node implementations
-- `ref/thingsboard-master/common/message/` - TbMsg structure
+- `~/work/viaanix/thingsboard.github.io-master/docs/user-guide/rule-engine-2-0/` - Official rule engine docs
+- `~/work/viaanix/thingsboard-master/rule-engine/rule-engine-components/` - Node implementations
+- `~/work/viaanix/thingsboard-master/common/message/` - TbMsg structure
 
 ## Related Sections
 
@@ -154,7 +154,7 @@ When updating this section, cross-reference:
 
 ### Updating TBEL Documentation
 
-1. Verify against source in `ref/thingsboard-master/`
+1. Verify against source in `~/work/viaanix/thingsboard-master/`
 2. Test all code examples for correctness
 3. Ensure examples use TBEL (not JavaScript) as primary
 4. Note any version-specific features

@@ -86,9 +86,9 @@ Focus on concepts and behaviors, not implementation:
 
 When updating this section, cross-reference:
 
-- `ref/thingsboard.github.io-master/docs/user-guide/` - Official user guides
-- `ref/thingsboard-master/common/data/` - Entity data models
-- `ref/thingsboard-master/dao/` - Data access patterns
+- `~/work/viaanix/thingsboard.github.io-master/docs/user-guide/` - Official user guides
+- `~/work/viaanix/thingsboard-master/common/data/` - Entity data models
+- `~/work/viaanix/thingsboard-master/dao/` - Data access patterns
 
 ## Related Sections
 
@@ -109,7 +109,7 @@ When updating this section, cross-reference:
 
 ### Updating Data Model
 
-1. Verify changes against source code in `ref/thingsboard-master/`
+1. Verify changes against source code in `~/work/viaanix/thingsboard-master/`
 2. Update relevant file in `data-model/`
 3. Check for impacts on related concepts (e.g., if telemetry changes, check rule-engine docs)
 

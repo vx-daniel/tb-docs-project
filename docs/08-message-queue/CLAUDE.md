@@ -133,9 +133,9 @@ When documenting, clarify trade-offs:
 
 When updating this section, cross-reference:
 
-- `ref/thingsboard.github.io-master/docs/user-guide/rule-engine-2-5/queues/` - Official queue docs
-- `ref/thingsboard-master/common/queue/` - Queue abstractions
-- `ref/thingsboard-master/rule-engine/rule-engine-components/` - Queue rule nodes
+- `~/work/viaanix/thingsboard.github.io-master/docs/user-guide/rule-engine-2-5/queues/` - Official queue docs
+- `~/work/viaanix/thingsboard-master/common/queue/` - Queue abstractions
+- `~/work/viaanix/thingsboard-master/rule-engine/rule-engine-components/` - Queue rule nodes
 
 ## Related Sections
 

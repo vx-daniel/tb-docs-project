@@ -71,6 +71,7 @@ graph TB
 | Pitfall | Solution |
 |---------|----------|
 | ... | ... |
+
 ```
 
 ### Terminology
@@ -110,10 +111,10 @@ Focus on patterns and architecture, not implementation details:
 
 When updating this section, cross-reference:
 
-- `ref/thingsboard-master/ui-ngx/src/app/core/` - Core module and services
-- `ref/thingsboard-master/ui-ngx/src/app/shared/` - Shared components and utilities
-- `ref/thingsboard-master/ui-ngx/src/app/modules/` - Feature modules
-- `ref/thingsboard-master/ui-ngx/src/app/modules/home/components/widget/` - Widget framework
+- `~/work/viaanix/thingsboard-master/ui-ngx/src/app/core/` - Core module and services
+- `~/work/viaanix/thingsboard-master/ui-ngx/src/app/shared/` - Shared components and utilities
+- `~/work/viaanix/thingsboard-master/ui-ngx/src/app/modules/` - Feature modules
+- `~/work/viaanix/thingsboard-master/ui-ngx/src/app/modules/home/components/widget/` - Widget framework
 
 ## Related Sections
 

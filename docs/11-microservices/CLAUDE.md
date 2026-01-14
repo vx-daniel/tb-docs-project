@@ -81,6 +81,7 @@ graph TB
 | Pitfall | Impact | Solution |
 |---------|--------|----------|
 | ... | ... | ... |
+
 ```
 
 ### Terminology
@@ -118,10 +119,10 @@ Focus on service behavior and operations, not implementation:
 
 When updating this section, cross-reference:
 
-- `ref/thingsboard-master/msa/` - Microservice modules
-- `ref/thingsboard-master/application/src/main/java/org/thingsboard/server/service/` - Core services
-- `ref/thingsboard-master/common/transport/` - Transport abstractions
-- `ref/thingsboard.github.io-master/docs/reference/msa/` - Official MSA docs
+- `~/work/viaanix/thingsboard-master/msa/` - Microservice modules
+- `~/work/viaanix/thingsboard-master/application/src/main/java/org/thingsboard/server/service/` - Core services
+- `~/work/viaanix/thingsboard-master/common/transport/` - Transport abstractions
+- `~/work/viaanix/thingsboard.github.io-master/docs/reference/msa/` - Official MSA docs
 
 ## Related Sections
 

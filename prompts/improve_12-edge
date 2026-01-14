@@ -2,8 +2,8 @@
 
   ## Context
   - **Docs to update:** `docs/12-edge/`
-  - **Reference source:** `ref/thingsboard.github.io-master/`
-  - **Live code reference:** `ref/thingsboard-master/application/src/main/java/org/thingsboard/server/service/edge/` and `ref/thingsboard-master/common/edge-api/`
+  - **Reference source:** `~/work/viaanix/thingsboard.github.io-master/`
+  - **Live code reference:** `~/work/viaanix/thingsboard-master/application/src/main/java/org/thingsboard/server/service/edge/` and `~/work/viaanix/thingsboard-master/common/edge-api/`
 
   ## Skills to Use
   Invoke these skills during execution for specialized expertise:
@@ -22,7 +22,7 @@
 
   ### Phase 1: Discovery
   1. Read all files in `docs/12-edge/` to understand current coverage
-  2. Search `ref/thingsboard.github.io-master/` for edge content:
+  2. Search `~/work/viaanix/thingsboard.github.io-master/` for edge content:
      - Search patterns: `edge`, `thingsboard-edge`, `cloud-sync`, `edge-rule-chain`, `edge-event`, `offline`, `local-processing`, `edge-install`, `grpc-edge`
      - Check directories: `docs/edge/`, `docs/user-guide/`, `docs/pe/edge/`
   3. Use `/iot-engineer` to analyze:

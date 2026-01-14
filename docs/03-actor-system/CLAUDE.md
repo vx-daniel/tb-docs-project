@@ -90,9 +90,9 @@ When documenting, ensure readers understand:
 
 When updating this section, cross-reference:
 
-- `ref/thingsboard-master/common/actor/` - Actor system implementation
-- `ref/thingsboard-master/application/src/main/java/org/thingsboard/server/actors/` - Actor implementations
-- `ref/thingsboard-master/common/message/` - Message type definitions
+- `~/work/viaanix/thingsboard-master/common/actor/` - Actor system implementation
+- `~/work/viaanix/thingsboard-master/application/src/main/java/org/thingsboard/server/actors/` - Actor implementations
+- `~/work/viaanix/thingsboard-master/common/message/` - Message type definitions
 
 ## Related Sections
 
@@ -115,7 +115,7 @@ When updating this section, cross-reference:
 
 ### Updating Message Flow Documentation
 
-1. Verify against source in `ref/thingsboard-master/`
+1. Verify against source in `~/work/viaanix/thingsboard-master/`
 2. Update sequence diagrams for accuracy
 3. Check for new message types
 4. Validate routing logic descriptions

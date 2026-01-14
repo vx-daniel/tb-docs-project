@@ -3,7 +3,7 @@ can you do the same with this prompt as well mention the use of any skills that 
 Review the documentation generated in `/docs/03-actor-system` and update it based on the official ThingsBoard documentation website source.
 
 Current status:
-- Official ThingsBoard documentation website source: ref/thingsboard.github.io-master
+- Official ThingsBoard documentation website source: ~/work/viaanix/thingsboard.github.io-master
 
 Guidelines:
 - Technology-agnostic language (behavior/contracts, not Java specifics)

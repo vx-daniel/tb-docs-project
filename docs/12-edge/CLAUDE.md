@@ -77,6 +77,7 @@ graph TB
 | Pitfall | Impact | Solution |
 |---------|--------|----------|
 | ... | ... | ... |
+
 ```
 
 ### Terminology
@@ -113,8 +114,8 @@ Focus on edge behavior, not implementation:
 
 When updating this section, cross-reference:
 
-- `ref/thingsboard.github.io-master/docs/edge/` - Official Edge documentation
-- `ref/thingsboard-master/application/src/main/java/org/thingsboard/server/service/edge/` - Edge services
+- `~/work/viaanix/thingsboard.github.io-master/docs/edge/` - Official Edge documentation
+- `~/work/viaanix/thingsboard-master/application/src/main/java/org/thingsboard/server/service/edge/` - Edge services
 
 ## Related Sections
 

@@ -3,8 +3,8 @@
 ## Context
 
 - **Docs to update:** `docs/05-transport-layer/`
-- **Reference source:** `ref/thingsboard.github.io-master/`
-- **Live code reference:** `ref/thingsboard-master/common/transport/` and `ref/thingsboard-master/transport/`
+- **Reference source:** `~/work/viaanix/thingsboard.github.io-master/`
+- **Live code reference:** `~/work/viaanix/thingsboard-master/common/transport/` and `~/work/viaanix/thingsboard-master/transport/`
 
 ## Skills to Use
 
@@ -25,7 +25,7 @@
 ### Phase 1: Discovery
 
   1. Read all files in `docs/05-transport-layer/` to understand current coverage
-  2. Search `ref/thingsboard.github.io-master/` for transport content:
+  2. Search `~/work/viaanix/thingsboard.github.io-master/` for transport content:
      - Search patterns: `mqtt`, `coap`, `http`, `lwm2m`, `snmp`, `transport`, `gateway`, `ssl`, `tls`, `device-api`
      - Check directories: `docs/reference/`, `docs/user-guide/`, `docs/iot-gateway/`
   3. Use `/mqtt-expert` to analyze MQTT transport:

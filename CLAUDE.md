@@ -5,9 +5,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 This is a ThingsBoard documentation project containing:
+
 - **docs/** - Internal documentation (115 markdown files) derived from source code analysis
-- **ref/thingsboard-master** - ThingsBoard platform source code (Java 17/Spring Boot 3.4.10 backend, Angular 18 frontend)
-- **ref/thingsboard.github.io-master** - Official ThingsBoard documentation website (Jekyll)
+- **~/work/viaanix/thingsboard-master** - ThingsBoard platform source code (Java 17/Spring Boot 3.4.10 backend, Angular 18 frontend)
+- **~/work/viaanix/thingsboard.github.io-master** - Official ThingsBoard documentation website (Jekyll)
 - **.claude/skills/** - 38 specialized Claude Code skills for development workflows
 
 ## Documentation Structure
@@ -39,7 +40,8 @@ Documentation is organized in numbered sections for logical progression:
 
 ## ThingsBoard Reference Build Commands
 
-**Backend (from ref/thingsboard-master):**
+**Backend (from ~/work/viaanix/thingsboard-master):**
+
 ```bash
 # Full build with Maven (skips tests)
 ./build.sh
@@ -51,7 +53,8 @@ Documentation is organized in numbered sections for logical progression:
 ./build_proto.sh
 ```
 
-**Frontend (from ref/thingsboard-master/ui-ngx):**
+**Frontend (from ~/work/viaanix/thingsboard-master/ui-ngx):**
+
 ```bash
 npm start                  # Dev server at localhost:4200
 npm run build:prod         # Production build
@@ -70,6 +73,7 @@ npm run build:icon-metadata # Generate icon metadata
 ## Documentation Conventions
 
 When writing or editing documentation in `docs/`:
+
 - Use Mermaid diagrams for architecture visualization
 - Each section has a README.md with contents table and "See Also" cross-references
 - Lead with what to do, then explain why

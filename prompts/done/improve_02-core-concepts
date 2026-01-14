@@ -3,8 +3,8 @@
 ## Context
 
 - **Docs to update:** `docs/02-core-concepts/`
-- **Reference source:** `ref/thingsboard.github.io-master/`
-- **Live code reference:** `ref/thingsboard-master/common/data/` and `ref/thingsboard-master/dao/`
+- **Reference source:** `~/work/viaanix/thingsboard.github.io-master/`
+- **Live code reference:** `~/work/viaanix/thingsboard-master/common/data/` and `~/work/viaanix/thingsboard-master/dao/`
 
 ## Skills to Use
 
@@ -25,7 +25,7 @@
 ### Phase 1: Discovery
 
   1. Read all files in `docs/02-core-concepts/` to understand current coverage
-  2. Search `ref/thingsboard.github.io-master/` for core concept content:
+  2. Search `~/work/viaanix/thingsboard.github.io-master/` for core concept content:
      - Search patterns: `entity`, `device`, `asset`, `tenant`, `customer`, `telemetry`, `attribute`, `relation`, `provisioning`, `claiming`, `ota`, `profile`, `dashboard`, `alarm`
      - Check directories: `docs/user-guide/`, `docs/reference/`, `docs/getting-started-guides/`
   3. Use `/iot-engineer` to analyze:
@@ -33,7 +33,7 @@
      - OTA update mechanisms
      - Device claiming workflows
      - Profile-based configuration
-  4. Use `/java-patterns` to understand entity design in `ref/thingsboard-master/common/data/`:
+  4. Use `/java-patterns` to understand entity design in `~/work/viaanix/thingsboard-master/common/data/`:
      - Entity inheritance hierarchy
      - ID types and generation
      - Relationship modeling
