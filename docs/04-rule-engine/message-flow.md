@@ -821,6 +821,101 @@ RuleNodeToRuleChainTellNextMsg {
 2. **Minimize metadata size** - string-only, no nested structures
 3. **Use appropriate data type** - JSON for structured, TEXT for simple
 
+## Common Pitfalls
+
+### Message Transformation
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Forgetting message immutability | Unexpected behavior when modifying messages | Always use `copy()` or `transform()` to create new messages |
+| Sharing metadata between messages | Data corruption in parallel processing | Use `metadata.copy()` for independent messages |
+| Modifying originator without intent | Messages route to wrong entity, data saved to wrong place | Verify Change Originator node placement; save original in metadata |
+| Not incrementing execution counter | Infinite loop detection fails | Use `transform()` which handles counter automatically |
+
+### Context and Callbacks
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Losing callback reference | Messages never acknowledged, queue backup | Use `copyWithNewCtx()` for async operations; preserve callback chain |
+| Multiple callbacks for same message | Double acknowledgment errors | Only call one routing method (`tellSuccess`/`tellFailure`/`tellNext`) per execution |
+| Not calling callback | Message stuck, queue consumer blocked | Always call routing method, even on error |
+| Callback without error on failure | Errors not tracked properly | Use `tellFailure(msg, throwable)` to include exception details |
+
+### Message Stack and Depth
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Deep call stack without limit | Stack overflow after many nested chains | Monitor `ctx.stack` depth; limit nested chain calls to 5 levels |
+| Not checking stack depth | Infinite recursion undetected | Validate stack size before invoking nested chains |
+| Circular chain references | Stack overflow, infinite processing | Maintain chain dependency diagram; validate no cycles |
+
+### Metadata Management
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Storing complex objects in metadata | Serialization errors | Metadata values must be strings only |
+| Missing correlation ID | Cannot trace request-response flows | Set `correlationId` for RPC and integration calls |
+| Overwriting system metadata | Breaking message processing | Avoid keys: `ts`, `ruleChainId`, `ruleNodeId` |
+| Large metadata maps | Memory pressure, serialization overhead | Limit metadata size; use < 50 keys per message |
+
+### Message Types
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Wrong message type for node | Node doesn't process message | Use Message Type Switch to route correctly |
+| Custom type without handler | Messages not routed | Add custom type handlers in root chain |
+| Type case sensitivity | Routing failures | Use exact type constants (POST_TELEMETRY_REQUEST, not post_telemetry) |
+
+### Originator Handling
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Null originator | Processing errors | Validate originator exists before attribute/relation operations |
+| Wrong originator type | Type-specific operations fail | Check entity type before device/asset-specific operations |
+| Changing originator mid-chain | Data saved to unintended entity | Change originator only when intentional; document clearly |
+
+### Data and Payload
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Large payloads (>100KB) | Memory pressure, serialization overhead | Store large data separately; pass references in message |
+| Invalid JSON payload | Parsing errors downstream | Validate JSON before Save Telemetry nodes |
+| Payload data type mismatch | Node expects JSON, receives TEXT | Set `dataType` correctly when creating messages |
+| Nested data too deep | JSON parsing performance | Flatten data structures where possible |
+
+### Routing and Relations
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Case-sensitive relation names | Messages route to Failure | Use exact relation names: "Success" not "success" |
+| No Failure relation handler | Failed messages marked as processed | Always connect Failure relations to error handlers |
+| Multiple Success connections | Ambiguous routing | Use Switch node with distinct labels instead |
+| Custom relation not connected | Messages dropped | Ensure all custom relations have downstream connections |
+
+### Partition and Distribution
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Missing partition key | Random distribution, no ordering | Set partition key for ordered processing |
+| Partition key changes | Message reordering during processing | Use stable partition keys (device ID, tenant ID) |
+| High-cardinality partition | Partition imbalance | Choose keys with reasonable cardinality |
+
+### Async Processing
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Not handling async node completion | Parent chain doesn't wait | Understand async node behavior; use proper callback handling |
+| Blocking operations in node code | Thread pool exhaustion | Use async APIs; avoid blocking I/O |
+| No timeout on async operations | Messages stuck indefinitely | Set reasonable timeouts for external calls |
+
+### Serialization and Transfer
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Non-serializable objects in metadata | Queue transport fails | Keep metadata simple: strings only |
+| Message size exceeds Kafka limit | Message rejected | Limit message size to < 1MB; use external storage for large data |
+| Binary data in JSON payload | Encoding issues | Base64 encode binary data or use separate storage |
+
 ## See Also
 
 - [Rule Engine Overview](./README.md) - Introduction to rule engine

@@ -928,6 +928,71 @@ graph TB
     RETRY -->|No| DLQ[Dead Letter Queue]
 ```
 
+## Common Pitfalls
+
+### Node Selection
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Using Script node when built-in exists | Performance degradation, harder to maintain | Check if built-in node exists (Message Type Switch vs script) |
+| Filter logic in Action nodes | Mixed concerns, hard to debug | Separate filtering from actions; use dedicated Filter nodes |
+| Transformation in Filter scripts | Violates single responsibility | Use Filter for routing, Transform for data manipulation |
+| External calls in Script Transform | Timeouts, blocking | Use REST API Call node for external HTTP requests |
+
+### Node Ordering
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Enrichment after transformation | Enriched data overwritten | Enrich BEFORE transformation nodes |
+| Validation after save | Invalid data persisted | Filter and validate BEFORE Save Telemetry nodes |
+| Change Originator after Save | Data saved to wrong entity | Change originator BEFORE save/alarm operations |
+| Error handling at end of chain | No recovery for early failures | Add Failure handlers throughout chain |
+
+### Performance Patterns
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Too many Script nodes | High CPU usage | Combine logic; use fewer, smarter scripts |
+| Sequential external calls | High latency | Batch or parallelize external API calls when possible |
+| Enrichment in loops | Database thrashing | Fetch all needed data once, then process |
+| No caching for static data | Redundant queries | Use shared attributes for configuration data |
+
+### Architectural Mistakes
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| God chain (everything in one chain) | Hard to maintain, single point of failure | Split into logical sub-chains |
+| Duplicate logic across chains | Maintenance burden | Extract to reusable nested chains |
+| No abstraction | Copy-paste errors | Use nested chains for common patterns |
+| Mixing concerns | Tight coupling | Separate: ingestion, enrichment, validation, action |
+
+### Node Configuration
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Default configurations in production | Suboptimal performance | Review and tune all node configurations |
+| Hardcoded values | Cannot reuse across environments | Use metadata patterns: `${metadata.key}` |
+| No input validation | Garbage in, garbage out | Add validation filters early in chain |
+| Over-configuration | Complexity, hard to debug | Start simple; add complexity only when needed |
+
+### Error Handling Patterns
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| No Failure connections | Silent failures | Always connect Failure relations |
+| Generic error handlers | Cannot diagnose issues | Add context-specific error handling |
+| Swallowing errors | Issues go unnoticed | Log errors; track failure metrics |
+| No retry logic | Transient failures become permanent | Add Delay + retry pattern for external calls |
+
+### Data Flow Patterns
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Message type mismatches | Nodes skip processing | Use Message Type Switch early in chain |
+| Lost context | Cannot correlate related messages | Use metadata to carry context (correlationId, sessionId) |
+| Large message payloads | Memory pressure | Store large data externally; pass references |
+| State management in messages | Race conditions | Use database for shared state, not message passing |
+
 ## See Also
 
 - [Rule Engine Overview](./README.md) - Introduction to rule engine

@@ -1143,6 +1143,123 @@ public class AddTimestampNode implements TbNode {
 5. **Don't assume ordering** - Messages may arrive out of order
 6. **Don't hold references** - Don't store TbContext or TbMsg across invocations
 
+## Common Pitfalls
+
+### Lifecycle Management
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Heavy initialization in constructor | Slow node creation, blocking | Move heavy work to `init()` method with async operations |
+| Not cleaning up in destroy() | Resource leaks | Always close connections, release resources in `destroy()` |
+| Ignoring init() errors | Node unusable but appears active | Throw `TbNodeException` on critical init failures |
+| Stateful nodes without singleton mode | State not preserved across messages | Use `singletonMode: true` for stateful nodes |
+| Assuming destroy() always called | Resources leaked on crashes | Make resources auto-closeable or use try-with-resources |
+
+### Message Processing
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Not routing every message | Messages stuck, queue backup | Every code path must call `ctx.tellSuccess()`, `tellFailure()`, or `tellNext()` |
+| Calling multiple routing methods | Double acknowledgment errors | Only call ONE routing method per message |
+| Blocking `onMsg()` method | Actor thread starvation | Use async operations with callbacks |
+| Long-running synchronous code | Performance degradation | Break into async steps; use separate thread pool if needed |
+| Not handling null messages | NullPointerException | Check `msg != null` at method start |
+
+### Async Operations and Callbacks
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Using `future.get()` without timeout | Thread deadlock | Use async callbacks: `Futures.addCallback()` |
+| Not handling callback exceptions | Silent failures | Wrap callbacks in try-catch; route to failure on error |
+| Losing message context in callbacks | Cannot route message | Capture `msg` in callback closure |
+| Callback on wrong executor | Thread safety issues | Use `ctx.getExecutor()` or `MoreExecutors.directExecutor()` |
+| Forgetting to route in callback | Message never acknowledged | Always include routing in success AND error callbacks |
+
+### Configuration Handling
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Invalid default configuration | Node won't initialize | Test `defaultConfiguration()` method thoroughly |
+| Not validating configuration | Runtime errors from bad config | Validate all config fields in `init()` |
+| Missing upgrade() implementation | Configuration migration fails | Implement `upgrade()` for schema changes |
+| Complex configuration | User errors | Keep configuration simple; use sensible defaults |
+| No configuration documentation | Users can't configure node | Document all configuration fields clearly |
+
+### Error Handling
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Swallowing exceptions | Silent failures | Always log exceptions before handling |
+| Generic error messages | Hard to debug | Include context: node name, message ID, operation |
+| Not using tellFailure() properly | Error not tracked | Always pass exception to `tellFailure(msg, throwable)` |
+| Retry without limit | Infinite loops | Implement retry limits; use exponential backoff |
+| No graceful degradation | Complete failure on minor issues | Handle partial failures; continue processing when possible |
+
+### Resource Management
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Creating connections per message | Resource exhaustion | Initialize connections in `init()`, reuse in `onMsg()` |
+| Not using connection pools | Poor performance | Use pool for HTTP clients, database connections |
+| Unbounded caches | Memory leaks | Use bounded caches with TTL (Guava Cache, Caffeine) |
+| Large memory allocations | Heap pressure | Minimize object creation; reuse buffers when possible |
+| Thread pool per node instance | Thread explosion | Share thread pools across node instances |
+
+### Relation and Routing
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Missing Failure relation in @RuleNode | Users can't handle errors | Always include Failure in `relationTypes` |
+| Custom relations not documented | Users don't know how to connect | Document all output relations in node description |
+| Dynamic relation types | UI can't show connections | Declare all possible relations in annotation |
+| Routing to undefined relation | Message routes to Failure | Only use relations defined in annotation |
+
+### Partition Awareness
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Ignoring partition changes | Stale partition state | Implement `onPartitionChangeMsg()` for partition-aware nodes |
+| Not clearing state on partition change | Processing wrong data | Clear partition-specific state in partition handler |
+| Assuming single partition | Incorrect in distributed mode | Design for multi-partition from start |
+
+### Performance and Scalability
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Synchronous database queries | Blocking actor threads | Use async query APIs |
+| No caching for repeated queries | Database overload | Cache static/slow-changing data |
+| Large object creation | GC pressure | Minimize allocations; use object pools if needed |
+| Inefficient data structures | CPU waste | Choose appropriate collections (HashMap, ArrayList, etc.) |
+| No performance testing | Production issues | Load test custom nodes before deployment |
+
+### Testing and Debugging
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| No unit tests | Bugs in production | Write unit tests for node logic |
+| Not testing error paths | Unhandled errors in production | Test all failure scenarios |
+| No integration tests | Node doesn't work in chain | Test node in actual rule chain |
+| Insufficient logging | Hard to debug issues | Add debug/trace logs at key points |
+| Not testing with real load | Performance issues in production | Load test with realistic message volumes |
+
+### Security and Validation
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| No input validation | Processing invalid data | Validate all inputs in `onMsg()` |
+| Trusting message payload | Injection vulnerabilities | Sanitize all data from messages |
+| Logging sensitive data | Security breach | Sanitize logs; avoid logging credentials, PII |
+| No access control | Unauthorized operations | Validate tenant/user context before operations |
+
+### Concurrency Issues
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Shared mutable state without synchronization | Race conditions | Use concurrent collections or synchronize access |
+| Assuming message ordering | Logic errors | Design for out-of-order message delivery |
+| Non-thread-safe libraries | Data corruption | Use thread-safe alternatives or synchronize |
+| Deadlock in callbacks | System hang | Avoid holding locks in callbacks; use timeout |
+
 ## See Also
 
 - [Rule Engine Overview](./README.md) - Introduction to rule engine

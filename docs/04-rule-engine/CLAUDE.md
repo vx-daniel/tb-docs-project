@@ -230,6 +230,179 @@ When documenting scripts, prefer TBEL:
 
 Always show TBEL examples first, JavaScript as alternative.
 
+## Enhanced Documentation Pattern (Phase 3 - Proven Successful)
+
+For major nodes in heavily-used files (action-nodes.md, filter-nodes.md, transformation-nodes.md), apply this comprehensive enhancement pattern:
+
+### "When to Use" Section
+
+Add immediately after node description, before Configuration:
+
+```markdown
+### When to Use
+
+**Primary Use Cases:**
+- **Use case 1** - Brief description
+- **Use case 2** - Brief description
+- **Use case 3** - Brief description
+- **Use case 4** - Brief description
+
+**Not Recommended For:**
+- Anti-pattern 1 (use X instead)
+- Anti-pattern 2 (use Y instead)
+- Anti-pattern 3 (consider Z)
+```
+
+**Guidelines**:
+- 4-5 primary use cases with domain context (IoT, industrial, monitoring)
+- 3-5 anti-patterns with alternative recommendations
+- Be specific: "Save sensor readings" not "save data"
+- Point to better alternatives for anti-patterns
+
+### Complete Examples
+
+Add 2-3 complete examples after basic configuration examples:
+
+```markdown
+### Complete Example: [Descriptive Use Case Title]
+
+**Use Case**: One-sentence description of real-world scenario.
+
+**Input Message** (with context):
+\`\`\`json
+{
+  "type": "POST_TELEMETRY_REQUEST",
+  "originator": {
+    "entityType": "DEVICE",
+    "id": "device-uuid"
+  },
+  "metadata": {
+    "deviceName": "Sensor-Floor1",
+    "key": "value"
+  },
+  "data": {
+    "field1": 25.5,
+    "field2": 60
+  }
+}
+\`\`\`
+
+**Node Configuration**:
+\`\`\`json
+{
+  "param1": "value1",
+  "param2": true
+}
+\`\`\`
+
+**Output**: Description of routing decision or transformed message.
+
+**Result**: What happens in the system (data saved where, alarm created, etc.)
+
+**Why This Works**: 1-2 sentences explaining the pattern and its benefits.
+```
+
+**Guidelines**:
+- Include FULL message structure (type, originator, metadata, data)
+- Use realistic IoT domain examples (sensors, buildings, meters)
+- Show actual configuration JSON
+- Explain the outcome in system behavior terms
+- Add "Why This Works" paragraph explaining the pattern
+
+### Configuration Tips Table
+
+Add after examples, before Common Pitfalls:
+
+```markdown
+### Configuration Tips
+
+| Scenario | Recommended Configuration | Rationale |
+|----------|---------------------------|-----------|
+| Scenario 1 | Config approach | Why it works |
+| Scenario 2 | Config approach | Why it works |
+| ... | ... | ... |
+```
+
+**Guidelines**:
+- 7-8 rows covering common scenarios
+- Mix basic and advanced use cases
+- Include actual parameter values or patterns
+- Explain WHY, not just WHAT
+
+### Performance Considerations Table
+
+Add after Configuration Tips:
+
+```markdown
+### Performance Considerations
+
+| Practice | Impact | Recommendation |
+|----------|--------|----------------|
+| Practice 1 | Quantified impact | What to do |
+| Practice 2 | Quantified impact | What to do |
+| ... | ... | ... |
+```
+
+**Guidelines**:
+- 5-6 rows covering performance-sensitive patterns
+- Quantify impact where possible (10-100ms, 50% reduction, etc.)
+- Include both positive practices and anti-patterns
+- Be specific about recommendations
+
+### Decision Matrices (For Critical Timing/Placement Decisions)
+
+For nodes where placement matters (Change Originator, enrichment vs transformation):
+
+```markdown
+### Decision Matrix: [Decision Title]
+
+| Goal | Placement/Configuration | Why |
+|------|------------------------|-----|
+| Goal 1 | Specific placement | Explanation |
+| Goal 2 | Specific placement | Explanation |
+| ... | ... | ... |
+```
+
+**Example**: Change Originator BEFORE vs AFTER Save Telemetry
+
+### ASCII Diagrams (For Confusing Concepts)
+
+For directional confusion (Check Relation FROM/TO, enrichment direction):
+
+```markdown
+### Direction Quick Reference
+
+\`\`\`
+Visual representation showing:
+┌────────────┐              ┌───────────┐
+│   Entity1  │──[Relation]──▶│  Entity2  │
+└────────────┘              └───────────┘
+     ▲                           ▲
+     │                           │
+Explanation               Explanation
+\`\`\`
+```
+
+**Used successfully in**: Check Relation (FROM/TO direction)
+
+## Enhancement Success Metrics (Phase 3 Results)
+
+Applied to action-nodes.md, filter-nodes.md, transformation-nodes.md:
+
+**Quantitative**:
+- Average 70-82% content increase per file
+- 15 complete examples with full message flows
+- 11 configuration tip tables with 80+ scenarios
+- 3 critical decision matrices
+
+**Qualitative**:
+- Transformed from reference → implementation guides
+- Clarified confusing concepts (FROM/TO, BEFORE/AFTER timing)
+- Added realistic IoT domain examples
+- Provided actionable performance guidance
+
+**Pattern to Replicate**: Apply same enhancement to remaining 4 node files (enrichment, external, flow, analytics) for consistency.
+
 ## Helpful Paths
 
 - local-skillz: `~/Projects/barf/repo/SKILLS/README.md`

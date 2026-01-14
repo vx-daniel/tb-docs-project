@@ -27,6 +27,22 @@ Filter nodes evaluate conditions and route messages to different output connecti
 
 Executes a user-defined function that returns a boolean value. Routes messages via `True` if the function returns `true`, or via `False` if it returns `false`.
 
+### When to Use
+
+**Primary Use Cases:**
+- **Threshold validation** - Check if sensor values exceed acceptable ranges
+- **Multi-field conditions** - Combine multiple field checks in complex boolean logic
+- **Dynamic threshold comparison** - Compare values against thresholds stored in metadata
+- **Data quality filtering** - Validate data completeness, format, or consistency
+- **Business rule evaluation** - Implement custom domain logic (SLA checks, authorization rules)
+
+**Not Recommended For:**
+- Message type routing (use Message Type Switch instead - faster)
+- Simple field presence checks (use Check Fields Presence instead)
+- Entity type routing (use Entity Type Switch instead)
+- Static conditions that never change (use built-in filters when available)
+- Heavy computation (pre-calculate in transformation node, filter on result)
+
 ### Configuration
 
 | Field | Type | Description |
@@ -103,11 +119,129 @@ graph LR
 
 **Result:** Routes via `True` (temperature 45.2 > threshold 45.0)
 
+### Complete Example: Multi-Field Business Rule
+
+**Use Case**: Validate industrial equipment telemetry before saving - reject messages with invalid combinations (e.g., high temperature with zero pressure indicates sensor failure).
+
+**Input Message:**
+```json
+{
+  "type": "POST_TELEMETRY_REQUEST",
+  "originator": {
+    "entityType": "DEVICE",
+    "id": "compressor-8"
+  },
+  "metadata": {
+    "deviceName": "Compressor-Line-C-8",
+    "minPressure": "1.5",
+    "maxTemperature": "85"
+  },
+  "data": {
+    "temperature": 92,
+    "pressure": 0.0,
+    "vibration": 3.2,
+    "runtime": 14500
+  }
+}
+```
+
+**Node Configuration:**
+```json
+{
+  "scriptLang": "TBEL",
+  "tbelScript": "// Validate data quality\nif (msg.temperature == null || msg.pressure == null) {\n  return false; // Missing critical fields\n}\n\n// Business rule: High temp with zero pressure = sensor fault\nvar maxTemp = parseFloat(metadata.maxTemperature);\nvar minPress = parseFloat(metadata.minPressure);\n\nif (msg.temperature > maxTemp && msg.pressure < minPress) {\n  return false; // Invalid combination\n}\n\nreturn true; // Valid data"
+}
+```
+
+**Output**: Routes to **False** (invalid: temperature 92 > max 85, but pressure 0.0 < min 1.5)
+
+**Downstream Handling**:
+- **False** connection → Log error, Send notification to maintenance team
+- **True** connection → Save Telemetry, Continue normal processing
+
+**Why This Works**: The script implements domain knowledge (high temp + low pressure = sensor fault) that can't be expressed with simple threshold checks. Invalid data is rejected early in the chain, preventing false alarms and bad data storage.
+
+### Complete Example: Data Quality Filter with Null Safety
+
+**Use Case**: Ensure all required fields exist and have valid values before processing.
+
+**Input Message:**
+```json
+{
+  "type": "POST_TELEMETRY_REQUEST",
+  "originator": {
+    "entityType": "DEVICE",
+    "id": "sensor-42"
+  },
+  "data": {
+    "temperature": 25.5,
+    "humidity": null,
+    "location": ""
+  }
+}
+```
+
+**Node Configuration:**
+```json
+{
+  "scriptLang": "TBEL",
+  "tbelScript": "// Required fields\nvar required = ['temperature', 'humidity', 'location'];\n\nfor (var i = 0; i < required.length; i++) {\n  var field = required[i];\n  var value = msg[field];\n  \n  // Check field exists, is not null, and is not empty string\n  if (value == null || value === '') {\n    return false;\n  }\n  \n  // For numeric fields, check they're actual numbers\n  if ((field === 'temperature' || field === 'humidity') && typeof value !== 'number') {\n    return false;\n  }\n}\n\nreturn true;"
+}
+```
+
+**Output**: Routes to **False** (humidity is null, location is empty string)
+
+**Result**:
+- Message rejected due to incomplete data
+- Can route to error handler that logs the validation failure
+- Prevents processing of partial/corrupt messages
+
+**Why This Works**: Comprehensive null checking and type validation ensures only complete, valid messages proceed. The explicit checks prevent runtime errors in downstream nodes that expect specific data types.
+
+### Configuration Tips
+
+| Scenario | Recommended Approach | Rationale |
+|----------|---------------------|-----------|
+| Simple threshold (single field) | `return msg.temp > 30;` | Fastest, most readable |
+| Multiple independent thresholds | Use Switch node with severity levels | Better routing visibility than nested if/else |
+| Dynamic thresholds | Read from metadata: `parseFloat(metadata.threshold)` | Single script works for all devices |
+| Null-safe comparisons | `msg.field != null && msg.field > X` | Always check null before comparison |
+| Complex multi-field logic | Pre-calculate in transformation, filter on result | Separates computation from routing |
+| Performance-critical path | Prefer TBEL over JavaScript | 10-100x faster execution |
+| Development/debugging | Use JavaScript with console.log | Better tooling, then migrate to TBEL |
+
+### Performance Considerations
+
+| Practice | Impact | Recommendation |
+|----------|--------|----------------|
+| Null checking every field | Minimal (<1ms overhead) | Always check - prevents Failure routing |
+| Complex regex matching | High (10-50ms per message) | Use enrichment to pre-validate, cache results |
+| Metadata parsing on every message | Moderate (1-5ms) | Parse once if threshold doesn't change |
+| Nested loops in filter | Very high (blocking) | Avoid; use enrichment for data aggregation |
+| JavaScript vs TBEL | 10-100x slower for JS | Use TBEL unless need JS-specific features |
+| Filter position in chain | Affects all downstream | Place filters early to discard early |
+
 ---
 
 ## Switch
 
 Executes a user-defined function that returns connection labels for routing. Supports routing to multiple connections simultaneously.
+
+### When to Use
+
+**Primary Use Cases:**
+- **Multi-level severity routing** - Route to different handlers based on severity levels (Normal, Warning, Critical)
+- **Multi-target fanout** - Send single message to multiple downstream chains based on conditions
+- **Dynamic routing** - Calculate routing destination at runtime based on message content
+- **Complex classification** - Categorize messages into multiple buckets for parallel processing
+- **Priority-based queuing** - Route to different queue strategies based on message priority
+
+**Not Recommended For:**
+- Simple true/false decisions (use Script Filter instead - clearer intent)
+- Message type routing (use Message Type Switch - built-in and faster)
+- Entity type routing (use Entity Type Switch - built-in)
+- Single-target routing (use Script Filter - simpler)
+- Fan-out to all connections (use multiple nodes from same parent - explicit)
 
 ### Configuration
 
@@ -168,6 +302,111 @@ graph LR
 ```
 
 **Result:** Routes via both `TempAlert` and `HumidityAlert` connections
+
+### Complete Example: Priority-Based Routing with Fanout
+
+**Use Case**: Route alarm messages to different notification channels based on severity, with critical alarms going to multiple channels simultaneously.
+
+**Input Message:**
+```json
+{
+  "type": "ALARM_CREATED",
+  "originator": {
+    "entityType": "DEVICE",
+    "id": "reactor-3"
+  },
+  "metadata": {
+    "alarmType": "Temperature Exceeded",
+    "severity": "CRITICAL",
+    "deviceName": "Nuclear-Reactor-3",
+    "currentTemp": "950"
+  },
+  "data": {
+    "alarmDetails": {
+      "threshold": 800,
+      "currentValue": 950,
+      "duration": 120
+    }
+  }
+}
+```
+
+**Node Configuration:**
+```json
+{
+  "scriptLang": "TBEL",
+  "tbelScript": "var severity = metadata.severity;\nvar targets = [];\n\nif (severity === 'CRITICAL') {\n  // Critical: notify all channels\n  targets.push('SMS');\n  targets.push('Email');\n  targets.push('PagerDuty');\n  targets.push('Dashboard');\n} else if (severity === 'MAJOR') {\n  // Major: email and dashboard\n  targets.push('Email');\n  targets.push('Dashboard');\n} else if (severity === 'WARNING') {\n  // Warning: dashboard only\n  targets.push('Dashboard');\n} else {\n  // Minor/Indeterminate: log only\n  targets.push('Log');\n}\n\nreturn targets;"
+}
+```
+
+**Output**: Routes to **4 connections simultaneously**: SMS, Email, PagerDuty, Dashboard
+
+**Downstream Chain Structure**:
+- **SMS** → Send SMS notification node
+- **Email** → Send Email node with template
+- **PagerDuty** → REST API call to PagerDuty
+- **Dashboard** → Save to alarm table, trigger WebSocket update
+
+**Why This Works**: Single message fans out to multiple notification channels based on severity. The script ensures appropriate escalation - critical alarms wake up on-call engineers via SMS/pager while minor issues only appear in dashboards.
+
+### Complete Example: Dynamic Customer Routing
+
+**Use Case**: Route telemetry to different processing chains based on customer subscription tier (stored in metadata).
+
+**Input Message:**
+```json
+{
+  "type": "POST_TELEMETRY_REQUEST",
+  "originator": {
+    "entityType": "DEVICE",
+    "id": "meter-4251"
+  },
+  "metadata": {
+    "customerId": "cust-enterprise-42",
+    "customerTier": "enterprise",
+    "features": "analytics,alerts,export"
+  },
+  "data": {
+    "energy": 125.5,
+    "power": 4200,
+    "voltage": 230
+  }
+}
+```
+
+**Node Configuration:**
+```json
+{
+  "scriptLang": "TBEL",
+  "tbelScript": "var tier = metadata.customerTier;\nvar features = metadata.features ? metadata.features.split(',') : [];\n\nvar targets = [];\n\n// All tiers get basic processing\ntargets.push('SaveTelemetry');\n\n// Enterprise tier gets advanced features\nif (tier === 'enterprise') {\n  if (features.indexOf('analytics') >= 0) {\n    targets.push('RealTimeAnalytics');\n  }\n  if (features.indexOf('alerts') >= 0) {\n    targets.push('AdvancedAlerts');\n  }\n  if (features.indexOf('export') >= 0) {\n    targets.push('DataExport');\n  }\n} else if (tier === 'professional') {\n  if (features.indexOf('alerts') >= 0) {\n    targets.push('BasicAlerts');\n  }\n} // Free tier: only SaveTelemetry\n\nreturn targets;"
+}
+```
+
+**Output**: Routes to **4 connections**: SaveTelemetry, RealTimeAnalytics, AdvancedAlerts, DataExport
+
+**Why This Works**: Single switch node implements feature gating based on customer subscription. Enterprise customers get additional processing (analytics, advanced alerts, export) while free users only get basic telemetry storage. Metadata-driven routing allows per-customer feature control without code changes.
+
+### Configuration Tips
+
+| Scenario | Recommended Approach | Rationale |
+|----------|---------------------|-----------|
+| 2-3 severity levels | Return single string per level | Simpler than filter chain |
+| Fanout to multiple targets | Return array of connection names | Single message goes everywhere |
+| All messages need default path | Include fallback: `return ['Default'];` | Prevents dropped messages |
+| Dynamic connection names | Build strings: `return 'Priority_' + priority;` | Flexible routing |
+| Conditional fanout | Build array conditionally: `if (x) arr.push('Y');` | Selective multi-target |
+| Performance-critical | Minimize array operations | Array creation has overhead |
+| Complex routing logic | Break into multiple smaller switches | Easier to debug and maintain |
+
+### Performance Considerations
+
+| Practice | Impact | Recommendation |
+|----------|--------|----------------|
+| Array creation for single target | Minimal overhead | Return string directly for single target |
+| Large fanout (>5 targets) | Message cloning overhead | Consider if all targets really need message |
+| String concatenation in loop | Moderate (1-5ms) | Pre-build connection name lookup |
+| Complex nested if/else | Readability, not performance | Refactor to lookup table or map |
+| Switch after expensive enrichment | Wasted computation if routed away | Place switches early when possible |
 
 ---
 
@@ -302,6 +541,21 @@ Filters messages by checking if the originator entity type matches the specified
 
 Verifies whether a relation exists between the message originator and another entity.
 
+### When to Use
+
+**Primary Use Cases:**
+- **Authorization checks** - Verify device belongs to correct customer before processing
+- **Topology validation** - Ensure device is assigned to an asset before aggregating data
+- **Conditional processing** - Route messages differently based on entity relationships
+- **Hierarchical filtering** - Check if entity is part of specific group or zone
+- **Access control** - Validate user has permission to access device (via relations)
+
+**Not Recommended For:**
+- Loading related entity data (use Enrichment nodes - Check Relation only validates existence)
+- Creating relations (use Create Relation action node)
+- Complex multi-hop traversals (high performance cost - pre-calculate if possible)
+- Static relationships that never change (consider caching in attributes)
+
 ### Configuration
 
 | Field | Type | Description |
@@ -345,6 +599,125 @@ graph TB
 ```
 
 This checks if any Asset has a "Contains" relation TO the device (device is contained by some asset).
+
+### Complete Example: Understanding FROM vs TO Direction
+
+**Relationship Setup** (in platform):
+- Asset "Building-A" (ID: `asset-building-a`)
+- Device "TempSensor-42" (ID: `device-sensor-42`)
+- Relation: `asset-building-a` --[Contains]--> `device-sensor-42`
+
+In database terms:
+- **FROM** entity: `asset-building-a`
+- **TO** entity: `device-sensor-42`
+- **Relation Type**: "Contains"
+
+**Scenario 1: Check if Device belongs to any Asset (Incoming Check)**
+
+**Input Message** (originator is Device):
+```json
+{
+  "type": "POST_TELEMETRY_REQUEST",
+  "originator": {
+    "entityType": "DEVICE",
+    "id": "device-sensor-42"
+  },
+  "data": {
+    "temperature": 25.5
+  }
+}
+```
+
+**Node Configuration**:
+```json
+{
+  "direction": "TO",
+  "relationType": "Contains",
+  "checkForSingleEntity": false,
+  "entityType": "ASSET"
+}
+```
+
+**Logical Question**: "Does any Asset have a Contains relation TO this device?"
+**Translation**: "Is this device contained by any Asset?"
+**Result**: Routes to **True** (Building-A contains this device)
+
+**Why "TO" Direction**: The relation points **TO** the device (the originator). We're checking if something else (an Asset) has a relation pointing to our device.
+
+**Scenario 2: Check if Asset contains any Devices (Outgoing Check)**
+
+**Input Message** (originator is Asset):
+```json
+{
+  "type": "ATTRIBUTES_UPDATED",
+  "originator": {
+    "entityType": "ASSET",
+    "id": "asset-building-a"
+  },
+  "data": {
+    "occupancy": "full"
+  }
+}
+```
+
+**Node Configuration**:
+```json
+{
+  "direction": "FROM",
+  "relationType": "Contains",
+  "checkForSingleEntity": false,
+  "entityType": "DEVICE"
+}
+```
+
+**Logical Question**: "Does this Asset have a Contains relation FROM itself to any Device?"
+**Translation**: "Does this Asset contain any Devices?"
+**Result**: Routes to **True** (Building-A contains device-sensor-42)
+
+**Why "FROM" Direction**: The relation points **FROM** the asset (the originator) to something else. We're checking if our asset has outgoing relations to devices.
+
+### Direction Quick Reference
+
+```
+Originator: Device → Check if contained by Asset
+┌────────────┐              ┌───────────┐
+│   Asset    │──[Contains]──▶│  Device   │◄── Originator
+└────────────┘              └───────────┘
+                                 ▲
+                                 │
+                        Use direction: "TO"
+                        (relation points TO originator)
+
+Originator: Asset → Check if contains Devices
+┌────────────┐              ┌───────────┐
+│   Asset    │──[Contains]──▶│  Device   │
+└────────────┘              └───────────┘
+     ▲
+     │
+ Originator
+ Use direction: "FROM"
+ (relation points FROM originator)
+```
+
+### Configuration Tips
+
+| Scenario | Direction | Rationale |
+|----------|-----------|-----------|
+| Check if device assigned to asset | TO | Asset → Device (relation points TO device) |
+| Check if asset has devices | FROM | Asset → Device (relation points FROM asset) |
+| Check if device managed by customer | TO | Customer → Device (relation points TO device) |
+| Check if user has access to entity | FROM | User → Entity (relation points FROM user) |
+| Multi-hop parent check | TO with maxLevel > 1 | Traverse up hierarchy |
+| Multi-hop child check | FROM with maxLevel > 1 | Traverse down hierarchy |
+
+### Common Direction Mistakes
+
+| Mistake | Symptom | Fix |
+|---------|---------|-----|
+| Used FROM when checking parent | Always routes to False | Change to TO (parent relation points TO child) |
+| Used TO when checking children | Always routes to False | Change to FROM (parent relation points FROM itself) |
+| Confused relation name | Always routes to False | Use "Contains", not "Contained By" (one relation type) |
+| Forgot relation case-sensitivity | Always routes to False | Use exact relation type: "Contains" not "contains" |
 
 ---
 
@@ -534,6 +907,86 @@ graph LR
     GEO -->|False| OUTSIDE[Outside Zone]
     OUTSIDE --> ALARM[Create Geofence Alarm]
 ```
+
+## Common Pitfalls
+
+### Script Filter
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Missing null checks | Runtime exceptions route to Failure | Always check `msg.field != null` before comparison |
+| Returning non-boolean | Message routes to Failure | Ensure script returns explicit `true` or `false` |
+| Complex calculations in filter | Performance degradation | Pre-calculate in enrichment or transformation node |
+| Accessing missing metadata keys | NullPointerException | Use safe navigation: `metadata.?key` or check existence first |
+| Using JavaScript instead of TBEL | 10-100x slower performance | Prefer TBEL for simple conditions; reserve JS for complex logic |
+
+### Switch Node
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Returning single string as array | Type error | Return string directly, not `['value']` |
+| Invalid connection names | Messages route to Failure | Ensure returned strings match connected relation names |
+| No matching connection | Message dropped | Connect all expected return values or add fallback logic |
+| Dynamic routing without validation | Unexpected behavior | Test all possible return values |
+
+### Message Type Switch / Filter
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| No "Other" handler | Unknown message types fail | Connect "Other" relation to log or generic handler |
+| Case-sensitive type comparison | Messages not routed | Use exact message type constants (POST_TELEMETRY_REQUEST, not post_telemetry) |
+| Filtering custom message types | Switch only handles standard types | Add Script Filter after switch for custom types |
+| Multiple switches in series | Complexity and performance impact | Combine into single Switch node with routing logic |
+
+### Entity Type Switch / Filter
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Wrong entity type assumption | Messages misrouted | Verify originator type with enrichment before filtering |
+| No default handler | Unexpected entity types fail | Connect default relation for unknown entity types |
+| Type vs subtype confusion | Devices filtered incorrectly | Use Entity Type Switch for DEVICE/ASSET, Device Profile Switch for device types |
+
+### Check Relation
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Wrong relation direction | Cannot find existing relations | FROM means originator→related; TO means related→originator |
+| Relation type typo | Always routes to False | Use relation type constants from system (case-sensitive) |
+| Checking transitive relations | Only checks direct relations | Set `maxLevel > 1` for multi-hop checks; be aware of performance impact |
+| Entity type mismatch | Relation check fails | Verify both entities support the relation type |
+
+### Check Fields Presence
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Checking nested fields | Node only checks top-level keys | Use Script Filter with path navigation for nested fields |
+| Field exists but null/empty | Presence check passes but value unusable | Combine with Script Filter to validate values |
+| Case-sensitive field names | Field not found | Ensure exact field name match including case |
+
+### Check Alarm Status
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Alarm type doesn't match | No alarm found | Use same alarm type pattern as in Create Alarm |
+| Status changed during processing | Status check stale | Process quickly after status check |
+| Multiple alarms same type | Only checks latest | Be specific with alarm type patterns |
+
+### GPS Geofencing Filter
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Missing latitude/longitude | Filter routes to Failure | Validate GPS coordinates exist in enrichment node |
+| Coordinates in wrong format | Parsing errors | Ensure lat/lon are numeric values in decimal degrees |
+| Invalid perimeter definition | Incorrect zone detection | Test perimeter with known coordinates |
+| High-precision requirements | GPS accuracy limitations | Consider GPS accuracy in perimeter size |
+
+### Device/Asset Profile Switch
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Profile name changes | Routing breaks | Use profile ID patterns when possible |
+| No default profile handler | Messages from new profiles fail | Connect default relation for unmatched profiles |
+| Profile switch before enrichment | Profile information not available | Load profile data via enrichment if needed for routing |
 
 ## Best Practices
 

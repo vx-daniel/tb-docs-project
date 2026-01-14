@@ -341,6 +341,46 @@ graph TB
 | Tight coupling | Use Rule Chain node instead |
 | Low latency requirements | Queue transfer adds latency |
 
+## Common Pitfalls
+
+### Rule Chain Input/Output Nodes
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Circular chain references | Infinite loops, stack overflow | Maintain chain dependency diagram; validate no cycles |
+| Deep nesting (>5 levels) | Stack overflow, debugging difficulty | Flatten chains; use shared chains instead of deep nesting |
+| Different tenant chains | Security boundary violation | Validate target chain belongs to same tenant |
+| No default chain configured | Fallback behavior missing | Configure default rule chain in node settings |
+| Wrong relation type returned | Message routing fails | Verify Output node relation types match parent chain expectations |
+
+### Checkpoint Node
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Checkpoint to non-existent queue | Messages lost or processing fails | Validate queue exists and is started before checkpoint |
+| Checkpoint for all messages | Original queue underutilized | Reserve checkpoint for priority/special processing only |
+| Queue strategy mismatch | Ordering or performance issues | Align target queue strategy with message requirements (e.g., SEQUENTIAL for ordering) |
+| Long delays in main queue | Blocks other message processing | Use separate queue for delayed or slow messages |
+| No error handling after checkpoint | Failures in target queue not handled | Add error handling in target queue's rule chain |
+
+### Acknowledge Node
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Acknowledging before critical action | Data loss if action fails | Place ACK node AFTER save/alarm/RPC nodes, not before |
+| No ACK in error path | Queue retry loop, duplicate processing | Add ACK to Failure handler to prevent infinite retries |
+| Multiple ACKs for same message | Potential errors | Only acknowledge once per message path |
+| ACK without processing | Message dropped without action | Ensure all message paths perform intended actions before ACK |
+
+### General Flow Control
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Missing return path from nested chain | Parent chain doesn't continue | Ensure Output node is used in nested chains |
+| Async processing without callback | Parent doesn't wait for completion | Understand async node behavior; use proper relation handling |
+| Error suppression in nested chains | Failures invisible to parent | Propagate errors via Output node Failure relation |
+| Too many chain hops | Increased latency, complexity | Keep message paths short; combine logic where possible |
+
 ## See Also
 
 - [Rule Chain Structure](../rule-chain-structure.md) - Chain composition

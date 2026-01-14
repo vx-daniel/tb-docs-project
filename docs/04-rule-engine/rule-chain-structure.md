@@ -676,6 +676,99 @@ For singleton nodes (`singletonMode: true`):
 - Node starts on new owner with fresh initialization
 - State is NOT transferred between instances
 
+## Common Pitfalls
+
+### Chain Design
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| No error handling path | Failed messages marked as processing failures | Always connect Failure relations to error handler nodes |
+| Circular chain references | Infinite loops, stack overflow | Use visual chain dependency diagram; enforce DAG (Directed Acyclic Graph) structure |
+| Too many nodes in single chain (>20) | Hard to debug, slow processing, visual clutter | Break into nested chains at logical boundaries |
+| Missing first node configuration | Chain cannot process messages | Always set `firstRuleNodeId` when creating chains |
+| Debug mode enabled in production | Significant performance degradation (10-100x slower) | Disable debug mode after troubleshooting; monitor performance impact |
+
+### Connection Configuration
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Case-sensitive relation typo | Messages route to wrong path or Failure | Use constants: "Success" not "success", "True" not "true" |
+| Orphaned nodes (no incoming connections) | Nodes never execute | Verify all nodes have incoming connections; remove unused nodes |
+| Multiple connections with same type | Ambiguous routing | Use Switch node with distinct labels instead |
+| Missing relation type | Node returns relation not defined in connections | Add all expected output relations in chain editor |
+
+### Root Chain Configuration
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| No root chain set | Device messages not processed | Set one chain as root per tenant |
+| Multiple root chains | Confusion, only latest takes effect | Only one root chain allowed per tenant |
+| Root chain with Input node | Input node not needed in root | Root chain receives messages automatically |
+| Wrong message types in root | Messages not routed | Use Message Type Switch as first node in root chain |
+
+### Nested Chain Issues
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Deep nesting (>5 levels) | Stack overflow, debugging nightmare | Flatten chains; use shared utility chains |
+| No Output node in nested chain | Parent chain doesn't continue processing | Always include Output node to return to parent |
+| Wrong relation from Output node | Parent expects "Success", receives custom type | Ensure Output relation types match parent chain connections |
+| Nested chain in different tenant | Security violation | Validate all chains belong to same tenant |
+
+### Import/Export Issues
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Exporting with absolute IDs | Import creates duplicates or fails | Use relative references in export; regenerate IDs on import |
+| Missing node metadata | Imported chain has wrong configuration | Verify JSON includes all node configurations |
+| Version incompatibility | Imported chain fails to load | Check ThingsBoard version compatibility before import |
+| Circular dependencies in import | Import validation fails | Resolve circular references before export |
+
+### Hot Reload Pitfalls
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Configuration change mid-processing | Inconsistent behavior during transition | Update chains during low-traffic periods when possible |
+| Stateful node configuration change | State loss or corruption | Understand state is preserved; validate state compatibility |
+| Rapid repeated updates | Performance impact, actor churn | Batch configuration changes; avoid frequent updates |
+| No validation before save | Invalid configuration deployed | Test chains in non-production before updating production |
+
+### Node Configuration
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Invalid JSON in node config | Node fails to initialize | Validate JSON syntax; use schema validation |
+| Missing required fields | Node initialization fails | Check node configuration requirements in documentation |
+| Default values misunderstood | Unexpected node behavior | Review default values; set explicitly when critical |
+| Configuration too complex | Hard to maintain | Simplify; split into multiple simpler nodes if needed |
+
+### Performance and Scalability
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| All processing in one chain | Single point of failure, performance bottleneck | Distribute processing across multiple chains |
+| No queue assignment | All chains use Main queue | Assign appropriate queues (Main, HighPriority, custom) |
+| Synchronous heavy operations | Blocking message processing | Use async nodes; move heavy work to separate queue |
+| Large chains without optimization | High latency per message | Profile performance; optimize hot paths |
+
+### Debugging and Monitoring
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Debug mode in high-volume chain | Database overwhelm, performance crash | Use debug mode sparingly; disable after troubleshooting |
+| No logging for failures | Silent failures, hard to diagnose | Add Log nodes on Failure paths |
+| Missing test coverage | Production issues | Test chains with representative data before deployment |
+| No performance monitoring | Degradation goes unnoticed | Monitor rule engine statistics dashboard |
+
+### Versioning and Change Management
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| No version control for chains | Cannot rollback bad changes | Export chains regularly; maintain version history |
+| Editing production chains directly | Risk of breaking changes | Test in staging environment first |
+| No documentation of chain logic | Maintenance difficulty | Document chain purpose and design decisions |
+| Ad-hoc changes without review | Accumulating technical debt | Use change management process for production chains |
+
 ## See Also
 
 - [Rule Engine Overview](./README.md) - Introduction to rule engine

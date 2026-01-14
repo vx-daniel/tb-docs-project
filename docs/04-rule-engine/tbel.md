@@ -603,6 +603,100 @@ Built-in limits prevent resource abuse:
 4. Validate input data types
 5. Review transformation output in rule chain debug
 
+## Common Pitfalls
+
+### Null Pointer Handling
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Not checking for null | NullPointerException, script fails | Always use safe navigation: `msg.?field` or explicit null checks |
+| Accessing nested nulls | Runtime exception | Check each level: `msg.?obj.?field` or validate first |
+| Null in arithmetic | Error or unexpected results | Use null coalescing: `(msg.value ?? 0) + 10` |
+| Missing metadata keys | Null reference | Check existence: `metadata.key != null` before use |
+
+### Type Coercion and Conversion
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| String to number implicit conversion | Type errors | Explicit conversion: `parseFloat(metadata.value)` or `parseInt(metadata.count)` |
+| Boolean string comparison | Unexpected results | Compare strings: `metadata.enabled === 'true'`, not `=== true` |
+| Numeric string concatenation | String concat instead of math | Convert first: `parseInt(a) + parseInt(b)` |
+| Date string handling | Invalid date operations | Use `parseDate()` or Java Date constructors |
+
+### Syntax and Language Features
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Using `for` instead of `foreach` | Syntax error | Use `foreach (item : array) { }` not `for (item in array)` |
+| Arrow functions (`=>`) | Not supported in TBEL | Use traditional function syntax: `function name() { }` |
+| `let`/`const` keywords | Not supported | Use `var` for variable declarations |
+| Template literals | Not supported | Use string concatenation: `"Value: " + value` |
+| Spread operator (`...`) | Not supported | Use manual array/object copying |
+
+### Performance Issues
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Infinite loops | Script timeout, message failure | Always include termination condition; use iteration limits |
+| Large loops in filters | Processing delay per message | Pre-calculate in enrichment; use simpler logic |
+| Deep recursion | Stack overflow | Limit recursion depth; use iterative approach |
+| Creating large objects | Memory pressure | Minimize object creation in hot paths |
+| String concatenation in loops | Performance degradation | Use array and join: `parts.push(item); parts.join("")` |
+
+### Array and Collection Operations
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Array index out of bounds | Runtime exception | Check length first: `if (array.length > index)` |
+| Modifying immutable collections | Error | Clone first: `var copy = msg.array.clone()` |
+| Assuming array exists | Null pointer | Check: `if (msg.array != null && msg.array.length > 0)` |
+| Foreach on non-array | Type error | Validate: `if (Array.isArray(msg.items))` |
+
+### Data Access Patterns
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Accessing missing message fields | Null reference | Use safe navigation or check existence |
+| Assuming metadata format | Type mismatches | Validate and convert metadata values |
+| Modifying msg/metadata directly | Side effects | Return new structure in transforms |
+| Deep object navigation | Null pointer at any level | Check each level or use safe navigation |
+
+### Common Logic Errors
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Using `=` instead of `===` | Assignment, not comparison | Use `===` for equality, `==` for loose equality |
+| Incorrect operator precedence | Wrong calculation results | Use parentheses: `(a + b) * c` |
+| Short-circuit evaluation surprise | Unexpected behavior | Understand `&&` and `||` evaluation order |
+| Truthy/falsy confusion | Wrong boolean logic | Explicit comparison: `value === true`, not `if (value)` |
+
+### TBEL vs JavaScript Differences
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Using JavaScript-only features | Syntax errors | Stick to TBEL supported syntax |
+| Expecting async/await | Not supported | Use synchronous code only |
+| Promise-based code | Not supported | Use direct values |
+| ES6+ features | Syntax errors | Use ES5-compatible syntax |
+
+### Script Structure
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Filter script not returning boolean | Routes to Failure | Always return `true` or `false` explicitly |
+| Transform script incomplete return | Undefined message | Return `{msg, metadata, msgType}` structure |
+| Switch script wrong return type | Routing errors | Return string or string array |
+| Script without return statement | Undefined behavior | Always include explicit return |
+
+### Security and Validation
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| No input validation | Processing invalid data | Validate data types and ranges |
+| Trusting user input | Injection risks | Sanitize all external data |
+| Exposing sensitive data in logs | Security breach | Sanitize before logging |
+| No error handling | Unhandled exceptions | Use try-catch where appropriate |
+
 ## See Also
 
 - [Rule Engine Overview](./README.md) - Rule chain processing

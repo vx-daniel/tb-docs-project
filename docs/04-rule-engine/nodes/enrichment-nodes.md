@@ -551,6 +551,72 @@ graph LR
     SAVE --> AGGREGATE[Aggregate by Hour]
 ```
 
+## Common Pitfalls
+
+### Originator Attributes
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Overwriting message fields | Original data lost | Use METADATA fetch destination for safety |
+| Missing scope prefix awareness | Key not found downstream | Remember attribute scope prefixes: `cs_` (client), `ss_` (shared/server) |
+| Fetching all telemetry | Performance impact on high-frequency data | Specify only needed keys in `latestTsKeyNames` array |
+| tellFailureIfAbsent disabled silently | Missing required data not detected | Enable `tellFailureIfAbsent` for critical attributes; log missing keys |
+| Wrong attribute scope | Cannot find attributes | Verify scope: CLIENT, SHARED, or SERVER |
+
+### Originator Telemetry
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Fetching large time ranges | Database performance issues | Limit time range; use aggregations for long periods |
+| Ordering by timestamp descending | Latest value comes first (unexpected) | Understand default ordering or specify explicitly |
+| Missing keys in telemetry | Empty result set | Check telemetry keys exist before enriching |
+| Mixing into DATA overwrites | Original telemetry overwritten | Use METADATA destination or unique key names |
+
+### Related Entity Data
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Wrong relation direction | Fetches wrong entities | FROM = outgoing from originator; TO = incoming to originator |
+| Multiple related entities | Only first entity's data returned by default | Use `fetchAll` if multiple entities expected |
+| Deep relation traversal | Database performance issues | Keep `maxLevel ≤ 2`; cache frequently accessed relations |
+| Mapping key collision | Data overwrites existing message fields | Use unique target key names in attribute mappings |
+| No relations exist | Empty enrichment | Use Check Relation filter before enrichment |
+
+### Tenant/Customer Attributes
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Fetching large datasets | High latency | Limit attribute list; consider caching in memory |
+| Assuming customer exists | Null pointer on unassigned entities | Check originator has customer assignment first with enrichment |
+| Wrong scope for tenant attributes | Attributes not found | Tenant attributes typically in SERVER scope |
+| Overwriting message data | Lost original message | Use METADATA destination |
+
+### Originator Fields
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Field names collision | Message data overwritten | Use unique field names or namespace with prefix |
+| Expecting all fields | Some fields may be null | Validate field existence in downstream scripts |
+| Entity type mismatch | Fields not applicable | Verify originator entity type before enriching |
+
+### Fetch Device Credentials
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Exposing credentials | Security risk | Only use in secure chains; don't log credentials |
+| Wrong entity type | Only works for devices | Ensure originator is a DEVICE entity |
+| Credentials in message payload | Credentials visible in logs | Store in metadata; sanitize before logging |
+
+### Calculate Delta
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| First message always zero | No previous value | Handle first reading specially (often skip delta calculation) |
+| Counter resets | Negative delta or large spike | Add logic to detect and handle counter resets |
+| Non-monotonic values | Invalid deltas | Validate input values are cumulative counters |
+| Period too long | Stale delta calculations | Set appropriate `useCache` period for data frequency |
+| Multiple delta calculations same originator | Cache collision | Use unique keys for different counter types |
+
 ## Best Practices
 
 1. **Fetch only needed data** - Request only attributes/telemetry you'll use

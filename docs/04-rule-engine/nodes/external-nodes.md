@@ -602,6 +602,104 @@ graph LR
     TRANSFORM --> SAVE[Save Telemetry]
 ```
 
+## Common Pitfalls
+
+### REST API Call
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| No error handling | External failures block processing | Always connect Failure relation to error handler |
+| Hardcoded URLs | Cannot reuse across environments | Use URL patterns with metadata: `${metadata.apiEndpoint}/path` |
+| Missing authentication headers | 401/403 errors | Store credentials in attributes; resolve in headers configuration |
+| Timeout too long | Slow external service blocks queue | Set `readTimeoutMs ≤ 5000ms` for most APIs |
+| Timeout too short | False failures on legitimate slow responses | Monitor actual response times; set timeout 2x typical |
+| No retry logic | Transient failures cause data loss | Use Failure path with delay and retry counter |
+| Synchronous calls in high volume | Latency buildup, queue backup | Set `maxParallelRequestsCount` based on API rate limits |
+| Sending sensitive data | Security/compliance issues | Sanitize payloads; use secure connections (HTTPS) |
+
+### Kafka Node
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Missing broker retry | Transient failures cause data loss | Set `retries ≥ 3` in configuration |
+| acks=0 for critical data | No delivery guarantee | Use `acks=-1` (all replicas) for durability |
+| Large messages without compression | Network saturation | Enable compression: `lz4` or `snappy` |
+| Static topic name | Cannot route by device type or tenant | Use `topicPattern` with metadata variables: `iot.${metadata.deviceType}` |
+| No partitioning strategy | Load imbalance | Set partition key for even distribution |
+| Ignoring send failures | Data loss unnoticed | Connect Failure output; implement retry or dead-letter |
+
+### MQTT Node
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| QoS 0 for critical data | No delivery guarantee | Use QoS 1 (at least once) or QoS 2 (exactly once) for important messages |
+| Missing connection handling | Messages lost when broker unavailable | Implement reconnection logic; connect Failure output |
+| Large retained messages | Broker memory issues | Limit retained message size; use sparingly |
+| Wrong topic structure | Messages not routed correctly | Follow MQTT topic conventions; test with MQTT client |
+
+### RabbitMQ Node
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Exchange doesn't exist | Messages dropped silently | Verify exchange exists; use durable exchanges |
+| Wrong routing key | Messages not routed to queues | Test routing key patterns with RabbitMQ management |
+| No publisher confirms | Cannot detect failures | Enable publisher confirms in configuration |
+| Connection pool exhaustion | Performance degradation | Configure appropriate pool size for load |
+
+### Cloud Integration Nodes (AWS, Azure, GCP)
+
+**AWS Lambda / SNS / SQS:**
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| IAM permissions missing | Invocation/publish fails | Ensure IAM role has required permissions |
+| Payload size exceeds limits | Requests fail | Check Lambda (6MB), SNS (256KB), SQS (256KB) limits |
+| Async Lambda without error handling | Failures invisible | Use SNS/SQS for reliable async processing |
+| No throttling protection | Lambda throttled under load | Implement backoff and retry logic |
+
+**Azure IoT Hub / Event Hubs:**
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Connection string in plain text | Security risk | Store in encrypted attributes; use managed identities |
+| Partition key not set | Uneven partition distribution | Use device ID or tenant ID as partition key |
+| Exceeding throughput units | Throttling errors | Monitor throughput; scale up units or batch messages |
+
+**GCP Pub/Sub:**
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Service account missing permissions | Publish fails | Grant `pubsub.publisher` role to service account |
+| Message ordering expected | Pub/Sub doesn't guarantee order | Use ordering key if available, or handle out-of-order |
+| Large message batching | Memory issues | Limit batch size; use flow control |
+
+### Send Email / SMS Nodes
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| SMTP not configured | All emails fail | Configure SMTP settings in System Settings |
+| Rate limiting not considered | Account suspended or throttled | Implement rate limiting; use queuing |
+| HTML injection | Security vulnerability or rendering issues | Sanitize all user input before email body |
+| No recipient validation | Emails bounce | Validate email/phone format before sending |
+| Large attachments | Delivery failure or delays | Limit attachment size; use links to files instead |
+
+### Send Notification (Push)
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| User not subscribed | Notification not delivered | Check user has active notification subscriptions |
+| Too many notifications | User annoyance, disabled notifications | Implement notification rules and throttling |
+| Missing notification template | Default formatting used | Create notification templates for better UX |
+
+### Send to Slack
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Invalid webhook URL | Messages not delivered | Verify webhook URL; test with curl |
+| Rate limiting | Messages dropped | Respect Slack rate limits (1 message/second) |
+| Message too long | Truncated or rejected | Keep messages under 4000 characters |
+| No error handling | Failed sends unnoticed | Connect Failure output |
+
 ## Best Practices
 
 1. **Handle failures gracefully** - Always connect Failure output
