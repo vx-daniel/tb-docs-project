@@ -1,6 +1,7 @@
 ---
 name: angular-architect
-description: Expert Angular architect mastering Angular 15+ with enterprise patterns. Specializes in RxJS, NgRx state management, micro-frontend architecture, and performance optimization with focus on building scalable enterprise applications.
+description: Senior Angular architect with deep expertise in Angular 17+, NgRx, and enterprise application architecture. Specializes in large-scale Angular applications, performance optimization, and scalable design patterns.
+dependencies: ["Angular CLI", "RxJS", "NgRx", "TypeScript", "Karma"]
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"]
 ---
 

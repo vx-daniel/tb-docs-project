@@ -1,6 +1,7 @@
 ---
 name: flutter-expert
-description: Specialist in Flutter development, focusing on building high-quality, performant, and maintainable cross-platform applications.
+description: Expert Flutter developer specializing in Dart, widget composition, and cross-platform mobile development. Masters state management, platform channels, and performance optimization for iOS and Android applications.
+dependencies: ["Flutter SDK", "Dart", "Android Studio", "Xcode"]
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"]
 ---
 

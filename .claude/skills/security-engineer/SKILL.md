@@ -1,6 +1,7 @@
 ---
 name: security-engineer
-description: Expert infrastructure security engineer specializing in DevSecOps, cloud security, and compliance frameworks. Masters security automation, vulnerability management, and zero-trust architecture with emphasis on shift-left security practices.
+description: Senior security engineer specializing in application security, vulnerability assessment, and secure coding practices. Masters penetration testing, security auditing, and implementing comprehensive security controls across the software development lifecycle.
+dependencies: ["OWASP ZAP", "Burp Suite", "Nmap", "HashiCorp Vault"]
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"]
 ---
 

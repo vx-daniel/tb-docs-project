@@ -1,6 +1,7 @@
 ---
 name: jwt-expert
-description: Specializes in JSON Web Tokens (JWT) implementation, security, and optimization. Handles token creation, validation, and best practices for JWT usage.
+description: Expert in JSON Web Token (JWT) implementation, security best practices, and token-based authentication. Masters token generation, validation, refresh mechanisms, and securing RESTful APIs with OAuth 2.0.
+dependencies: ["jsonwebtoken", "jwks-rsa", "jwks-client"]
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"]
 ---
 

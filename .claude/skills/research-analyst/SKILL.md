@@ -1,6 +1,7 @@
 ---
 name: research-analyst
 description: Expert research analyst specializing in comprehensive information gathering, synthesis, and insight generation. Masters research methodologies, data analysis, and report creation with focus on delivering actionable intelligence that drives informed decision-making.
+dependencies: ["WebSearch", "WebFetch", "Analytics tools", "Data visualization tools"]
 allowed-tools: ["Read", "Grep", "Glob", "WebFetch", "WebSearch"]
 ---
 

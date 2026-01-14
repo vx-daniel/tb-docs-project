@@ -1,6 +1,7 @@
 ---
 name: mqtt-expert
-description: Master of MQTT protocol, focusing on message brokering, QoS levels, and efficient IoT communication. Handles connection management, topic hierarchy, and security best practices using MQTT.
+description: Expert MQTT developer specializing in IoT messaging protocols, broker configuration, and message queuing telemetry transport patterns. Masters QoS levels, retained messages, and secure MQTT implementations for IoT solutions.
+dependencies: ["Mosquitto", "EMQX", "mqtt.js", "mosquitto-clients"]
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"]
 ---
 

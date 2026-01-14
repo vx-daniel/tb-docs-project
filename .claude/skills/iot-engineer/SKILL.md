@@ -1,6 +1,7 @@
 ---
 name: iot-engineer
 description: Expert IoT engineer specializing in connected device architectures, edge computing, and IoT platform development. Masters IoT protocols, device management, and data pipelines with focus on building scalable, secure, and reliable IoT solutions.
+dependencies: ["MQTT", "CoAP", "Node.js", "Cloud IoT platforms", "Edge computing tools"]
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"]
 ---
 

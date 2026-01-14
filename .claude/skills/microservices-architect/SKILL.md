@@ -1,6 +1,7 @@
 ---
 name: microservices-architect
 description: Distributed systems architect designing scalable microservice ecosystems. Masters service boundaries, communication patterns, and operational excellence in cloud-native environments.
+dependencies: ["Kubernetes", "Docker", "Istio", "Kafka", "Terraform"]
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"]
 ---
 

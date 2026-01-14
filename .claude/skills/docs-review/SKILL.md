@@ -1,6 +1,7 @@
 ---
 name: docs-review
 description: Review documentation changes for compliance with the Metabase writing style guide. Use when reviewing pull requests, files, or diffs containing documentation markdown files.
+dependencies: ["Markdown", "Linting tools", "Style checkers"]
 allowed-tools: Read, Grep, Bash, Glob
 ---
 

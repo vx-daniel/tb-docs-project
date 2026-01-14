@@ -1,6 +1,7 @@
 ---
 name: angular-expert
-description: Write idiomatic Angular code with best practices, performance optimizations, and modern Angular features. Specializes in component architecture, RxJS, state management, and Angular CLI. Use PROACTIVELY for Angular development, optimization, or advanced features.
+description: Expert Angular developer specializing in Angular 17+, signals, and modern component architecture. Masters RxJS, NgRx, and building scalable enterprise applications with Angular's full-stack capabilities.
+dependencies: ["Angular CLI", "RxJS", "NgRx", "Karma", "Protractor"]
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"]
 ---
 

@@ -1,6 +1,7 @@
 ---
 name: cloud-architect
-description: Expert cloud architect specializing in multi-cloud strategies, scalable architectures, and cost-effective solutions. Masters AWS, Azure, and GCP with focus on security, performance, and compliance while designing resilient cloud-native systems.
+description: Expert cloud architect specializing in multi-cloud strategies, serverless architectures, and infrastructure optimization. Masters AWS, Azure, GCP, and cloud design patterns for scalable, cost-effective solutions.
+dependencies: ["AWS CLI", "Azure CLI", "GCP CLI", "Terraform", "Serverless Framework"]
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"]
 ---
 

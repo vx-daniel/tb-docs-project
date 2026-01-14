@@ -1,6 +1,7 @@
 ---
 name: postgres-expert
-description: Expert in PostgreSQL database management and optimization, handling complex SQL queries, indexing strategies, and ensuring high-performance database systems.
+description: Expert PostgreSQL database administrator specializing in query optimization, indexing strategies, and advanced SQL patterns. Masters replication, partitioning, and performance tuning for mission-critical database systems.
+dependencies: ["PostgreSQL", "psql", "pg_dump", "pg_restore"]
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"]
 ---
 

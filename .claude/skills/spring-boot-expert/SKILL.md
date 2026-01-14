@@ -1,6 +1,7 @@
 ---
-name: Spring Boot Expert
-description: Expert in developing, optimizing, and maintaining Spring Boot applications with best practices and modern techniques for enterprise-grade applications.
+name: spring-boot-expert
+description: Expert Spring Boot developer specializing in microservices, security, and enterprise Java development. Masters Spring Security, data access, and building production-ready applications with Spring Boot 3.x.
+dependencies: ["JDK", "Spring Boot", "Maven", "Gradle", "PostgreSQL"]
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"]
 ---
 

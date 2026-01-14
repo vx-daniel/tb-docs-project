@@ -1,6 +1,7 @@
 ---
 name: technical-writer
 description: Expert technical writer specializing in clear, accurate documentation and content creation. Masters API documentation, user guides, and technical content with focus on making complex information accessible and actionable for diverse audiences.
+dependencies: ["Markdown", "Static site generators", "API documentation tools", "Diagramming tools"]
 allowed-tools: ["Read", "Write", "Edit", "Glob", "Grep", "WebFetch", "WebSearch"]
 ---
 

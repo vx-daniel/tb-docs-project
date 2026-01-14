@@ -70,6 +70,27 @@ npm run build:icon-metadata # Generate icon metadata
 - **Protocols**: MQTT, CoAP, HTTP, LWM2M, SNMP, WebSocket
 - **Architecture**: Actor-based concurrency, microservices, multi-tenant
 
+## File Reading Guidelines
+
+When reading files in this repository:
+
+- **For files under 16k characters**: Use the standard Read tool
+- **For files over 16k characters**: Use `cat` via Bash to ensure complete file contents are read
+
+**Rationale**: The standard Read tool may truncate large files, which can cause incomplete context and hallucinations. Using `cat` ensures the full file content is available.
+
+**Example for large files**:
+
+```bash
+cat /path/to/large/file.java
+```
+
+**Checking file size**: If uncertain about file size, check first:
+
+```bash
+wc -c /path/to/file  # Shows byte count
+```
+
 ## Documentation Conventions
 
 When writing or editing documentation in `docs/`:

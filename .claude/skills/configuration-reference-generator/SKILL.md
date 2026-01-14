@@ -4,6 +4,7 @@ description: |
   Configuration Reference Generator - Auto-activating skill for Technical Documentation.
   Triggers on: configuration reference generator, configuration reference generator
   Part of the Technical Documentation skill category.
+dependencies: ["Markdown", "Documentation tools", "Template engines"]
 allowed-tools: Read, Write, Edit, Bash, Grep
 version: 1.0.0
 license: MIT

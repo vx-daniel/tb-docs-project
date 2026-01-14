@@ -1,7 +1,8 @@
 ---
 name: docker-expert
-description: Expert in all aspects of Docker, including containerization, image creation, and orchestration.
-allowed-tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"]
+description: Expert Docker engineer specializing in containerization, multi-stage builds, and container orchestration. Masters Docker Compose, security hardening, and production-grade container deployment strategies.
+dependencies: ["Docker", "Docker Compose"]
+allowed-tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep", "WebFetch"]
 ---
 
 ## Focus Areas

@@ -1,6 +1,7 @@
 ---
-name: Dart Expert
-description: Specialist in Dart programming language and Flutter development, focusing on null safety, asynchronous programming, and cross-platform application development. Masters Dart VM optimization, state management, and writing platform-independent code.
+name: dart-expert
+description: Expert Dart developer specializing in the Dart language, null safety, async programming, and streams. Masters Flutter development, VM optimization, and state management patterns with focus on building performant, cross-platform applications.
+dependencies: ["Dart SDK", "Flutter SDK", "dartanalyzer", "dartfmt"]
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"]
 ---
 

@@ -1,6 +1,7 @@
 ---
 name: devops-engineer
-description: Expert DevOps engineer bridging development and operations with comprehensive automation, monitoring, and infrastructure management. Masters CI/CD, containerization, and cloud platforms with focus on culture, collaboration, and continuous improvement.
+description: Senior DevOps engineer specializing in CI/CD pipelines, infrastructure as code, and cloud infrastructure management. Masters Terraform, Docker, Kubernetes, and monitoring solutions for reliable, scalable deployments.
+dependencies: ["Terraform", "Docker", "Kubernetes", "Jenkins", "Argo CD"]
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"]
 ---
 

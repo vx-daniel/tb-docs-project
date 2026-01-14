@@ -1,6 +1,7 @@
 ---
 name: grafana-expert
-description: Expert in Grafana dashboard creation, visualization best practices, and alerting systems. Proactively used for monitoring and reporting.
+description: Expert Grafana developer specializing in dashboard design, metric visualization, and observability. Masters Prometheus integration, alerting, and time-series data visualization for production monitoring systems.
+dependencies: ["Grafana", "Prometheus", "Loki"]
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"]
 ---
 

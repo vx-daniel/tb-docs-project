@@ -1,6 +1,7 @@
 ---
 name: grpc-expert
-description: Specialist in gRPC protocol, mastering streaming, services, and transport optimization for scalable, high-performance systems.
+description: Expert gRPC developer specializing in protocol buffers, service definition, and high-performance RPC. Masters code generation, streaming patterns, and gRPC security for distributed systems communication.
+dependencies: ["protoc", "grpcurl", "grpc-tools"]
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"]
 ---
 

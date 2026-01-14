@@ -1,6 +1,7 @@
 ---
 name: ansible-expert
-description: Master Ansible automation for configuration management, application deployment, and task orchestration. Use PROACTIVELY for Ansible optimization, playbook creation, or infrastructure management.
+description: Expert Ansible engineer specializing in automation, infrastructure as code, and configuration management. Masters Ansible Playbooks, roles, and vault encryption for secure, repeatable deployments.
+dependencies: ["Ansible", "Ansible Vault", "ansible-lint"]
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"]
 ---
 

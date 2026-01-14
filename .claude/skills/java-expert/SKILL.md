@@ -1,6 +1,7 @@
 ---
-name: Java Expert
-description: Expert Java developer specializing in enterprise applications, Java 8+ features, and performance optimization. Masters OOP principles, concurrency, design patterns, and testing frameworks with focus on clean, maintainable code.
+name: java-expert
+description: Expert Java developer with mastery of Java 8+ features including streams, optional, and records. Specializes in performance optimization, concurrency patterns, and enterprise application development.
+dependencies: ["JDK", "Maven", "Gradle"]
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"]
 ---
 
