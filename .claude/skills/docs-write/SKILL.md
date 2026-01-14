@@ -1,7 +1,7 @@
 ---
-name: docs-write
-description: Write documentation following Metabase's conversational, clear, and user-focused style. Use when creating or editing documentation files (markdown, MDX, etc.).
-allowed-tools: Read, Write, Grep, Bash, Glob
+name: Documentation Writer
+description: Write documentation following conversational, clear, and user-focused style. Use when creating or editing documentation files (markdown, MDX, etc.) with emphasis on clarity and user success.
+allowed-tools: ["Read", "Write", "Edit", "Grep", "Bash", "Glob"]
 ---
 
 # Documentation Writing Skill

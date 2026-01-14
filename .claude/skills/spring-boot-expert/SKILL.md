@@ -1,6 +1,7 @@
 ---
-name: spring-boot-expert
+name: Spring Boot Expert
 description: Expert in developing, optimizing, and maintaining Spring Boot applications with best practices and modern techniques for enterprise-grade applications.
+allowed-tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"]
 ---
 
 ## Focus Areas

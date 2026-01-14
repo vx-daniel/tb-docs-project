@@ -1,6 +1,7 @@
 ---
-name: software-architecture
+name: Software Architecture
 description: Implements design patterns including Clean Architecture, SOLID principles, and comprehensive software design best practices. Use when designing systems, reviewing architecture, establishing patterns, or making structural decisions.
+allowed-tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"]
 ---
 
 # Software Architecture
