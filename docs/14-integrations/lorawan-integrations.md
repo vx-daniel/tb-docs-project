@@ -272,6 +272,72 @@ graph LR
 
 ---
 
+## Sigfox Integration
+
+Sigfox integration receives device data via HTTP callbacks from the Sigfox backend.
+
+```mermaid
+graph LR
+    subgraph "Sigfox Network"
+        DEVICE[Sigfox Devices]
+        BASE[Base Stations]
+        CLOUD[Sigfox Cloud]
+    end
+
+    subgraph "ThingsBoard"
+        INT[Sigfox Integration]
+        TB[ThingsBoard]
+    end
+
+    DEVICE -->|UNB| BASE
+    BASE --> CLOUD
+    CLOUD -->|HTTP Callback| INT
+    INT --> TB
+    TB --> INT
+    INT -->|Downlink Response| CLOUD
+```
+
+**Connection Method**: HTTP Webhooks (callback)
+
+**Key Configuration:**
+
+| Parameter | Description |
+|-----------|-------------|
+| Webhook URL | ThingsBoard endpoint for callbacks |
+| API credentials | Sigfox backend credentials (optional) |
+| Custom payload config | Fields to include in callback |
+
+**Sigfox Callback Setup:**
+
+1. In Sigfox backend, navigate to **Device Type** → **Callbacks**
+2. Create a **Custom callback** with:
+   - Type: **DATA** / **UPLINK**
+   - Channel: **URL**
+   - URL pattern: ThingsBoard integration endpoint
+   - HTTP Method: **POST**
+   - Content Type: **application/json**
+
+**Payload Format:**
+```json
+{
+  "device": "BF1327",
+  "time": "1661868952",
+  "data": "2502af2102462a",
+  "seqNumber": "3737"
+}
+```
+
+**Features:**
+- Ultra-narrow band (UNB) protocol support
+- Low power, long range connectivity
+- Downlink via callback response (synchronous)
+- Limited payload size (12 bytes uplink, 8 bytes downlink)
+
+**Downlink Behavior:**
+Sigfox uses synchronous downlinks. The response to an uplink callback is queued and sent to the device during the next downlink window. This differs from MQTT-based integrations where downlinks are sent immediately.
+
+---
+
 ## Converters Library
 
 ThingsBoard provides pre-built uplink converters for popular LoRaWAN devices.
@@ -415,6 +481,66 @@ Example: lora-0102030405060708
 
 ---
 
+## Common Pitfalls
+
+### LoRaWAN General
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Device EUI format mismatch | Duplicate devices created | Normalize format (hex uppercase, no separators) |
+| ABP vs OTAA confusion | Device won't join | Match activation mode between network server and device |
+| Downlink queue overflow | Commands dropped | Limit queued downlinks, prioritize critical commands |
+| Port number routing | Wrong decoder applied | Use fPort to determine payload format |
+| Payload codec mismatch | Garbled data | Verify decoder matches device firmware version |
+
+### The Things Network (TTN)
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| API key scope too narrow | Authentication fails | Include required permissions (read devices, write downlinks) |
+| V2 vs V3 API differences | Integration breaks | Use V3 endpoints and payload format |
+| Webhook vs MQTT choice | Different setup required | Webhooks simpler; MQTT for real-time requirements |
+| Application ID mismatch | Messages not received | Verify application ID matches exactly |
+| Fair use policy exceeded | Messages dropped | Monitor airtime usage, reduce transmission frequency |
+| Region-specific endpoints | Connection fails | Use correct cluster (eu1, nam1, au1) |
+
+### ChirpStack
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| API token format | Authentication rejected | Include "Bearer " prefix or use correct header |
+| gRPC vs REST selection | Wrong protocol configured | Use HTTP integration for simplicity |
+| Application server URL | Downlinks fail | Configure correct AS URL for bidirectional flow |
+| Device profile mismatch | Join fails | Ensure device profile matches device configuration |
+| Gateway bridge misconfiguration | No uplinks | Verify gateway bridge points to ChirpStack |
+
+### Sigfox
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Callback URL unreachable | No data received | Ensure ThingsBoard endpoint is publicly accessible |
+| Downlink synchronous timing | Commands delayed | Downlinks only sent after device uplink |
+| Payload size limits | Data truncated | Keep uplink ≤12 bytes, downlink ≤8 bytes |
+| Device type callback scope | Some devices missing | Configure callbacks at correct device type level |
+| Sequence number gaps | Missed messages suspected | Normal behavior; Sigfox doesn't guarantee delivery |
+
+### Device Classes
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Class A downlink timing | Commands never arrive | Queue commands, wait for device uplink window |
+| Class C power consumption | Battery drain | Only use Class C with powered devices |
+| Class B beacon sync | Missed receive windows | Ensure gateway broadcasts beacons |
+
+### Converter Issues
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Base64 vs hex payload | Decode fails | Check network server encoding format |
+| Missing rssi/snr extraction | No RF metadata | Extract from rxInfo array in payload |
+| Timestamp format mismatch | Wrong time displayed | Convert epoch seconds to milliseconds if needed |
+| Null fPort handling | Exceptions thrown | Check for null before accessing fPort |
+
 ## Troubleshooting
 
 | Issue | Possible Cause | Solution |
@@ -423,6 +549,8 @@ Example: lora-0102030405060708
 | Decoder errors | Payload format changed | Update converter for new format |
 | Downlinks not delivered | Class A timing | Wait for device uplink window |
 | Duplicate devices | DevEUI format mismatch | Normalize DevEUI in converter |
+| Authentication failed | Invalid API token | Regenerate token, verify format |
+| Partial data received | Converter exception | Enable debug mode, check for null values |
 
 ## See Also
 

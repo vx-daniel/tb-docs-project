@@ -406,6 +406,47 @@ graph TB
 | Network isolation | Use VPC endpoints where available |
 | Audit logging | Enable cloud provider audit logs |
 
+## Common Pitfalls
+
+### AWS IoT Integration
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| IAM policy too restrictive | Connection or publish fails | Grant `iot:Connect`, `iot:Subscribe`, `iot:Receive`, `iot:Publish` permissions |
+| Certificate not activated | Authentication rejected | Activate certificate in AWS IoT console |
+| Wrong endpoint region | Connection timeout | Use region-specific endpoint (e.g., `xxx.iot.us-east-1.amazonaws.com`) |
+| Thing registry mismatch | Device shadow conflicts | Ensure consistent device naming between platforms |
+| Topic filter too broad | Receiving irrelevant messages | Use specific topic patterns like `devices/+/telemetry` |
+
+### Azure IoT Hub Integration
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Connection string format | Parse error on startup | Use IoT Hub connection string, not device connection string |
+| Consumer group conflicts | Messages not received | Create dedicated consumer group for ThingsBoard |
+| IoT Hub vs IoT Central confusion | Wrong API/protocol | Use IoT Hub for direct integration; IoT Central requires different approach |
+| Shared access policy scope | Permission denied | Use `iothubowner` or policy with ServiceConnect permission |
+| D2C vs C2D message routing | Commands not delivered | Configure message routing for cloud-to-device messages |
+
+### Google Cloud Pub/Sub Integration
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Service account key expired | Authentication fails | Rotate keys regularly, update in integration config |
+| Subscription not pulling | Messages accumulate | Verify subscription exists and is attached to correct topic |
+| IAM roles insufficient | Permission denied | Grant `pubsub.subscriber` and `pubsub.publisher` roles |
+| Acknowledgment timeout | Duplicate messages | Process messages faster or increase ack deadline |
+| Cross-project access | Subscription not found | Ensure service account has access to the project |
+
+### General Cloud Integration
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Rate limiting from cloud provider | Messages dropped | Implement backoff, monitor API quotas |
+| Network latency between regions | High message delay | Deploy ThingsBoard closer to cloud region |
+| Credential expiration | Silent failures | Set up monitoring for credential expiration |
+| Message ordering assumptions | Out-of-order processing | Use timestamps from payload, not arrival time |
+
 ## Troubleshooting
 
 | Issue | Possible Cause | Solution |
@@ -414,6 +455,8 @@ graph TB
 | Authentication failed | Invalid credentials | Regenerate and update certificates/keys |
 | Converter errors | Payload format mismatch | Enable debug mode, check payload structure |
 | High latency | Network/region distance | Deploy integration closer to cloud region |
+| Intermittent disconnects | Network instability | Enable reconnection, check keep-alive settings |
+| Duplicate messages | At-least-once delivery | Implement deduplication in converter or rule chain |
 
 ## See Also
 

@@ -1,6 +1,7 @@
 ---
 name: grpc-expert
 description: Specialist in gRPC protocol, mastering streaming, services, and transport optimization for scalable, high-performance systems.
+allowed-tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"]
 ---
 
 ## Focus Areas

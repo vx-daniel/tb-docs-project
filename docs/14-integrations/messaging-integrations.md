@@ -2,16 +2,105 @@
 
 ## Overview
 
-Messaging integrations connect ThingsBoard to external message brokers and streaming platforms, enabling data ingestion from MQTT brokers, Apache Kafka, RabbitMQ, and Apache Pulsar. These integrations support both consuming messages from external systems and publishing data back, making them ideal for enterprise integration scenarios and stream processing pipelines.
+Messaging integrations connect ThingsBoard to external message brokers, streaming platforms, and HTTP endpoints. These integrations enable data ingestion from MQTT brokers, Apache Kafka, RabbitMQ, Apache Pulsar, and HTTP webhooks. They support both consuming messages from external systems and publishing data back, making them ideal for enterprise integration scenarios and stream processing pipelines.
 
 ## Supported Platforms
 
 | Platform | Protocol | Direction | Use Case |
 |----------|----------|-----------|----------|
+| HTTP | HTTP/HTTPS | Bidirectional | Webhooks, REST APIs |
 | MQTT | MQTT 3.1.1/5.0 | Bidirectional | External MQTT brokers |
 | Apache Kafka | Kafka | Bidirectional | Stream processing |
 | RabbitMQ | AMQP | Bidirectional | Message queuing |
 | Apache Pulsar | Pulsar | Bidirectional | Distributed messaging |
+
+---
+
+## HTTP Integration
+
+HTTP integration receives data via webhooks and can send HTTP requests to external systems.
+
+```mermaid
+graph LR
+    subgraph "External Systems"
+        DEVICES[Devices/Services]
+        API[External API]
+    end
+
+    subgraph "ThingsBoard"
+        INT[HTTP Integration]
+        CONV[Converters]
+        TB[ThingsBoard Platform]
+    end
+
+    DEVICES -->|POST Webhook| INT
+    INT --> CONV
+    CONV --> TB
+    TB --> CONV
+    CONV --> INT
+    INT -->|HTTP Request| API
+```
+
+### Key Configuration
+
+| Parameter | Description |
+|-----------|-------------|
+| Base URL | ThingsBoard server URL |
+| HTTP Endpoint URL | Generated webhook URL for receiving data |
+| Headers filter | Optional security headers for validation |
+| Downlink URL | Target URL for outbound requests |
+
+### Use Cases
+
+- Receive webhooks from third-party services
+- Connect devices with custom HTTP-based protocols
+- Stream data from external IoT platforms
+- Bridge systems that only support HTTP callbacks
+
+### Uplink Converter Example
+
+```javascript
+var data = decodeToJson(payload);
+
+var result = {
+    deviceName: data.deviceId || metadata['deviceName'],
+    deviceType: data.deviceType || 'http-device',
+    telemetry: {
+        temperature: data.temp,
+        humidity: data.hum
+    },
+    attributes: {
+        model: data.model
+    }
+};
+
+return result;
+```
+
+### Downlink Configuration
+
+HTTP integration supports synchronous downlinks. The response to an uplink webhook contains any queued downlink data.
+
+```javascript
+var result = {
+    contentType: "JSON",
+    data: JSON.stringify({
+        command: msg.method,
+        params: msg.params
+    }),
+    metadata: {}
+};
+
+return result;
+```
+
+### Security Options
+
+| Option | Description |
+|--------|-------------|
+| Headers filter | Require specific header values for authentication |
+| HTTPS | Enable TLS encryption for webhook endpoint |
+| IP whitelist | Restrict incoming connections by IP address |
 
 ---
 
@@ -430,6 +519,68 @@ All messaging integrations support encrypted connections:
 
 ---
 
+## Common Pitfalls
+
+### HTTP Integration
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Webhook endpoint unreachable | No data received | Ensure ThingsBoard endpoint is publicly accessible |
+| Missing security headers | Unauthorized requests accepted | Configure headers filter for authentication |
+| Request timeout too short | Failed uplinks | Increase timeout for slow networks |
+| Content-Type mismatch | Payload parsing fails | Ensure sender uses correct Content-Type header |
+| Response status code ignored | Sender retries unnecessarily | Enable "Replace response status from 'No-Content' to 'OK'" |
+| Synchronous downlink timing | Commands never delivered | Understand that downlinks require subsequent uplink |
+
+### MQTT Integration
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Client ID collision | Broker disconnects one client | Use unique client ID per integration |
+| Topic filter too broad | Receiving irrelevant messages | Use specific topic patterns |
+| QoS level mismatch | Message loss or duplication | Match QoS between broker and integration |
+| Clean session enabled | Missed messages during reconnect | Disable clean session for persistence |
+| TLS certificate validation | Connection rejected | Include full certificate chain |
+| Last Will not configured | No disconnect notification | Configure LWT if needed for monitoring |
+
+### Kafka Integration
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Consumer group coordination | Uneven partition assignment | Use consistent group ID, monitor partition balance |
+| Auto offset reset wrong | Missing or duplicate messages | Use "earliest" for replay, "latest" for real-time |
+| Serialization format mismatch | Deserialization errors | Match serializer/deserializer configuration |
+| Schema registry not configured | Avro/Protobuf parsing fails | Configure schema registry URL |
+| Broker connection pool exhaustion | Timeouts under load | Increase connection limits |
+| Offset commit failures | Message reprocessing | Monitor commit success rate |
+
+### RabbitMQ Integration
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Prefetch count too high | Memory exhaustion | Tune prefetch to match processing speed |
+| Exchange type mismatch | Messages not routed | Match exchange type (direct, topic, fanout) |
+| Queue not bound to exchange | Messages lost | Verify queue binding before sending |
+| Dead letter queue not configured | Failed messages lost | Configure DLX for error handling |
+| Connection recovery disabled | Integration stays disconnected | Enable automatic connection recovery |
+
+### Apache Pulsar Integration
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Subscription type wrong | Message distribution issues | Use Shared for multiple consumers |
+| Token authentication expired | Connection fails | Implement token refresh mechanism |
+| Namespace not found | Subscription fails | Verify topic path format |
+
+### General Messaging
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Message ordering assumptions | Out-of-order processing | Use timestamps from payload, not arrival |
+| Poison messages | Consumer stuck | Implement error handling and dead letter |
+| Backpressure not handled | Memory issues | Configure buffer limits and flow control |
+| No retry logic | Transient failures cause data loss | Implement retry with exponential backoff |
+
 ## Troubleshooting
 
 | Issue | Possible Cause | Solution |
@@ -439,6 +590,8 @@ All messaging integrations support encrypted connections:
 | No messages received | Wrong topic/queue | Verify subscription |
 | High latency | Network/batch settings | Tune buffer and batch sizes |
 | Consumer lag | Slow processing | Increase consumers or partitions |
+| Intermittent disconnects | Network instability | Enable reconnection, check keep-alive |
+| Duplicate messages | At-least-once delivery | Implement deduplication logic |
 
 ## See Also
 
