@@ -877,6 +877,135 @@ graph TB
 | Widget debug mode | Data inspection |
 | Console logging | Custom debugging |
 
+## Common Pitfalls
+
+### Widget Lifecycle Management
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| Not unsubscribing from data streams | Memory grows, dashboard slows down | Store subscription references, unsubscribe in onDestroy |
+| Accessing context before initialization | "Cannot read property of undefined" errors | Wait for onInit, check for null/undefined |
+| Missing cleanup in onDestroy | Resources leak, widgets continue processing | Explicitly destroy subscriptions, timers, event listeners |
+| Initialization race conditions | Intermittent widget failures | Use proper lifecycle hooks, don't access services in constructor |
+
+```mermaid
+sequenceDiagram
+    participant Framework
+    participant Widget
+    participant Subscription
+    participant Cleanup
+
+    Framework->>Widget: constructor()
+    Note over Widget: DO: Prepare properties<br/>DON'T: Access services
+
+    Framework->>Widget: onInit()
+    Note over Widget: DO: Create subscriptions<br/>Access context services
+
+    Widget->>Subscription: subscribe()
+    Subscription-->>Widget: data updates
+
+    Framework->>Widget: onDestroy()
+    Widget->>Subscription: unsubscribe()
+    Widget->>Cleanup: Cancel timers
+    Widget->>Cleanup: Remove listeners
+    Note over Widget: Critical: Clean ALL resources
+```
+
+### Data Subscription Issues
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| Creating subscription before alias resolution | Subscription with undefined entity ID | Wait for alias resolution callback |
+| Not handling subscription errors | Widget appears broken with no feedback | Implement error callbacks, show user-friendly message |
+| Requesting raw data for large time windows | Slow loading, browser memory exhaustion | Configure aggregation for time ranges > 1 hour |
+| Missing aggregation configuration | Thousands of datapoints requested | Set appropriate aggregation interval |
+| Duplicate subscriptions | Multiple update messages for same widget | Check if subscription exists before creating |
+
+### Change Detection and Rendering
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| Not triggering change detection after async updates | Data updates but UI doesn't refresh | Call detectChanges() after external data changes |
+| Mutating data objects instead of replacing | UI doesn't update even with new data | Replace entire object/array instead of mutating |
+| Heavy computation in onDataUpdated | UI freezes during data updates | Debounce updates, move computation outside render |
+| Accessing DOM before AfterViewInit | DOM elements undefined | Wait for AfterViewInit to access template elements |
+
+### Widget Context and Service Access
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| Storing context references incorrectly | Lost context after widget operations | Use ctx provided in callbacks, don't cache |
+| Calling services before they're injected | Service undefined errors | Access services only in/after onInit |
+| Not checking for optional services | Errors when features not available | Check if service exists before using |
+| Modifying context shared state | Unexpected side effects in other widgets | Don't mutate context properties |
+
+### Widget Actions and Navigation
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| Actions without entity context | "Entity not found" errors | Pass entity ID/name to action handlers |
+| Missing action source configuration | Actions not appearing in UI | Define action sources in widget type parameters |
+| Circular navigation | Browser history issues | Use state parameters instead of full navigation |
+| Not handling action errors | Failed actions with no user feedback | Implement error handling, show toast notifications |
+
+### Performance and Optimization
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| Not using latest-value mode for current data | Unnecessary historical data fetched | Use latest widget type for current values only |
+| Rendering large datasets without pagination | Slow rendering, browser freeze | Implement virtual scrolling or pagination |
+| Subscribing to unnecessary data keys | Excessive data transfer | Request only keys used in visualization |
+| Not debouncing high-frequency updates | CPU usage spikes | Debounce data updates (e.g., every 500ms) |
+| Memory leaks from retained chart instances | Dashboard memory grows continuously | Destroy chart libraries in onDestroy |
+
+### Custom Widget Development
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| Not defining widget type parameters | Widget doesn't appear in correct category | Implement typeParameters() returning proper configuration |
+| Missing settings schema | No configuration UI for widget | Define settings schema in widget definition |
+| Incorrect resource URL paths | External libraries fail to load | Use absolute URLs or properly resolved relative paths |
+| Not handling missing data | Widget shows error instead of "No Data" | Check data availability, show appropriate empty state |
+| Hardcoded values instead of settings | Widget not reusable | Expose all configurable values in settings schema |
+
+### Widget Configuration
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| Configuration changes not applied | Settings don't take effect | Call updateWidgetParams() after config changes |
+| Missing validation in settings schema | Invalid configuration breaks widget | Add validators to all settings fields |
+| Dependent settings not updating | Changing one setting doesn't update related ones | Subscribe to setting changes, update dependents |
+| Not providing default values | Widget breaks with missing config | Define sensible defaults in widget definition |
+
+### WebSocket and Real-Time Data
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| Not handling connection loss | Data stops updating after network issue | Implement reconnection logic, show connection status |
+| Subscription not recreated on reconnect | Widget doesn't recover after reconnection | Resubscribe with new command ID on reconnection |
+| Command ID not tracked | Can't unsubscribe properly | Store subscription command ID for cleanup |
+| Batching not utilized | Poor performance with many widgets | Let framework batch subscription commands |
+| Updates processed synchronously | UI freezes on rapid updates | Use requestAnimationFrame or batching for updates |
+
+### Data Formatting and Display
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| Not handling null/undefined values | "NaN" or errors displayed | Check for null, provide default value |
+| Missing unit conversion | Values displayed in wrong units | Use unit service for automatic conversion |
+| Incorrect decimal precision | Too many or too few decimal places | Configure decimals based on data magnitude |
+| Timestamp formatting issues | Dates show in wrong timezone | Use date service with user's timezone |
+| Not formatting large numbers | Hard to read values (e.g., 1000000) | Use number formatting with thousands separators |
+
+### Security and Validation
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| Not sanitizing HTML content | XSS vulnerabilities | Use sanitizer service for HTML/URLs |
+| Trusting user input in custom JavaScript | Security vulnerabilities | Validate and sanitize all input |
+| Exposing sensitive data in client | Data leakage | Never include secrets in widget code |
+| Not validating entity IDs | Unauthorized data access | Validate entity IDs before making requests |
+
 ## See Also
 
 - [Angular Architecture](./angular-architecture.md) - Frontend framework

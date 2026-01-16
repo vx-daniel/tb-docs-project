@@ -375,6 +375,9 @@ Configure RPC time-to-live in **Tenant Profile**:
 | No response | Missing RPC Call Reply node | Add node to rule chain |
 | Permission denied | Invalid JWT or wrong device owner | Verify authentication |
 | QUEUED indefinitely | Device never comes online | Check device connectivity |
+| One-way RPC expecting response | Using `callType=oneway` but waiting for device response | Use `callType=twoway` for response-expected RPCs, `oneway` only for fire-and-forget commands (no response will be received) |
+| Persistent RPC expires before PSM wake | `expirationTime` shorter than Power-Saving Mode sleep cycle | Set `expirationTime` to exceed PSM cycle (e.g., 86400000 ms = 24 hours for daily wake). Calculate: `expirationTime = Date.now() + (PSM_sleep_hours * 3600000)` |
+| RPC payload exceeds protocol limit | Large payload exceeds MQTT max message size (default 256 KB) or CoAP limit (1 KB) | Reduce payload size, increase `MQTT_MAX_PAYLOAD_SIZE` in server config, or use file transfer/chunking for large data. CoAP limited to 1KB max |
 
 ## See Also
 

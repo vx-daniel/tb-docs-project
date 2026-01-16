@@ -444,6 +444,134 @@ sequenceDiagram
 
 **Risk:** Partial execution if node completes work after cancellation (e.g., external API called but response ignored).
 
+### No Automatic Dead-Letter Queue
+
+**⚠️ CRITICAL**: ThingsBoard **does not provide automatic dead-letter queue (DLQ) handling**. Failed messages are either:
+- **Lost permanently** (with SKIP strategies)
+- **Retried indefinitely** until max retries exhausted (with RETRY strategies)
+
+Unlike Azure Service Bus or RabbitMQ, there is **no automatic routing** of failed messages to a dead-letter topic.
+
+```mermaid
+graph TB
+    subgraph "What ThingsBoard DOES NOT Have"
+        MSG[Failed Message] -.->|NO automatic routing| DLQ[Dead-Letter Queue]
+    end
+
+    subgraph "Actual Behavior"
+        MSG2[Failed Message]
+        MSG2 -->|SKIP strategies| LOST[Lost Forever]
+        MSG2 -->|RETRY strategies| RETRY[Retry Until Exhausted]
+        RETRY -->|Max retries reached| LOST2[Lost Forever]
+    end
+
+    style DLQ fill:#ffcdd2
+    style LOST fill:#ef5350
+    style LOST2 fill:#ef5350
+```
+
+**Impact:**
+- **No built-in failure analysis**: Cannot review failed messages without custom logging
+- **No automatic recovery**: Failed messages don't queue for manual review
+- **Data loss risk**: Critical messages may be lost without detection
+
+### Implementing Manual Dead-Letter Handling
+
+To implement DLQ functionality, use the **Failure** output of rule nodes:
+
+```mermaid
+graph LR
+    INPUT[Input Message] --> PROC[External REST Call]
+
+    PROC -->|Success| NEXT[Continue Processing]
+    PROC -->|Failure| LOG[Log Node:<br/>Log to DB/File]
+    LOG --> CHECKPOINT[Checkpoint Node]
+    CHECKPOINT --> DLQ[DLQ Queue:<br/>SEQUENTIAL + RETRY_ALL]
+
+    DLQ --> MANUAL[Manual Review UI<br/>or Alert System]
+
+    style PROC fill:#fff3e0
+    style DLQ fill:#e3f2fd
+    style MANUAL fill:#c8e6c9
+```
+
+**Implementation Steps:**
+
+1. **Connect Failure Output**
+   - Every external integration node (REST API, Kafka, MQTT, etc.) has a Failure output
+   - Connect this to logging/DLQ handling chain
+
+2. **Log Failed Message Details**
+   ```
+   [Log Node Configuration]
+   - Log message data: ${msg.data}
+   - Log error: ${error}
+   - Log metadata: ${metadata}
+   ```
+
+3. **Route to DLQ Queue**
+   - Use Checkpoint node to transfer to dedicated DLQ queue
+   - Configure DLQ queue with SEQUENTIAL + RETRY_ALL for maximum reliability
+
+4. **Create DLQ Review Dashboard**
+   - Query logged failures from database
+   - Display message content, error reason, timestamp
+   - Provide "Replay" button to resubmit
+
+**Example Rule Chain for DLQ:**
+
+```yaml
+# DLQ Queue Configuration
+queue:
+  rule-engine:
+    queues:
+      - name: DeadLetterQueue
+        topic: tb_rule_engine.dlq
+        partitions: 1  # Sequential processing for review
+        submit-strategy:
+          type: SEQUENTIAL
+        processing-strategy:
+          type: RETRY_ALL  # Never lose DLQ messages
+          retries: 0  # Infinite retries
+```
+
+**Rule Chain Structure:**
+```
+[Main Queue: BURST + SKIP_ALL_FAILURES]
+    ↓
+[Process Telemetry]
+    ↓
+[External REST Call]
+    ├── Success → [Continue]
+    └── Failure → [Log to DB]
+                      ↓
+                  [Checkpoint to DLQ Queue]
+                      ↓
+        [DLQ Queue: SEQUENTIAL + RETRY_ALL]
+                      ↓
+                [Generate Alert]
+                      ↓
+            [Wait for Manual Review]
+```
+
+**DLQ Review Process:**
+
+1. **Alert on DLQ Messages**: Send notification when messages enter DLQ
+2. **Admin Reviews**: Operator checks error reason in dashboard
+3. **Fix Root Cause**: Correct external service, credentials, etc.
+4. **Replay Messages**: Resubmit from DLQ back to main processing
+5. **Monitor Success**: Verify reprocessed messages succeed
+
+**Alternative: Third-Party DLQ Tools**
+
+For enterprise deployments, consider:
+- **Kafka Connect**: Route failed messages to S3/database
+- **Vector**: Log aggregation with retry capabilities
+- **Custom Service**: Dedicated microservice for failure handling
+
+**Key Takeaway:**
+> ThingsBoard requires **manual DLQ implementation** via rule chain design. Plan failure handling **before** deployment to avoid permanent data loss.
+
 ## Retry Configuration
 
 ### Retry Parameters

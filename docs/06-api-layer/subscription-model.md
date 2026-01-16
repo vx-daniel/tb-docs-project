@@ -703,6 +703,17 @@ On new subscription registration:
 - Hourly cleanup of `entityUpdates` entries older than 1 hour
 - Prevents unbounded growth of timestamp cache
 
+## Common Pitfalls
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| Dashboard slow with many devices (100+) | Creating one V1 TIMESERIES/ATTRIBUTES subscription per device doesn't scale (O(n) overhead) | Use V2 ENTITY_DATA subscription with EntityTypeFilter or DeviceTypeFilter to subscribe to multiple entities (100s) in single subscription (O(1) overhead) |
+| Entity query returns no results | Invalid filter syntax - wrong field names, incorrect operators, or malformed JSON | Use exact entity field names (`name`, `type`, `label`). Valid operators: `EQ`, `NEQ`, `CONTAINS`, `STARTS_WITH`, `ENDS_WITH`. Test filter with REST API `/api/entitiesQuery/find` first |
+| Time-series chart empty after subscribe | Using `latestValues=true` without `historyCmds` only receives future updates, no initial data | Add `historyCmds` array to V2 ENTITY_DATA subscription to fetch initial time range, then receive real-time updates. Or use `startTs`/`timeWindow` in V1 subscriptions |
+| Server memory grows over time | Not unsubscribing when dashboard closed or component unmounted leaves subscriptions active | Send ENTITY_DATA_UNSUBSCRIBE/TIMESERIES_UNSUBSCRIBE command with matching `cmdId` before closing WebSocket or unmounting React/Angular component |
+| Duplicate updates for same telemetry | Multiple overlapping subscriptions to same entity/keys send duplicate data | Consolidate subscriptions - use single V2 subscription instead of multiple V1. Or deduplicate client-side by `(entityId, key, ts)` tuple |
+| Entity count doesn't update immediately | Count subscriptions (ENTITY_COUNT, ALARM_COUNT) poll on interval (default 5 seconds), not real-time | Use ENTITY_DATA subscription and count results client-side for instant updates, or increase poll frequency in tenant profile (trades latency for server load) |
+
 ## See Also
 
 - [WebSocket Overview](./websocket-overview.md) - WebSocket connection details

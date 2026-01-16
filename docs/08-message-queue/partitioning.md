@@ -761,6 +761,326 @@ graph LR
 | High latency per partition | Add partitions, add consumers |
 | Uneven distribution | Check entity ID distribution |
 
+## Common Pitfalls
+
+### Hot Partitions from Skewed Keys
+
+**Problem:** Uneven entity ID distribution causes some partitions to receive disproportionate traffic:
+
+```mermaid
+graph LR
+    subgraph "Skewed Distribution"
+        M1[80% of messages] --> P0[Partition 0]
+        M2[15% of messages] --> P1[Partition 1]
+        M3[5% of messages] --> P2[Partition 2]
+    end
+
+    P0 --> C0[Consumer 0<br/>Overloaded ❌]
+    P1 --> C1[Consumer 1<br/>Underutilized]
+    P2 --> C2[Consumer 2<br/>Underutilized]
+
+    style P0 fill:#ffcdd2
+    style C0 fill:#ef5350
+```
+
+**Causes:**
+- **Sequential entity IDs**: Entities created in order (Device-1, Device-2, Device-3...) may hash similarly
+- **Tenant concentration**: Large tenant with many devices hashing to same partition
+- **Poor hash function**: Non-uniform distribution from hash algorithm
+
+**Impact:**
+- Consumer lag on hot partitions
+- Uneven CPU/memory usage across consumers
+- Reduced overall throughput (bottlenecked by hottest partition)
+
+**Solutions:**
+1. **Use UUIDs for entity IDs**: Random UUIDs distribute uniformly
+2. **Increase partition count**: More partitions dilute hot-spot effect
+3. **Review entity creation patterns**: Avoid sequential or predictable IDs
+4. **Monitor partition sizes**: Alert on >20% deviation from average
+
+### Partition Count Changes Break Ordering
+
+**Problem:** Changing partition count **breaks entity-to-partition mapping**, violating ordering guarantees:
+
+```mermaid
+graph TB
+    subgraph "Before: 3 Partitions"
+        E1[Device ABC] --> |hash % 3 = 0| P0_B[Partition 0]
+        E2[Device XYZ] --> |hash % 3 = 1| P1_B[Partition 1]
+    end
+
+    subgraph "After: 5 Partitions"
+        E1_A[Device ABC] --> |hash % 5 = 2| P2_A[Partition 2]
+        E2_A[Device XYZ] --> |hash % 5 = 4| P4_A[Partition 4]
+    end
+
+    style P0_B fill:#e3f2fd
+    style P2_A fill:#ffcdd2
+    style P1_B fill:#e3f2fd
+    style P4_A fill:#ffcdd2
+```
+
+**Consequences:**
+- **Old messages** for Device ABC in Partition 0
+- **New messages** for Device ABC in Partition 2
+- **Separate consumers** process out of order
+- **Race conditions** if messages overlap during transition
+
+**⚠️ CRITICAL:** Never change partition count for topics requiring ordering guarantees.
+
+**If Partition Change Required:**
+1. **Stop all producers** (maintenance window)
+2. **Drain existing messages** from all partitions
+3. **Change partition count** in configuration
+4. **Restart all services** (producers and consumers)
+5. **Verify clean slate** before resuming production
+
+**Better Approach:** Set partition count conservatively high from the start.
+
+### Consumer Count Exceeding Partition Count
+
+**Problem:** More consumers than partitions leaves idle consumers:
+
+```mermaid
+graph TB
+    subgraph "3 Partitions, 5 Consumers"
+        P0[Partition 0] --> C0[Consumer 0<br/>Active ✓]
+        P1[Partition 1] --> C1[Consumer 1<br/>Active ✓]
+        P2[Partition 2] --> C2[Consumer 2<br/>Active ✓]
+
+        C3[Consumer 3<br/>Idle ⚠️]
+        C4[Consumer 4<br/>Idle ⚠️]
+    end
+
+    style C3 fill:#fff3e0
+    style C4 fill:#fff3e0
+```
+
+**Impact:**
+- **Wasted resources**: Idle consumers consume memory/CPU but do no work
+- **False capacity**: Appears to have 5 consumers but effective capacity is 3
+- **Misleading scaling**: Adding more consumers doesn't increase throughput
+
+**Solution:**
+- **Max consumers = partition count** for optimal utilization
+- If scaling needed, increase partitions **first**, then add consumers
+- Monitor partition assignment to detect idle consumers
+
+### Null Message Keys Cause Round-Robin Distribution
+
+**Problem:** Messages without keys bypass entity-based partitioning:
+
+```mermaid
+graph LR
+    M1[Message<br/>key=null] --> |Round-robin| P0[Partition 0]
+    M2[Message<br/>key=null] --> |Round-robin| P1[Partition 1]
+    M3[Message<br/>key=null] --> |Round-robin| P2[Partition 2]
+    M4[Message<br/>key=Device1] --> |hash| P1
+
+    style M1 fill:#fff3e0
+    style M2 fill:#fff3e0
+    style M3 fill:#fff3e0
+```
+
+**Consequences:**
+- **No ordering**: Successive messages for same entity go to different partitions
+- **Unpredictable routing**: Cannot determine where message will land
+- **Consumer coordination issues**: Multiple consumers may process same entity concurrently
+
+**When This Happens:**
+- Message created without entity ID
+- Null entity in message metadata
+- System-level messages (not entity-specific)
+
+**Solution:**
+- **Always set entity ID** for device/asset/customer messages
+- Use system entity ID for broadcast messages (intended behavior)
+- Validate message keys in producers
+
+### Rebalancing During High Load
+
+**Problem:** Consumer crashes during peak traffic triggers rebalancing, amplifying load:
+
+```mermaid
+sequenceDiagram
+    participant C1 as Consumer 1
+    participant C2 as Consumer 2
+    participant C3 as Consumer 3
+    participant K as Kafka
+
+    Note over C1,C3: Peak traffic: 100K msg/sec
+
+    C1->>K: Process messages...
+    Note over C1: Crashes (OOM)
+
+    Note over K: Rebalancing...
+    K->>C2: Reassign P0,P1 to Consumer 2
+    K->>C3: Reassign P2,P3 to Consumer 3
+
+    Note over C2: Load doubles!
+    C2->>K: Process...
+    Note over C2: Overloaded, crashes
+
+    Note over K: Cascade failure!
+```
+
+**Cascade Effect:**
+1. One consumer crashes under load
+2. Remaining consumers get more partitions
+3. Increased load causes more crashes
+4. Spiral continues until system-wide failure
+
+**Prevention:**
+- **Provision headroom**: Size consumers for 150% peak load
+- **Increase rebalance timeout**: Give consumers time to stabilize
+- **Monitor consumer health**: Alert before OOM/CPU saturation
+- **Graceful degradation**: Use SKIP_ALL_FAILURES during incidents
+
+### Partition Strategy Mismatch
+
+**Problem:** Changing partition strategy mid-stream causes confusion:
+
+| Original Strategy | New Strategy | Impact |
+|-------------------|--------------|--------|
+| Entity ID hash | Tenant ID hash | Same entity goes to different partition |
+| Entity ID hash | Round-robin | No ordering guarantees |
+| Tenant ID hash | Entity ID hash | Tenant spread across all partitions |
+
+**Example Scenario:**
+```yaml
+# Original configuration
+partitioning:
+  strategy: ENTITY_ID_HASH
+
+# Changed to
+partitioning:
+  strategy: TENANT_ID_HASH
+```
+
+**Result:**
+- Device ABC (old messages) → Partition based on entity ID hash
+- Device ABC (new messages) → Partition based on tenant ID hash
+- **Ordering broken** for Device ABC
+
+**Solution:** Partition strategy is **immutable** for a topic. To change:
+1. Create new topic with new strategy
+2. Migrate consumers to new topic
+3. Deprecate old topic after drain
+
+### Race Conditions with Burst Submit Strategy
+
+**Problem:** BURST strategy submits all messages to rule engine in parallel, causing race conditions for state updates:
+
+```mermaid
+sequenceDiagram
+    participant Q as Queue (same partition)
+    participant RE as Rule Engine
+    participant DB as Database
+
+    Q->>RE: Message 1: counter = 5
+    Q->>RE: Message 2: counter = 5 (parallel!)
+
+    par Parallel Processing
+        RE->>DB: UPDATE counter = 5 + 1
+    and
+        RE->>DB: UPDATE counter = 5 + 1
+    end
+
+    Note over DB: Final value: 6<br/>Expected: 7<br/>❌ Lost update!
+```
+
+**When This Happens:**
+- Counter increments
+- Balance calculations
+- State machine transitions
+- Any read-modify-write operations
+
+**Solution:** Use `SEQUENTIAL_BY_ORIGINATOR` for stateful operations:
+```yaml
+queue:
+  rule-engine:
+    queues:
+      - name: CounterQueue
+        submit-strategy:
+          type: SEQUENTIAL_BY_ORIGINATOR  # Enforces ordering per entity
+```
+
+### Isolated Tenant Partition Starvation
+
+**Problem:** Isolated tenant assigned to partition with no active consumers:
+
+```mermaid
+graph TB
+    subgraph "Isolated Tenant Configuration"
+        IT[Isolated Tenant A<br/>Assigned to Partitions 10-12]
+    end
+
+    subgraph "Rule Engine Services"
+        RE1[Rule Engine 1<br/>Consumes P0-P4]
+        RE2[Rule Engine 2<br/>Consumes P5-P9]
+        RE3[Rule Engine 3<br/>Offline ❌]
+    end
+
+    IT -.-> |P10-P12| RE3
+
+    Note1[No active consumer<br/>for Tenant A messages!]
+
+    style IT fill:#ffcdd2
+    style RE3 fill:#ef5350
+```
+
+**Impact:**
+- Tenant's messages queue indefinitely
+- Appears as service outage for that tenant
+- Other tenants unaffected (isolated)
+
+**Detection:**
+- Monitor partition lag by tenant
+- Alert on consumer assignment gaps
+- Track service health per partition range
+
+**Prevention:**
+- Ensure sufficient services for isolated partitions
+- Use auto-scaling tied to partition count
+- Health-check isolated tenant processing
+
+### Cross-Partition Message Ordering Impossible
+
+**Problem:** Messages split across partitions cannot be ordered:
+
+```mermaid
+graph TB
+    E1[Event 1<br/>Device A<br/>09:00:00] --> P0[Partition 0]
+    E2[Event 2<br/>Device B<br/>09:00:01] --> P1[Partition 1]
+    E3[Event 3<br/>Device A<br/>09:00:02] --> P0[Partition 0]
+
+    P0 --> C0[Consumer 0]
+    P1 --> C1[Consumer 1]
+
+    C0 --> R1[Processes E1, E3]
+    C1 --> R2[Processes E2]
+
+    Note[No guaranteed order<br/>between E2 and E3]
+
+    style Note fill:#fff3e0
+```
+
+**Reality:**
+- **Within partition**: Strict ordering guaranteed
+- **Across partitions**: No ordering guaranteed
+- **Between entities**: No ordering guaranteed
+
+**Implications:**
+- Cannot enforce "all events for tenant in order"
+- Cross-device ordering requires external coordination
+- Time-based ordering needs timestamp correlation
+
+**Workarounds:**
+- Use same entity ID for related events (forces same partition)
+- Implement external sequencing via database
+- Accept eventual consistency for cross-entity operations
+
 ## Troubleshooting
 
 ### Common Issues

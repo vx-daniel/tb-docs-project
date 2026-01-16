@@ -679,6 +679,181 @@ graph TB
 - Monitor for connection storms
 - Set up alerting on error rates
 
+## Common Pitfalls
+
+### MQTT Connection Limit Exhaustion
+
+**Problem:** Transport reaches OS file descriptor limit, rejecting new connections.
+
+**Detection:**
+- Logs: "Too many open files" errors
+- MQTT clients can't connect despite service running
+- `netstat -an | wc -l` shows high count
+
+**Solution:**
+```bash
+# Check current limits
+ulimit -n
+
+# Increase in systemd service
+[Service]
+LimitNOFILE=65536
+```
+
+Per-transport capacity:
+- MQTT: 1 connection = 2-3 file descriptors
+- HTTP: Transient connections, lower impact
+- Max connections = (File descriptor limit / 3) × 0.8
+
+**Horizontal Scaling:**
+Deploy multiple MQTT transports with connection limit per instance.
+
+### MQTT Session State Lost
+
+**Problem:** Device sessions not persisted across transport restarts.
+
+**Detection:**
+- Devices must re-subscribe after transport restart
+- QoS 1/2 messages lost during restart
+- Session state doesn't survive failures
+
+**Solution:**
+- **Note:** ThingsBoard MQTT transport is stateless by design
+- Sessions recreated on reconnect (clean session model)
+- For persistent sessions: Use external MQTT broker with bridge
+
+**Workaround:** Configure devices with `cleanSession=true` and reconnect logic.
+
+### CoAP UDP Packet Loss
+
+**Problem:** CoAP messages dropped due to network congestion or buffer overflow.
+
+**Detection:**
+- Telemetry gaps in time-series data
+- Devices report success but data missing in platform
+- Network statistics show UDP drops
+
+**Solution:**
+```yaml
+coap:
+  piggyback_timeout: 1000  # Increase response window
+  paging_transmission_window: 15000  # Larger batch window
+```
+
+**Network Tuning:**
+```bash
+# Increase UDP receive buffer
+sysctl -w net.core.rmem_max=26214400
+sysctl -w net.core.rmem_default=26214400
+```
+
+### HTTP Transport Thread Starvation
+
+**Problem:** Tomcat NIO connector thread pool exhausted under high load.
+
+**Detection:**
+- HTTP 503 errors during load spikes
+- Slow response times (> 5s)
+- Thread dump shows all threads busy
+
+**Solution:**
+```yaml
+server:
+  tomcat:
+    threads:
+      max: 500  # Increase from default 200
+      min-spare: 50
+```
+
+Thread sizing: `(Peak requests/sec) × (Avg response time) × 2`
+
+### LwM2M Bootstrap Failures
+
+**Problem:** Devices fail to bootstrap, unable to register with platform.
+
+**Detection:**
+- Logs: "Bootstrap request failed"
+- Devices stuck in bootstrap mode
+- DTLS handshake failures
+
+**Common Causes:**
+
+| Issue | Detection | Solution |
+|-------|-----------|----------|
+| Wrong bootstrap server URL | Device connects to wrong port | Verify bootstrap port 5686 vs server port 5685 |
+| Certificate mismatch | DTLS errors | Ensure bootstrap credentials match device config |
+| Timeout too short | Bootstrap incomplete | Increase `timeout: 180000` (3 minutes) |
+
+### Gateway Device Multiplexing Overload
+
+**Problem:** Single gateway handles too many child devices, causing performance issues.
+
+**Detection:**
+- Gateway telemetry delayed
+- Some child devices not updating
+- Gateway CPU/memory high
+
+**Solution:**
+
+| Gateway Load | Recommendation |
+|--------------|----------------|
+| < 50 devices | Single gateway OK |
+| 50-200 devices | Monitor performance |
+| > 200 devices | Split across multiple gateways |
+
+Configure gateway limits:
+```yaml
+gateway:
+  max_devices_per_gateway: 200
+  session_report_timeout: 30000
+```
+
+### Protocol-Specific Load Balancer Misconfiguration
+
+**Problem:** Load balancer doesn't handle protocol requirements correctly.
+
+**MQTT Requirements:**
+```
+# HAProxy MQTT backend
+backend tb-mqtt-backend
+    mode tcp  # Critical: must be TCP mode
+    balance leastconn  # Sticky to instance
+    option tcp-check
+    server mqtt1 tb-mqtt-1:1883 check inter 5s
+```
+
+**HTTP Requirements:**
+```
+backend tb-http-backend
+    mode http
+    balance roundrobin  # No stickiness needed
+    option httpchk GET /health
+```
+
+**UDP Protocols (CoAP, LwM2M):**
+- Use layer 4 load balancer or DNS round-robin
+- No session affinity possible with UDP
+
+### Rate Limiting Not Enforced Per Device
+
+**Problem:** Single misbehaving device floods transport with messages.
+
+**Detection:**
+- High message rate from specific device
+- Queue lag increases
+- Other devices experience delays
+
+**Solution:**
+```yaml
+transport:
+  rate_limits:
+    enabled: true
+    tenant: "1000:60"  # 1000 msg/min per tenant
+    device: "100:60"  # 100 msg/min per device
+```
+
+Implement exponential backoff for exceeded limits.
+
 ## See Also
 
 - [Microservices Overview](./README.md) - Architecture overview

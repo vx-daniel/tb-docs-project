@@ -417,6 +417,9 @@ Shows alarm count with configurable filters for severity and status.
 | Alarm noise | Threshold too sensitive | Use duration/repeating conditions |
 | Missing alarms | Propagation disabled | Enable alarm propagation |
 | Slow dashboard | Too many alarms | Add filters, increase TTL cleanup |
+| Alarm still active after acknowledge | Acknowledge means "seen", not "resolved" | Use Acknowledge (`POST /api/alarm/{id}/ack`) to mark seen, Clear (`POST /api/alarm/{id}/clear`) to mark resolved. State: ACTIVE_ACK → CLEARED_ACK |
+| Can't clear propagated alarm from parent | Propagated alarms are read-only copies on parent entities | Clear alarm on originating device entity (`POST /api/alarm/{id}/clear`), it will auto-clear on parent entities via propagation |
+| Wrong alarm status filter returns no results | Using `status=ACTIVE` query parameter instead of `searchStatus=ACTIVE` | Use `searchStatus` for broad filter (ACTIVE includes ACTIVE_UNACK + ACTIVE_ACK), `status` for exact status match (e.g., `status=ACTIVE_UNACK`) |
 
 ## See Also
 

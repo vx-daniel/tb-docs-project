@@ -807,9 +807,25 @@ security.claim.allowClaimingByDefault: false
 
 7. **Session Monitoring**: Monitor for suspicious session patterns
 
+## Common Pitfalls
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| Token expired mid-request | Access token expires during operation (2.5 hour lifetime by default) | Refresh token 5-10 minutes before expiry, implement retry with refresh on 401 response |
+| 401 despite valid token | JWT sent without "Bearer " prefix in Authorization header | Use `Authorization: Bearer $TOKEN` OR `X-Authorization: $TOKEN` (without Bearer) - both formats supported |
+| Logged out after 2.5 hours | Only access token stored, refresh token discarded | Store both tokens securely, implement token refresh flow before access token expiry (default: 9000 seconds) |
+| Token still valid after logout | JWT is stateless, logout endpoint only invalidates server-side cache | Call `/api/auth/logout` endpoint, then clear client storage. Token invalid on next request after cache sync (seconds) |
+| OAuth2 redirect fails | Registered redirect URI doesn't match callback URL exactly | Ensure exact match including protocol, domain, port, path in OAuth2 provider config and ThingsBoard client registration |
+| 2FA lockout after device reset | TOTP secret lost, backup codes not saved during setup | Always save backup codes during 2FA setup, store securely offline. Use `/api/noauth/resetPasswordByEmail` if locked out |
+| Custom user data missing in token | JWT only includes fixed claims (userId, scopes, tenantId, firstName, lastName) | Custom attributes not in token - fetch via `/api/user/{id}` endpoint or store in client after login |
+| API key exposed in logs | Full request headers logged including Authorization header | Use API keys only via HTTPS, rotate immediately if exposed, configure log sanitization to mask Authorization headers |
+| Refresh token also expired | After 7 days (default 604800 seconds), refresh token expires | No "refresh the refresh token" - client must re-authenticate with username/password. Monitor refresh token exp claim to warn users |
+| Wrong X-Authorization format | Using `X-Authorization: Bearer $TOKEN` instead of `X-Authorization: $TOKEN` | ThingsBoard's X-Authorization header doesn't use Bearer prefix: use `X-Authorization: $TOKEN` (raw token only) |
+
 ## See Also
 
 - [REST API Overview](./rest-api-overview.md) - API structure and patterns
 - [Device API](./device-api.md) - Device authentication
 - [WebSocket Overview](./websocket-overview.md) - Real-time authentication
 - [Security Architecture](../09-security/authentication.md) - Platform security details
+- Official: [OAuth 2.0 Support](https://thingsboard.io/docs/user-guide/oauth-2-support/) - OAuth2 provider configuration

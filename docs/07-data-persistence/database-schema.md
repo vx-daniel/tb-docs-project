@@ -894,9 +894,9 @@ CREATE INDEX idx_ts_kv_entity_key ON ts_kv(entity_id, key, ts DESC);
 | maintenance_work_mem | 512MB | Maintenance operations |
 | effective_cache_size | 75% RAM | Query planner hint |
 
-### Connection Pooling (HikariCP)
+### Connection Pooling
 
-ThingsBoard uses HikariCP for connection pooling:
+ThingsBoard uses HikariCP connection pooling for efficient database connection management:
 
 | Property | Default | Description |
 |----------|---------|-------------|
@@ -918,13 +918,12 @@ spring.datasource.events:
 
 ### Custom PostgreSQL Dialect
 
-ThingsBoard uses a custom Hibernate dialect with additional functions:
+ThingsBoard uses a custom Hibernate dialect providing additional database functions:
 
-```
-ThingsboardPostgreSQLDialect
-  - ilike() function for case-insensitive search
-  - order_by.default_null_ordering: last
-```
+- **Case-insensitive search**: `ilike()` function for pattern matching
+- **NULL ordering**: Default NULL values ordered last in result sets
+
+**Reference**: `ThingsboardPostgreSQLDialect` implementation
 
 ### TimescaleDB Configuration
 
@@ -1037,13 +1036,9 @@ sequenceDiagram
 
 ### Time-Series Latest Caching
 
-Redis-backed latest time-series values with cache-aside pattern:
+Latest time-series values are cached in Redis using a cache-aside pattern with version tracking for invalidation. Cache statistics (hit/miss ratios) are tracked for monitoring effectiveness.
 
-```
-CachedRedisSqlTimeseriesLatestDao
-  - VersionedTbCache<TsLatestCacheKey, TsKvEntry>
-  - Stats tracking: hit/miss counters
-```
+**Reference**: `CachedRedisSqlTimeseriesLatestDao` implementation
 
 ## Best Practices
 
@@ -1060,6 +1055,331 @@ CachedRedisSqlTimeseriesLatestDao
 6. **Vacuum Strategy**: Configure autovacuum for tables with high update frequency.
 
 7. **Cache Strategy**: Use Redis for distributed caching, Caffeine for local.
+
+## Common Pitfalls
+
+| Pitfall | Symptom | Cause | Solution | Prevention |
+|---------|---------|-------|----------|------------|
+| Missing tenant_id in queries | Slow queries, full table scans, potential data leakage | Index not utilized without tenant scope | Add tenant_id as first predicate in WHERE clause | Code review for tenant isolation, query linter |
+| Optimistic locking ignored | Lost updates, data inconsistency | Direct SQL bypasses version check | Include version field in UPDATE with row count validation | Use ORM @Version, API-level enforcement |
+| JSON column performance | Slow JSONB queries, high CPU | Missing functional indexes on extracted paths | CREATE INDEX on frequently queried JSON expressions | Profile queries before production, add indexes proactively |
+| Foreign keys on partitioned tables | Partition attach/detach failures | PostgreSQL restriction on partitioned table FKs | Use application-level referential integrity checks | Document FK alternatives, validate in code |
+| Unique constraints without tenant | Cross-tenant collisions, data corruption | Missing tenant_id in unique index definition | CREATE UNIQUE INDEX (tenant_id, column) | Schema review process, multi-tenant checklist |
+| Time-series key dictionary bloat | Millions of dictionary entries, memory pressure | Random or dynamic key names per message | Standardize key names, validate at ingestion | Key naming convention, input validation |
+| Cascade delete timeout | DELETE operations hang, transaction timeouts | Too many dependent rows in single transaction | Batch delete with commits, async cleanup workers | Limit cascade depth, use soft deletes |
+| Migration NOT NULL failures | Deployment failures on live data | Adding NOT NULL constraint to populated column | Three-phase migration: nullable → backfill → add constraint | Test migrations on production-sized datasets |
+
+### Detailed Examples
+
+#### Missing tenant_id in Queries
+
+**Problem**: Queries without `tenant_id` in the WHERE clause perform full table scans instead of using indexes, resulting in slow response times (5+ seconds) and potential cross-tenant data leakage.
+
+**Why It Happens**:
+- Multi-tenant tables have composite indexes starting with `tenant_id`
+- PostgreSQL query planner cannot use tenant-scoped indexes when `tenant_id` is absent
+- Single-tenant development environments don't expose this issue
+
+**Detection**:
+
+```sql
+-- Bad query (without tenant_id)
+EXPLAIN ANALYZE
+SELECT * FROM device WHERE name = 'sensor1';
+
+-- Output showing full scan:
+-- Seq Scan on device  (cost=0.00..17234.56 rows=1 width=512)
+--   (actual time=234.567..2341.234 rows=1 loops=1)
+-- Filter: ((name)::text = 'sensor1'::text)
+-- Rows Removed by Filter: 124567
+-- Execution Time: 2341.456 ms
+
+-- Good query (with tenant_id)
+EXPLAIN ANALYZE
+SELECT * FROM device
+WHERE tenant_id = '1e7b5c10-5c02-4c6f-8e5a-0b5c5c5c5c5c'
+  AND name = 'sensor1';
+
+-- Output showing index scan:
+-- Index Scan using device_name_unq_key on device
+--   (cost=0.42..8.44 rows=1 width=512) (actual time=0.123..0.125 rows=1 loops=1)
+-- Index Cond: ((tenant_id = '...'::uuid) AND ((name)::text = 'sensor1'::text))
+-- Execution Time: 0.167 ms  (14,000x faster!)
+```
+
+Find queries missing tenant_id:
+```sql
+-- Check for sequential scans on multi-tenant tables
+SELECT schemaname, tablename, seq_scan, seq_tup_read, idx_scan
+FROM pg_stat_user_tables
+WHERE tablename IN ('device', 'asset', 'customer', 'dashboard')
+  AND seq_scan > 100
+ORDER BY seq_tup_read DESC;
+```
+
+**Solution**:
+
+Always include tenant_id first in WHERE clauses:
+```sql
+-- Correct pattern
+SELECT d.id, d.name, d.type, d.label
+FROM device d
+WHERE d.tenant_id = ?
+  AND d.name = ?
+  AND d.customer_id = ?;
+```
+
+**Prevention**:
+- Add query linter to catch missing tenant_id
+- Use repository pattern that enforces tenant scope
+- Monitor slow query log for sequential scans
+
+#### Optimistic Locking Conflicts Ignored
+
+**Problem**: Concurrent updates silently overwrite each other without conflict detection, leading to lost updates. Users report "my changes disappeared" after saving.
+
+**Why It Happens**:
+- Direct SQL updates bypass version check mechanism
+- Missing row count checks after UPDATE
+- Bulk update operations skip version validation
+
+**Detection**:
+
+Check for version gaps indicating lost updates:
+```sql
+-- Detect suspicious version progression
+SELECT id, name, version
+FROM device
+WHERE version > 100  -- High version numbers
+ORDER BY version DESC;
+
+-- Monitor for missing OptimisticLockException in logs
+-- If count = 0 in concurrent environment, locking not enforced
+```
+
+**Anti-Pattern**:
+```sql
+-- ❌ BAD: Ignores version field
+UPDATE device
+SET name = 'Updated Name', label = 'New Label'
+WHERE id = 'device-uuid';
+```
+
+**Correct Pattern**:
+```sql
+-- ✅ GOOD: Atomic version check and increment
+UPDATE device
+SET name = 'Updated Name',
+    label = 'New Label',
+    version = version + 1
+WHERE id = 'device-uuid'
+  AND version = 5;  -- Expected current version
+
+-- Check affected rows (pseudo-code)
+-- IF rowCount = 0 THEN
+--   RAISE 'Optimistic lock failure: entity modified'
+```
+
+**Solution**:
+
+Application-level enforcement:
+```java
+// JPA/Hibernate automatic handling
+@Entity
+public class Device {
+    @Version  // Automatic optimistic locking
+    private Long version;
+}
+
+// On conflict, throws OptimisticLockException
+```
+
+REST API pattern:
+```http
+PUT /api/device/{id}
+If-Match: "5"  # ETag with version
+
+# Response on conflict:
+HTTP/1.1 409 Conflict
+{"error": "Device was modified by another user"}
+```
+
+**Prevention**:
+- Use ORM @Version annotation
+- Validate row count after UPDATE
+- Add integration tests for concurrent updates
+
+#### JSON Column Performance Traps
+
+**Problem**: Queries filtering on JSONB column fields execute slowly (> 500ms) despite small result sets, causing dashboard timeouts.
+
+**Why It Happens**:
+- Standard B-tree indexes don't support JSON path expressions
+- Query planner performs sequential scan to evaluate JSON extraction
+
+**Detection**:
+
+```sql
+-- Find profiles with MQTT transport
+EXPLAIN ANALYZE
+SELECT id, name, profile_data
+FROM device_profile
+WHERE tenant_id = '1e7b5c10-5c02-4c6f-8e5a-0b5c5c5c5c5c'
+  AND profile_data->'configuration'->'transportConfiguration'->>'type' = 'MQTT';
+
+-- Bad output (no index):
+-- Seq Scan on device_profile  (cost=0.00..234.56 rows=10)
+--   Filter: ((profile_data -> 'configuration'...) = 'MQTT')
+-- Execution Time: 456.912 ms
+```
+
+Check for missing JSON indexes:
+```sql
+-- Find JSONB columns without functional indexes
+SELECT t.tablename, a.attname as column_name,
+       COUNT(i.indexrelid) as index_count
+FROM pg_tables t
+JOIN pg_attribute a ON a.attrelid = t.tablename::regclass
+LEFT JOIN pg_index i ON i.indrelid = a.attrelid
+WHERE t.schemaname = 'public'
+  AND a.atttypid = 'jsonb'::regtype
+GROUP BY t.tablename, a.attname
+HAVING COUNT(i.indexrelid) = 0;
+```
+
+**Solution**:
+
+Create functional index on JSON path:
+```sql
+-- Index on frequently queried JSON path
+CREATE INDEX idx_device_profile_transport_type
+ON device_profile ((profile_data->'configuration'->'transportConfiguration'->>'type'));
+
+-- Verify index usage
+EXPLAIN ANALYZE
+SELECT id, name FROM device_profile
+WHERE profile_data->'configuration'->'transportConfiguration'->>'type' = 'MQTT';
+
+-- Good output (with index):
+-- Bitmap Index Scan on idx_device_profile_transport_type
+-- Execution Time: 0.578 ms  (800x faster!)
+```
+
+GIN index for containment queries:
+```sql
+-- For JSON key existence or containment
+CREATE INDEX idx_device_profile_data_gin
+ON device_profile USING GIN (profile_data jsonb_path_ops);
+
+-- Enables fast containment queries
+SELECT * FROM device_profile
+WHERE profile_data @> '{"configuration": {"transportConfiguration": {"type": "MQTT"}}}';
+```
+
+**Prevention**:
+- Profile queries against JSONB columns in staging
+- Add functional indexes for paths queried > 10 times/sec
+- Monitor index usage with `pg_stat_user_indexes`
+
+#### Foreign Keys on Partitioned Tables
+
+**Problem**: `ALTER TABLE ... ATTACH PARTITION` fails with foreign key constraint errors.
+
+**Cause**: PostgreSQL restrictions on foreign keys referencing partitioned tables.
+
+**Solution**:
+```sql
+-- Instead of FK constraint:
+-- CONSTRAINT fk_device_profile FOREIGN KEY (device_profile_id)
+--   REFERENCES device_profile(id)
+
+-- Use CHECK constraint + application validation
+ALTER TABLE device
+ADD CONSTRAINT check_profile_exists
+CHECK (device_profile_id IS NOT NULL);
+
+-- Validate profile exists in application before device insert
+```
+
+#### Unique Constraints Without Tenant Scope
+
+**Problem**: Unique constraint allows duplicate values across tenants, or prevents legitimate duplicates within tenant.
+
+**Solution**:
+```sql
+-- ❌ BAD: Missing tenant_id
+CREATE UNIQUE INDEX device_name_unq ON device (name);
+
+-- ✅ GOOD: Scoped to tenant
+CREATE UNIQUE INDEX device_name_unq_key ON device (tenant_id, name);
+```
+
+#### Time-Series Key Dictionary Bloat
+
+**Problem**: `ts_kv_dictionary` grows to millions of entries, consuming excessive memory.
+
+**Cause**: Dynamic key names like `temp_${timestamp}` create unique entries.
+
+**Solution**:
+- Standardize key names: `temperature`, `humidity`, `pressure`
+- Validate keys at ingestion using whitelist
+
+```sql
+-- Monitor dictionary size
+SELECT count(*) as key_count,
+       pg_size_pretty(pg_total_relation_size('ts_kv_dictionary'))
+FROM ts_kv_dictionary;
+
+-- Alert if count > 10,000
+```
+
+#### Cascade Delete Timeout
+
+**Problem**: `DELETE FROM tenant WHERE id = ?` hangs or times out.
+
+**Cause**: CASCADE deletes trigger millions of dependent row deletions in single transaction.
+
+**Solution**:
+
+Batch delete with checkpoints:
+```sql
+-- Delete in batches to avoid timeout
+DO $$
+DECLARE
+    batch_size INT := 10000;
+    deleted INT;
+BEGIN
+    LOOP
+        DELETE FROM device
+        WHERE id IN (
+            SELECT id FROM device
+            WHERE tenant_id = 'tenant-to-delete'
+            LIMIT batch_size
+        );
+
+        GET DIAGNOSTICS deleted = ROW_COUNT;
+        EXIT WHEN deleted = 0;
+
+        COMMIT;  -- Checkpoint after each batch
+    END LOOP;
+END $$;
+```
+
+#### Migration NOT NULL Failures
+
+**Problem**: `ALTER TABLE device ADD COLUMN new_col VARCHAR(255) NOT NULL` fails on populated table.
+
+**Solution**: Three-phase migration:
+```sql
+-- Phase 1: Add nullable column (deploy)
+ALTER TABLE device ADD COLUMN new_col VARCHAR(255);
+
+-- Phase 2: Backfill data (background job)
+UPDATE device SET new_col = 'default_value' WHERE new_col IS NULL;
+
+-- Phase 3: Add NOT NULL constraint (deploy)
+ALTER TABLE device ALTER COLUMN new_col SET NOT NULL;
+```
 
 ## See Also
 

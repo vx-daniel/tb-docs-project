@@ -386,36 +386,39 @@ Serialization: JSON
 
 ## Serialization Strategies
 
+Cache entries must be serialized to byte arrays for storage. ThingsBoard uses two strategies optimized for different data types:
+
 ### JSON Serialization (Default)
 
-```java
-// TbJsonRedisSerializer
-byte[] serialize(T value) {
-    return JacksonUtil.writeValueAsBytes(value);
-}
+Most entities use JSON serialization for:
+- **Human-readable format**: Easy debugging and inspection
+- **Schema flexibility**: Handles complex nested structures
+- **Backward compatibility**: Field additions don't break existing cached data
 
-T deserialize(K key, byte[] bytes) {
-    return JacksonUtil.fromBytes(bytes, clazz);
-}
-```
+**Process**:
+1. Convert entity to JSON representation
+2. Serialize to UTF-8 byte array
+3. Store in cache with compression
 
-Used for: User, Customer, Edge, most entities
+Used for: User, Customer, Edge, and most domain entities
+
+**Reference**: `TbJsonRedisSerializer` uses Jackson library for JSON processing
 
 ### Protocol Buffer Serialization
 
-```java
-// ProtoUtils for Device
-byte[] serialize(Device device) {
-    return ProtoUtils.toProto(device).toByteArray();
-}
+High-frequency data uses Protocol Buffers for:
+- **Compact size**: 30-50% smaller than JSON
+- **Fast serialization**: Binary format avoids parsing overhead
+- **Type safety**: Schema-defined message structure
 
-// KvProtoUtil for TsKvEntry
-byte[] serialize(TsKvEntry entry) {
-    return KvProtoUtil.toTsKvProto(entry).toByteArray();
-}
-```
+**Process**:
+1. Map entity fields to Protocol Buffer message
+2. Serialize to binary format
+3. Store in cache
 
-Used for: Device, Time-series entries
+Used for: Device entities and time-series entries (high read/write volume)
+
+**Reference**: `ProtoUtils` and `KvProtoUtil` provide entity-to-protobuf conversion
 
 ### Benefits Comparison
 

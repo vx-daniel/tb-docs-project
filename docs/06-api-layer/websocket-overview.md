@@ -833,6 +833,19 @@ max_binary_message_buffer: 32768  # 32KB
 
 8. **Connection Health**: Monitor for ping timeouts and reconnect proactively.
 
+## Common Pitfalls
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| Connection closes immediately after opening | JWT token not sent within 10 seconds of connection (auth_timeout_ms) | Send AUTH command immediately after connection opens, or include `?token=JWT` in WebSocket URL |
+| Wrong data received for subscription | Reusing cmdId for different subscriptions causes data to route to wrong handler | Use unique `cmdId` for each subscription (increment counter), never reuse IDs even after unsubscribe |
+| No data despite valid subscription | Entity alias used without proper resolution, or subscription to non-existent entity | Use entity ID directly in subscriptions, or resolve alias via `entityAliasId` mapping first. Verify entity exists via REST API |
+| No updates after network interruption | Subscriptions cleared on disconnect, not automatically restored on reconnection | Detect disconnect event (`onclose`), reconnect WebSocket, resubscribe to all previous subscriptions with new cmdIds |
+| Updates received out of order | WebSocket doesn't guarantee ordered delivery across different subscriptions | Use `ts` timestamp field to detect stale updates, implement client-side ordering by timestamp for time-series data |
+| New subscriptions silently fail | Max 1000 messages in outbound queue (max_queue_messages_per_session) exceeded | Unsubscribe unused subscriptions before adding new ones, use V2 entity queries instead of many V1 subscriptions, monitor queue depth |
+| Missing updates during high-frequency data | Per-session rate limiting drops messages when update rate exceeds limit | Reduce telemetry frequency at source, use server-side aggregation (avg, min, max), increase rate limits in Tenant Profile, or use REST API polling for high-frequency data |
+| Connection drops after 30 seconds of inactivity | Server ping/pong keep-alive detects stale connection (ping_timeout=30s, 3 missed pongs) | Ensure WebSocket client responds to ping frames automatically (most libraries do), or send periodic commands to keep connection active |
+
 ## See Also
 
 - [REST API Overview](./rest-api-overview.md) - General API patterns

@@ -288,6 +288,35 @@ Trendz visualizations can be embedded in ThingsBoard dashboards:
 | Real-time views | Limit time range |
 | Many entities | Filter before visualization |
 
+## Common Pitfalls
+
+### Connection & Integration
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **ThingsBoard connection timeout** | Views fail to load data, "Connection error" displayed | Check ThingsBoard URL in connection settings, verify network connectivity, ensure ThingsBoard is running |
+| **Expired authentication credentials** | All queries return 401 errors | Refresh connection credentials in Trendz settings, verify user permissions in ThingsBoard |
+| **Missing entity permissions** | Some devices don't appear in view builder | Verify Trendz service account has read access to all required entity types in ThingsBoard |
+| **Dashboard embedding CORS issues** | Embedded view fails to load, console shows CORS error | Configure CORS settings in both Trendz and ThingsBoard to allow cross-origin requests |
+
+### Configuration & Caching
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Cache shows stale data after device updates** | Dashboard displays old values despite new telemetry | Reduce cache TTL in cache settings, or manually clear cache for affected views |
+| **Background job not running** | Predictions/calculations never update | Check job status in Tasks tab, verify job scheduler is enabled, review job configuration |
+| **Incorrect time zone configuration** | Time aggregations off by hours, data appears shifted | Set correct time zone in Trendz configuration to match ThingsBoard and user location |
+| **Running out of calculation storage** | Error: "Storage limit exceeded" for calculated fields | Archive old calculations, increase storage limits, or reduce retention period for calculated telemetry |
+
+### Performance
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Query timeout on large time range** | View fails with timeout error after 30+ seconds | Reduce time range, increase aggregation interval, or enable result caching |
+| **High cardinality causing slowdown** | View takes minutes to load with many entities | Apply filters to limit entities, use grouping by category instead of individual devices |
+| **Complex calculations in real-time mode** | Slow dashboard response, frequent timeouts | Switch to batch mode, save results to ThingsBoard, query pre-calculated telemetry instead |
+| **No cache strategy for frequently viewed data** | Every dashboard load triggers full query | Enable caching with appropriate TTL, use pre-calculated fields for common queries |
+
 ## Deployment Options
 
 | Option | Description |

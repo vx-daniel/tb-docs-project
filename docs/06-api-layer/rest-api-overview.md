@@ -914,9 +914,24 @@ DeferredResult<T> wrapFuture(ListenableFuture<T> future) {
 
 Uses `spring.mvc.async.request-timeout` for timeout configuration.
 
+## Common Pitfalls
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| Pagination off-by-one error | Page numbers start at 0, not 1 | First page is `page=0`, second is `page=1`, etc. Use `hasNext` field to check for more pages |
+| Slow response with large dataset | Default or missing `pageSize` parameter returns too many results | Always specify `pageSize` parameter (max 1000, recommend 10-100 for UI). Use `pageSize=1000` only for batch processing |
+| Results not sorted as expected | Invalid `sortProperty` name silently ignored, returns unsorted | Use exact entity field names (case-sensitive): `createdTime`, `name`, `type`, `label`. Check entity model for available fields |
+| Time range filter doesn't work | Using ISO8601 format instead of epoch milliseconds | Convert to epoch ms: `Date.now()` in JS, `System.currentTimeMillis()` in Java, `int(time.time()*1000)` in Python |
+| 400 Bad Request for valid-looking ID | Entity ID must be valid UUID format (time-based UUID) | Use full UUID format: `784f394c-42b6-435a-983c-b7beff2784f9`, not shortened or base64-encoded IDs |
+| 429 Too Many Requests | Exceeding per-tenant or per-customer rate limits | Implement exponential backoff, check rate limit error response, batch requests, or request limit increase from admin |
+| Partial failure in batch operations | Bulk import has no atomicity - some entities succeed, others fail | Handle partial success in bulk import response: check `created`, `updated`, `errors` counts and `errorsList` array for line-by-line failures |
+| 400 with valid JSON body | Missing or incorrect `Content-Type` header | Always set `Content-Type: application/json` for POST/PUT/PATCH requests with JSON body |
+| Optimistic lock failures (409) | Concurrent updates to same entity without version check | Retry with fresh entity fetch, or implement client-side locking for critical updates |
+
 ## See Also
 
 - [Authentication (JWT)](./authentication.md) - Detailed auth documentation
 - [Device API](./device-api.md) - Device-specific endpoints
 - [WebSocket Overview](./websocket-overview.md) - Real-time data
 - [Subscription Model](./subscription-model.md) - Real-time subscriptions
+- Official: [API Limits](https://thingsboard.io/docs/user-guide/api-limits/) - Rate limiting configuration

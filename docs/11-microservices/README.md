@@ -855,6 +855,238 @@ Health check verifies:
 - Queue connectivity
 - Service registry connection
 
+## Common Pitfalls
+
+### Wrong Deployment Mode Selection
+
+**Problem:** Choosing microservices mode for small deployments or monolith for large scale.
+
+**Detection:**
+- Monolith: High memory usage (>8GB), CPU constantly high, file descriptor limit errors
+- Microservices: Over-provisioned infrastructure for <1000 devices, operational complexity
+
+**Solution:**
+
+| Deployment Size | Recommended Mode | Rationale |
+|-----------------|------------------|-----------|
+| < 1,000 devices | Monolith | Simpler ops, lower overhead |
+| 1,000-10,000 devices | Monolith or Microservices | Depends on HA requirements |
+| > 10,000 devices | Microservices | Horizontal scaling needed |
+| HA required | Microservices | Independent service failure isolation |
+
+### Service Discovery Lag
+
+**Problem:** Zookeeper registration delay causes routing errors when services join/leave cluster.
+
+**Detection:**
+- Logs: "Service not found" errors immediately after service restart
+- Requests fail for 10-30 seconds after service startup
+- Partition reassignment takes longer than expected
+
+**Solution:**
+```yaml
+zookeeper:
+  session_timeout: 10000  # Increase if network latency high
+  retry_interval_ms: 3000  # Faster retries
+```
+
+Wait for service `ready` status before routing traffic. Configure load balancer health checks with retry logic.
+
+### Queue Partition Imbalance
+
+**Problem:** Uneven partition distribution causes some service instances to handle disproportionate load.
+
+**Detection:**
+```bash
+# Check Kafka consumer lag per partition
+kafka-consumer-groups.sh --bootstrap-server kafka:9092 \
+  --group tb-rule-engine-consumer --describe
+
+# Look for partitions with significantly higher lag
+```
+
+**Solution:**
+- Ensure partition count is multiple of consumer count
+- Use partition count > consumer count (e.g., 30 partitions for 3-10 consumers)
+- Monitor partition lag metrics per instance
+- Enable partition rebalancing with `partition.assignment.strategy=org.apache.kafka.clients.consumer.CooperativeStickyAssignor`
+
+### Cascade Service Failures
+
+**Problem:** One service failure triggers failures in dependent services.
+
+**Failure Chain:**
+```mermaid
+graph LR
+    RE[Rule Engine Down] --> Q[Queue Backlog]
+    Q --> CORE[Core Services Slow]
+    CORE --> TRANS[Transport Timeouts]
+    TRANS --> DEV[Devices Disconnect]
+```
+
+**Detection:**
+- Multiple services reporting errors simultaneously
+- Queue lag growing across multiple topics
+- Cascading timeout errors in logs
+
+**Solution:**
+- Configure circuit breakers per service dependency
+- Set appropriate timeouts: transport (10s) → core (30s) → rule engine (60s)
+- Enable queue persistence to survive service restarts
+- Monitor queue depth and set alerts
+
+### Database Connection Pool Exhaustion
+
+**Problem:** All services compete for database connections, causing pool exhaustion.
+
+**Detection:**
+```sql
+-- PostgreSQL: Check active connections
+SELECT count(*) FROM pg_stat_activity
+WHERE state = 'active' AND datname = 'thingsboard';
+
+-- Check max connections
+SHOW max_connections;
+```
+
+**Solution:**
+
+| Service | Default Connections | High Load |
+|---------|---------------------|-----------|
+| TB Core | 16 per instance | 32-64 |
+| Rule Engine | 16 per instance | 16-32 |
+| Transport | 8 per instance | 16 |
+
+```yaml
+# Per-service configuration
+spring:
+  datasource:
+    hikari:
+      maximumPoolSize: 32
+      minimumIdle: 8
+```
+
+Total connections needed: `(Core instances × 32) + (RE instances × 16) + (Transport × 16)`
+
+Ensure `max_connections` in PostgreSQL > total + 20% headroom.
+
+### Configuration Drift
+
+**Problem:** Inconsistent configuration across service instances causes unpredictable behavior.
+
+**Detection:**
+- Some instances process messages differently
+- Intermittent failures that disappear after restart
+- Feature works on some nodes but not others
+
+**Solution:**
+- Use centralized configuration (ConfigMaps in Kubernetes, Parameter Store in AWS)
+- Version control all configuration files
+- Implement configuration validation on startup
+- Log all configuration values on service start for debugging
+
+### HAProxy Misconfiguration
+
+**Problem:** Improper load balancer settings cause connection issues or unbalanced load.
+
+**Common Mistakes:**
+
+| Issue | Impact | Fix |
+|-------|--------|-----|
+| No health checks | Routes to dead instances | Add `check inter 5s` |
+| Wrong balance algorithm | WebSocket breaks | Use `balance source` for WS |
+| Missing timeouts | Hung connections | Set `timeout client 50s` |
+| No sticky sessions | Session loss | Use `cookie` or `source` balance |
+
+**WebSocket Configuration:**
+```
+backend tb-websocket-backend
+    balance source  # Critical for session persistence
+    option httpchk GET /api/health
+    server tb1 tb-node-1:8080 check inter 5s
+    server tb2 tb-node-2:8080 check inter 5s
+```
+
+### Split-Brain with Zookeeper
+
+**Problem:** Network partition causes Zookeeper quorum loss, leading to cluster inconsistency.
+
+**Detection:**
+- Zookeeper logs: "Not connected" or "Session expired"
+- Services can't update partition assignments
+- Duplicate message processing across services
+
+**Solution:**
+- Deploy Zookeeper with 3 or 5 nodes (odd number for quorum)
+- Use separate network/availability zone for Zookeeper
+- Monitor Zookeeper cluster health
+- Configure proper session timeouts:
+```yaml
+zookeeper:
+  connection_timeout_ms: 30000
+  session_timeout_ms: 30000
+```
+
+### Queue Consumer Lag
+
+**Problem:** Services can't keep up with message production rate, causing growing queue lag.
+
+**Detection:**
+```bash
+# Check consumer lag
+kafka-consumer-groups.sh --bootstrap-server kafka:9092 \
+  --group tb-rule-engine-consumer --describe
+
+# Alert if LAG > 10000
+```
+
+**Solution:**
+
+| Cause | Solution |
+|-------|----------|
+| Insufficient instances | Scale horizontally |
+| Slow processing | Optimize rule chains, increase thread pools |
+| DB bottleneck | Scale database, add indexes, optimize queries |
+| External service timeouts | Add circuit breakers, increase timeouts |
+
+```yaml
+# Increase consumer threads
+queue:
+  rule-engine:
+    pack-processing-timeout: 2000  # Process faster
+    poll-interval: 25  # Poll more frequently
+```
+
+### Memory Leaks Across Services
+
+**Problem:** Services gradually consume more memory until OOM, requiring restart.
+
+**Detection:**
+```bash
+# Monitor heap usage
+jmap -heap <pid>
+
+# Look for growing old generation
+jstat -gcutil <pid> 1000
+```
+
+**Common Causes:**
+
+| Service | Leak Source | Solution |
+|---------|-------------|----------|
+| TB Core | Session cache not cleaning | Configure session timeout |
+| Rule Engine | Script cache unlimited | Set `max_active_scripts: 1000` |
+| EDQS | Repository cache growing | Enable eviction policy |
+| Transport | Connection tracking | Configure connection timeout |
+
+```yaml
+# Configure caching limits
+cache:
+  type: valkey
+  maximumSize: 100000
+  timeToLiveInMinutes: 1440
+```
+
 ## See Also
 
 ### Service Documentation

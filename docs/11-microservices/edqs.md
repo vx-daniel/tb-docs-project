@@ -493,6 +493,157 @@ sequenceDiagram
 - Monitor memory usage per instance
 - Balance partition distribution across instances
 
+## Common Pitfalls
+
+### Out of Memory from Large Tenants
+
+**Problem:** Single tenant with millions of entities exhausts EDQS instance memory.
+
+**Detection:**
+```bash
+# Check heap usage
+jmap -heap <pid>
+
+# Monitor per-tenant entity counts
+curl http://localhost:8080/api/edqs/stats
+```
+
+**Solution:**
+- Partition strategy: TENANT ensures large tenants don't share instances with others
+- Allocate 1-2GB heap per 100K entities
+- Use labels to assign large tenants to dedicated EDQS instances
+
+```yaml
+edqs:
+  partitioning_strategy: tenant
+  label: "large-tenants"  # Isolate specific tenants
+```
+
+### Slow Initial Sync on Startup
+
+**Problem:** EDQS takes 10+ minutes to sync state from compacted topic on startup.
+
+**Detection:**
+- Service not ready for extended period
+- Logs: "Syncing state from topic" with slow progress
+- High network usage reading from Kafka
+
+**Solution:**
+- Reduce retention on edqs.state topic (default: infinite)
+- Increase consumer fetch size for faster sync
+- Use faster storage for local cache during sync
+
+```yaml
+edqs:
+  state_sync_fetch_size: 10485760  # 10MB batches
+```
+
+For 1M entities × 1KB = 1GB, sync time ≈ 2-5 minutes.
+
+### Query Result Set Too Large
+
+**Problem:** Queries without pagination return millions of results, causing timeouts.
+
+**Detection:**
+- Logs: "Result set too large" errors
+- `RecordTooLargeException` in Kafka producer
+- Client timeouts waiting for response
+
+**Solution:**
+- Enforce pagination limits in API layer
+- Configure max result size per query
+
+```yaml
+edqs:
+  max_result_size: 10000  # Maximum entities per query
+```
+
+Best practices:
+- Always use pagination with `pageSize ≤ 100`
+- Use filters to reduce result set before querying
+- Consider using entity counts instead of full lists
+
+### Missing Calculated Field Updates
+
+**Problem:** EDQS doesn't receive calculated field update events, showing stale data.
+
+**Detection:**
+- Calculated fields not updating in dashboards
+- Logs: Missing CF update events
+- Mismatch between DB query and EDQS query results
+
+**Solution:**
+- Verify TB Core publishes CF updates to edqs.events topic
+- Check EDQS partition ownership for affected tenant
+- Monitor event topic lag
+
+```bash
+# Check event topic consumption
+kafka-consumer-groups.sh --bootstrap-server kafka:9092 \
+  --group edqs-consumer --describe
+```
+
+### Partition Rebalancing Data Loss
+
+**Problem:** EDQS clears in-memory data during partition reassignment, causing temporary query failures.
+
+**Detection:**
+- Logs: "Clearing repository for tenant X" during rebalancing
+- Temporary "Tenant not found" errors
+- Query latency spikes during scale events
+
+**Solution:**
+- Use cooperative rebalancing to minimize disruption
+- Implement client-side retry logic (3 retries with backoff)
+- Scale during low-traffic periods
+
+```yaml
+edqs:
+  kafka:
+    partition.assignment.strategy: "CooperativeStickyAssignor"
+```
+
+### JSON Compression Overhead
+
+**Problem:** CPU usage spikes due to excessive compression/decompression of large JSON attributes.
+
+**Detection:**
+- High CPU usage during query processing
+- Slow query latency for entities with large attributes
+- GC pressure from compression buffers
+
+**Solution:**
+```yaml
+edqs:
+  string_compression_length_threshold: 1024  # Increase from 512
+```
+
+Trade-off: Higher memory usage for less CPU. Profile your data:
+- Many small attributes: Higher threshold (1024-2048)
+- Few large attributes: Lower threshold (256-512)
+
+### Slow Query Thresholds Misconfigured
+
+**Problem:** Too many queries flagged as "slow", flooding logs.
+
+**Detection:**
+- Logs filled with slow query warnings
+- Difficulty identifying actual performance issues
+- Normal queries marked as slow
+
+**Solution:**
+```yaml
+edqs:
+  slow_query_threshold_ms: 500  # Adjust based on P95 latency
+```
+
+Recommended thresholds:
+- < 10K entities per tenant: 100ms
+- 10K-100K entities: 200-300ms
+- > 100K entities: 500-1000ms
+
+Monitor P95/P99 query latency and set threshold above P95.
+
 ## See Also
 
 - [Microservices Overview](./README.md) - Architecture overview

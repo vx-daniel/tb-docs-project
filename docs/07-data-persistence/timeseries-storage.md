@@ -482,6 +482,10 @@ graph TB
     BP3 --> DB
 ```
 
+Write operations are queued for batch processing using hash-based distribution to maintain ordering per entity.
+
+**Reference**: `TbSqlBlockingQueue` implementation
+
 ### Hash-Based Queue Distribution
 
 Writes are distributed across queues using entity ID hash:

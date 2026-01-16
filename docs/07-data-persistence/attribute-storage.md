@@ -193,6 +193,10 @@ graph TB
     BATCH --> DB
 ```
 
+Write operations are queued for batch processing to reduce database round-trips and improve throughput.
+
+**Reference**: `TbSqlBlockingQueue` implementation for queuing and `AttributeKvInsertRepository` for batch database operations
+
 ### Batch Configuration
 
 | Property | Default | Description |

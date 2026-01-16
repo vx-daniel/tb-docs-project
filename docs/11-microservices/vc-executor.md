@@ -445,6 +445,136 @@ stateDiagram-v2
 - Restrict repository folder permissions
 - Enable HTTPS for remote Git operations
 
+## Common Pitfalls
+
+### Git Repository Disk Space Exhaustion
+
+**Problem:** Repository storage fills up with large entity exports or many tenants.
+
+**Detection:**
+```bash
+# Check disk usage
+df -h /data/repositories
+
+# Check repository sizes
+du -sh /data/repositories/*
+```
+
+**Solution:**
+- Configure repository size limits per tenant
+- Implement repository cleanup for inactive tenants
+- Use remote Git with storage management
+- Monitor disk usage and alert at 70%
+
+```yaml
+vc:
+  repositories_folder: /data/repositories  # Dedicated volume
+  max_repository_size: 1GB  # Per tenant limit
+```
+
+### Git Operations Timeout on Large Commits
+
+**Problem:** Committing thousands of entities exceeds timeout, causing transaction failures.
+
+**Detection:**
+- Logs: "Operation timed out" during commit
+- Large entity exports fail
+- Partial commits in Git history
+
+**Solution:**
+```yaml
+vc:
+  pack_processing_timeout_ms: 300000  # 5 minutes
+  io_thread_pool_size: 6  # More concurrent ops
+```
+
+Batching strategy:
+- < 100 entities: Single commit OK
+- 100-1000 entities: 2-3 minute timeout
+- > 1000 entities: Batch into multiple commits
+
+### Partition Rebalancing Aborts In-Flight Transactions
+
+**Problem:** When partition ownership changes, pending commits are lost.
+
+**Detection:**
+- Logs: "Transaction aborted due to partition change"
+- Incomplete version control operations
+- User reports: "Commit never completed"
+
+**Solution:**
+- Use cooperative rebalancing
+- Implement client-side retry logic
+- Complete transactions quickly (< 60s per operation)
+
+```yaml
+kafka:
+  partition.assignment.strategy: "CooperativeStickyAssignor"
+```
+
+### Git Credential Authentication Failures
+
+**Problem:** Remote Git operations fail due to expired or incorrect credentials.
+
+**Detection:**
+- Logs: "Authentication failed" or "Permission denied"
+- Clone/push operations fail
+- Only local repository operations work
+
+**Solution:**
+```yaml
+# Use SSH keys for remote Git
+vc:
+  git_ssh_key_path: /etc/thingsboard/git-deploy-key
+```
+
+Or use Git credential helper for HTTPS:
+```bash
+git config --global credential.helper 'cache --timeout=3600'
+```
+
+### Message Chunking Overhead
+
+**Problem:** Large entity JSONs chunked into many messages, causing performance issues.
+
+**Detection:**
+- High message count for single operation
+- Slow response times
+- Kafka throughput bottleneck
+
+**Solution:**
+```yaml
+vc:
+  msg_chunk_size: 500000  # Increase from 250KB
+```
+
+Chunk size trade-off:
+- Larger chunks: Fewer messages, may hit Kafka limits
+- Smaller chunks: More overhead, slower reassembly
+
+Optimal: 250KB-1MB based on average entity size.
+
+### Concurrent Modifications to Same Tenant
+
+**Problem:** Multiple requests try to modify same repository simultaneously.
+
+**Detection:**
+- Logs: "Waiting for lock" with long durations
+- Slow version control operations
+- Requests queuing up
+
+**Solution:**
+- Per-tenant locking prevents concurrent modification (already implemented)
+- Configure adequate IO thread pool
+- Consider request queuing at API layer
+
+```yaml
+vc:
+  io_thread_pool_size: 10  # Increase for more concurrent tenants
+```
+
+Thread pool sizing: `(Concurrent tenants) × 1.5`
+
 ## See Also
 
 - [Microservices Overview](./README.md) - Architecture overview

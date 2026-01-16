@@ -18,7 +18,9 @@ Apache Cassandra provides a horizontally scalable storage backend for ThingsBoar
 
 ## Architecture
 
-### DAO Class Hierarchy
+### Storage Layer Architecture
+
+The Cassandra storage implementation uses a layered architecture for scalability and performance:
 
 ```mermaid
 graph TB
@@ -39,13 +41,21 @@ graph TB
     ACBT --> CBTLD
 ```
 
-| Class | Responsibility |
+| Layer | Responsibility |
 |-------|----------------|
-| CassandraAbstractDao | Session management, prepared statements, rate limiting |
-| CassandraAbstractAsyncDao | Async result processing with executor |
-| AbstractCassandraBaseTimeseriesDao | Row-to-entry conversion for all data types |
-| CassandraBaseTimeseriesDao | Historical time-series storage |
-| CassandraBaseTimeseriesLatestDao | Latest value storage |
+| Base Layer | Session management, query templates, rate limiting |
+| Async Layer | Non-blocking operations, result futures |
+| Time-Series Base | Row-to-entry conversion for all data types |
+| Historical Storage | Time-series data with partitioning |
+| Latest Storage | Current value optimization |
+
+**Reference Implementation**: See `CassandraAbstractDao` hierarchy in source code.
+
+The architecture provides:
+- **Session management**: Connection pooling and prepared statement caching
+- **Rate limiting**: Tenant-aware request throttling
+- **Async execution**: Non-blocking query processing
+- **Type conversion**: Cassandra rows to platform data types
 
 ### Data Flow
 
@@ -235,9 +245,13 @@ graph TB
     end
 ```
 
-- **Read Executor**: `CassandraBufferedRateReadExecutor`
-- **Write Executor**: `CassandraBufferedRateWriteExecutor`
-- Tenant-aware rate limiting with per-tenant quotas
+The system uses separate executors for read and write operations to optimize throughput and apply different rate limiting policies:
+
+- **Read Pipeline**: Dedicated executor for query operations with read-specific rate limits
+- **Write Pipeline**: Dedicated executor for insert/update operations with write-specific rate limits
+- **Tenant-aware**: Rate limiting enforced per-tenant with configurable quotas
+
+**Reference**: `CassandraBufferedRateReadExecutor` and `CassandraBufferedRateWriteExecutor` implementations
 
 ## TTL Configuration
 

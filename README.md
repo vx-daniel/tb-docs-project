@@ -179,3 +179,5 @@ This documentation project is for internal use. ThingsBoard is licensed under Ap
 - [ThingsBoard Official Docs](https://thingsboard.io/docs/)
 - [ThingsBoard GitHub](https://github.com/thingsboard/thingsboard)
 - [ThingsBoard Community](https://github.com/thingsboard/thingsboard/discussions)
+
+- progressive delivery

@@ -483,6 +483,38 @@ graph TB
 | Non-overlapping conditions | Accurate duration |
 | Use DURATION_PERCENT | Comparable across periods |
 
+## Common Pitfalls
+
+### Calculated Fields
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Division by zero** | Calculation returns Infinity or NaN | Add null/zero check: `var divisor = uniq(Device.area); return divisor > 0 ? value / divisor : 0;` |
+| **Using avg() on attribute** | Error: "Cannot aggregate attribute with avg()" | Use `uniq()` for attributes (server scope, client scope), not `avg()`, `sum()`, etc. |
+| **JavaScript syntax error** | Red error message, calculation won't save | Check for missing semicolons, unmatched braces, undefined variables. Test in Function tab before saving |
+| **Type coercion issues** | String concatenation instead of math: "2550" instead of 75 | Explicit conversion: `parseFloat(avg(Sensor.temp))` instead of relying on implicit conversion |
+| **Accessing nested attribute path** | Returns undefined, calculation produces null | Use correct path syntax: `uniq(Device.location.city)` with dot notation, ensure attribute exists |
+| **Complex batch calculation timeout** | Script execution exceeds time limit | Simplify logic, reduce loop iterations, or split into multiple simpler calculated fields |
+
+### Predictions
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Insufficient training data** | Low accuracy (<50%), erratic predictions | Use at least 3x prediction range for training (predict 1 month → train on 3+ months) |
+| **Wrong model for pattern** | Linear Regression for cyclic data shows poor fit | Use Fourier or Prophet for seasonal/cyclic patterns, ARIMA for trend with seasonality |
+| **Training data includes anomalies** | Predictions follow historical anomalies | Clean training dataset, exclude known anomaly periods from training range |
+| **Prediction range too long** | Accuracy degrades beyond first few intervals | Limit forecast to 10-20% of training range (1 year training → max 2 month forecast) |
+| **No model retraining** | Accuracy degrades over time as patterns change | Enable retraining in Job Configuration, retrain monthly or quarterly |
+| **Ignoring seasonality** | Poor predictions for weekly/yearly patterns | Use Prophet with seasonality settings, or Fourier for frequency-based patterns |
+
+### State Analysis
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Overlapping state definitions** | Device appears in multiple states simultaneously | Use mutually exclusive conditions with if/else: `if (x) return "State1"; else if (y) return "State2";` |
+| **Using AVG on state field** | Nonsensical duration values (0.347) | State fields must use DURATION or DURATION_PERCENT aggregation, never AVG/SUM/MIN/MAX |
+| **Missing none() function** | State condition evaluates on aggregated data | States require raw values: use `none(Machine.status)` not `avg(Machine.status)` |
+
 ## See Also
 
 - [Visualizations](./trendz-visualizations.md) - Display results

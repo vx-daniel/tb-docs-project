@@ -537,6 +537,159 @@ function transform(msg, metadata, msgType) {
 - Single-node deployment
 - No performance concerns
 
+## Common Pitfalls
+
+### Script Cache Eviction Storms
+
+**Problem:** LRU cache evicts frequently-used scripts, causing recompilation overhead.
+
+**Detection:**
+- Logs: High "Script not found, recompiling" messages
+- Increased CPU usage and latency
+- Cache hit rate < 80%
+
+**Solution:**
+```yaml
+script:
+  max_active_scripts: 5000  # Increase from 1000
+```
+
+Cache size calculation: `(Unique scripts in rule chains) × 1.5`
+
+Monitor cache metrics:
+```bash
+# Cache hit ratio should be > 90%
+curl http://localhost:8888/metrics | grep script_cache
+```
+
+### Infinite Loop Scripts
+
+**Problem:** Poorly written scripts enter infinite loops, consuming executor resources.
+
+**Detection:**
+- Logs: Frequent timeout errors for specific scripts
+- High CPU usage on JS Executor instances
+- Script execution time consistently hits timeout
+
+**Solution:**
+- Always configure execution timeouts
+- Blacklist problematic scripts after 3 failures
+
+```yaml
+js:
+  max_exec_requests_timeout: 2000  # 2 seconds default
+  max_errors: 3  # Blacklist after 3 failures
+  max_black_list_duration_sec: 300  # 5 minute blacklist
+```
+
+**Script Best Practices:**
+- Avoid `while(true)` loops
+- Use iteration limits: `for(let i=0; i<1000; i++)`
+- Test scripts with large payloads before deployment
+
+### Request Queue Overflow
+
+**Problem:** Too many pending script execution requests causes queue overflow and rejections.
+
+**Detection:**
+- Logs: "Max pending requests exceeded"
+- Rule Engine errors: "JS execution failed"
+- Increased message failures in rule chains
+
+**Solution:**
+```yaml
+# TB Node configuration
+js:
+  remote:
+    max_pending_requests: 20000  # Increase from 10000
+
+# JS Executor scaling
+deploy:
+  replicas: 10  # Scale horizontally
+```
+
+Queue sizing: `(Peak scripts/sec) × (Avg execution time) × 2`
+
+### Memory Leaks in Sandbox Context
+
+**Problem:** VM contexts not properly garbage collected, causing memory growth.
+
+**Detection:**
+```bash
+# Monitor memory growth over time
+ps aux | grep js-executor | awk '{print $6}'
+
+# Node.js heap snapshot
+node --expose-gc --inspect=0.0.0.0:9229 server.js
+```
+
+**Solution:**
+- Enable sandboxing to isolate contexts
+- Restart JS Executor instances periodically (daily)
+- Monitor heap usage and set alerts
+
+```yaml
+script:
+  use_sandbox: true  # Always enable in production
+```
+
+### Partition Key Skew
+
+**Problem:** Scripts from single rule chain always route to same JS Executor, creating hot spots.
+
+**Detection:**
+```bash
+# Check partition distribution
+kafka-consumer-groups.sh --bootstrap-server kafka:9092 \
+  --group js-executor-consumer --describe
+```
+
+**Solution:**
+- Increase partition count: 30 partitions for 10 executors
+- Use round-robin for script requests instead of keyed partitions
+- Monitor per-executor load and rebalance if needed
+
+### Large Argument Payloads
+
+**Problem:** Passing large JSON objects to scripts exceeds size limits.
+
+**Detection:**
+- Logs: "Max total args size exceeded" (> 100KB)
+- Scripts fail with "Argument too large" error
+- Kafka `RecordTooLargeException`
+
+**Solution:**
+```yaml
+js:
+  max_total_args_size: 250000  # Increase from 100000
+```
+
+**Script Optimization:**
+- Pass only required fields, not entire message
+- Use message metadata instead of full payload
+- Consider splitting processing across multiple scripts
+
+### Slow Network Between Services
+
+**Problem:** High latency between TB Node and JS Executor impacts performance.
+
+**Detection:**
+- Script execution time much higher than actual script runtime
+- Network latency > 50ms consistently
+- Timeouts despite scripts completing
+
+**Solution:**
+- Deploy JS Executors in same VPC/subnet as TB Nodes
+- Use dedicated network for inter-service communication
+- Increase timeout to account for network latency
+
+```yaml
+js:
+  max_request_timeout: 15000  # 15s for high-latency networks
+```
+
+Target latency: Network < 10ms + Execution < 500ms = Total < 1s
+
 ## See Also
 
 - [Microservices Overview](./README.md) - Architecture overview

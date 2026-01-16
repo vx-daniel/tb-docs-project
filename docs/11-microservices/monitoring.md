@@ -430,6 +430,116 @@ graph LR
 - Confirm WebSocket connectivity
 - Review latency trends in monitoring asset
 
+## Common Pitfalls
+
+### Monitoring Interval Too Aggressive
+
+**Problem:** Short intervals (< 10s) create synthetic load affecting real traffic.
+
+**Detection:**
+- Monitoring traffic visible in queue metrics
+- Test devices consume significant resources
+- Production latency increases during monitoring
+
+**Solution:**
+```yaml
+MONITORING_RATE_MS: 60000  # 60 seconds for production
+CHECK_TIMEOUT_MS: 10000  # Generous timeout
+```
+
+Recommended intervals:
+- Development: 10-30 seconds
+- Production: 60-120 seconds
+- Load testing: Disable monitoring
+
+### False Positives from Network Blips
+
+**Problem:** Single network hiccup triggers alerts, causing alarm fatigue.
+
+**Detection:**
+- Frequent alert → recovery → alert cycles
+- Alerts don't correlate with actual outages
+- Team ignores notifications
+
+**Solution:**
+```yaml
+FAILURES_THRESHOLD: 3  # Require 3 consecutive failures
+REPEATED_FAILURE_NOTIFICATION: 10  # Alert every 10 failures
+```
+
+Alert logic: Only notify after sustained failure (3+ checks = 3+ minutes).
+
+### WebSocket Subscription Leaks
+
+**Problem:** Monitoring service doesn't clean up old subscriptions, exhausting connections.
+
+**Detection:**
+- Growing WebSocket connection count
+- Eventually can't create new subscriptions
+- Logs: "Too many subscriptions" errors
+
+**Solution:**
+- Restart monitoring service daily
+- Configure subscription cleanup
+- Monitor WebSocket connection count
+
+```yaml
+WS_REQUEST_TIMEOUT_MS: 5000  # Short timeout for quick cleanup
+```
+
+### Test Device Credentials Expire
+
+**Problem:** Auto-provisioned test devices deleted or credentials rotated, breaking monitoring.
+
+**Detection:**
+- All protocols suddenly fail
+- Logs: "Device not found" or "Invalid credentials"
+- Monitoring stopped working after credential rotation
+
+**Solution:**
+- Use dedicated monitoring tenant with long-lived credentials
+- Document test device names for manual recreation
+- Implement credential validation on startup
+
+### Missing Protocol Endpoints
+
+**Problem:** Monitoring configured for protocols not deployed in environment.
+
+**Detection:**
+- Constant connection failures for specific protocols
+- Irrelevant alerts
+- Resource waste on failed checks
+
+**Solution:**
+```yaml
+# Disable unused protocols
+MQTT_TRANSPORT_MONITORING_ENABLED: true
+HTTP_TRANSPORT_MONITORING_ENABLED: true
+COAP_TRANSPORT_MONITORING_ENABLED: false  # Not deployed
+LWM2M_TRANSPORT_MONITORING_ENABLED: false  # Not deployed
+```
+
+Only enable monitoring for deployed transports.
+
+### Latency Thresholds Too Tight
+
+**Problem:** Thresholds set below normal latency, causing constant "high latency" alerts.
+
+**Detection:**
+- Latency alerts every monitoring cycle
+- Reported latencies within normal range
+- Alert noise obscures real issues
+
+**Solution:**
+```yaml
+LATENCY_THRESHOLD: 5000  # 5 seconds (adjust based on P95)
+```
+
+Set thresholds based on historical data:
+1. Run monitoring for 1 week
+2. Calculate P95 latency per metric
+3. Set threshold = P95 × 1.5
+
 ## See Also
 
 - [Microservices Overview](./README.md) - Architecture overview

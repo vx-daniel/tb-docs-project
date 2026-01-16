@@ -585,6 +585,9 @@ graph LR
 | SMS not sent | Provider error | Verify SMS provider config |
 | Slack message failed | Invalid channel | Check channel permissions |
 | Template error | Invalid parameter | Verify parameter names |
+| Template parameter not replaced | Typo in `${parameterName}` doesn't throw error, outputs literal text | Test template with sample data before production, verify parameter names match template type exactly (case-sensitive). Use Notification Center preview feature |
+| Notifications dropped during burst | Exceeding per-tenant notification rate limit (`notification.rate_limits` config) | Configure `notification.rate_limits` in system settings, batch notifications, use targeted recipients instead of "all users" broadcast, implement exponential backoff in client |
+| Escalation continues after alarm cleared | Stop condition not configured in escalation chain steps | Add stop conditions (CLEARED, ACKNOWLEDGED status) to each escalation chain step configuration. Check "Stop escalation if alarm has one of the statuses" with desired statuses |
 
 ### Debug Steps
 

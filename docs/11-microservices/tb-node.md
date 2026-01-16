@@ -533,6 +533,236 @@ graph TB
 - Enable Zookeeper for service discovery
 - Monitor queue lag metrics
 
+## Common Pitfalls
+
+### Actor Dispatcher Starvation
+
+**Problem:** Misconfigured dispatcher pool sizes cause actor processing delays.
+
+**Detection:**
+- Logs: "Actor mailbox size exceeded" warnings
+- High latency for specific operations (device state, rule processing)
+- Thread dump shows dispatchers at capacity
+
+**Solution:**
+
+| Dispatcher | Default | High Load | Use Case |
+|------------|---------|-----------|----------|
+| APP_DISPATCHER | 1 | 1 | Singleton app actor |
+| TENANT_DISPATCHER | 2 | 4-8 | Many tenants |
+| DEVICE_DISPATCHER | 4 | 8-16 | High connection count |
+| RULE_DISPATCHER | 8 | 16-32 | Complex rule chains |
+| CF_MANAGER_DISPATCHER | 2 | 4 | Calculated fields enabled |
+| CF_ENTITY_DISPATCHER | 8 | 16 | Many calculated fields |
+
+```yaml
+actors:
+  tenant_dispatcher_pool_size: 8
+  device_dispatcher_pool_size: 16
+  rule_dispatcher_pool_size: 32
+```
+
+### Rule Engine Thread Pool Exhaustion
+
+**Problem:** External node thread pools depleted, blocking rule chain execution.
+
+**Detection:**
+```bash
+# Check thread pool metrics
+jstack <pid> | grep "pool-.*-thread" | wc -l
+
+# Monitor rule engine stats
+curl http://localhost:8080/api/rule-engine/stats
+```
+
+**Common Bottlenecks:**
+
+| Pool | Default | Symptom | Solution |
+|------|---------|---------|----------|
+| DB Callbacks | 50 | Slow attribute/telemetry saves | Increase to 100 |
+| Mail | 40 | Email delays | Increase to 80 or use async |
+| SMS | 50 | SMS delays | Increase or batch |
+| External HTTP | 50 | REST node timeouts | Increase to 100, add circuit breaker |
+
+```yaml
+actors:
+  rule:
+    db_callback_thread_pool_size: 100
+    mail_thread_pool_size: 80
+    external_call_thread_pool_size: 100
+```
+
+### Queue Partition Ownership Concentration
+
+**Problem:** Single TB Node owns most partitions, creating hot spot.
+
+**Detection:**
+```bash
+# Check partition distribution
+kafka-consumer-groups.sh --bootstrap-server kafka:9092 \
+  --group tb-rule-engine-consumer --describe | \
+  awk '{print $7}' | sort | uniq -c
+```
+
+**Solution:**
+- Ensure partition count > instance count × 2
+- Use consistent service IDs (tb-core-1, tb-core-2 vs random UUIDs)
+- Monitor CPU/memory per instance for imbalance
+- Restart instances if rebalancing doesn't distribute evenly
+
+### Transaction Queue Overflow
+
+**Problem:** Rule engine transaction queue fills up, causing message rejection.
+
+**Detection:**
+- Logs: "Transaction queue is full" errors
+- Messages dropped with "capacity exceeded"
+- Queue lag doesn't decrease despite processing
+
+**Solution:**
+```yaml
+actors:
+  rule:
+    transaction_queue_size: 30000  # Increase from 15000
+    transaction_duration: 90s  # Extend timeout
+```
+
+Balance queue size with memory: Each queued message ~1-10KB. 30K messages ≈ 300MB.
+
+### Actor Init Failures
+
+**Problem:** Actors fail to initialize repeatedly, getting disabled.
+
+**Detection:**
+- Logs: "Actor init failed, attempt X of 10"
+- Tenant/device actors marked as disabled
+- Processing stops for specific entities
+
+**Common Causes:**
+
+| Cause | Detection | Solution |
+|-------|-----------|----------|
+| Database unreachable | Connection timeout logs | Fix DB connectivity, increase retry |
+| Corrupted entity data | Deserialization errors | Fix data, increase init attempts |
+| Resource exhaustion | OOM errors | Increase memory, reduce actor count |
+
+```yaml
+actors:
+  system:
+    max_actor_init_attempts: 20  # Increase retry limit
+```
+
+### Session Cache Memory Bloat
+
+**Problem:** Device session cache grows unbounded, causing OOM.
+
+**Detection:**
+```bash
+# Monitor cache size
+curl http://localhost:8080/api/cache/stats
+
+# Check heap usage
+jmap -heap <pid> | grep -A 5 "Heap Usage"
+```
+
+**Solution:**
+```yaml
+cache:
+  type: valkey  # Use external cache
+  specs:
+    sessions:
+      timeToLiveInMinutes: 1440
+      maxSize: 100000
+```
+
+For 100K devices with 1KB session data = ~100MB cached.
+
+### REST API Rate Limiting Not Configured
+
+**Problem:** Single tenant or user overwhelms API, affecting all users.
+
+**Detection:**
+- High request rate from single IP/tenant in logs
+- Slow API responses for all users
+- CPU usage spikes correlate with specific API calls
+
+**Solution:**
+```yaml
+security:
+  rateLimit:
+    enabled: true
+    perTenant:
+      limit: "1000:60"  # 1000 requests per 60 seconds
+    perCustomer:
+      limit: "500:60"
+```
+
+Configure per-endpoint limits for expensive operations.
+
+### WebSocket Subscription Overload
+
+**Problem:** Too many WebSocket subscriptions per entity cause update storms.
+
+**Detection:**
+- Logs: "Too many subscriptions" warnings
+- Slow telemetry updates
+- High network bandwidth usage
+
+**Solution:**
+```yaml
+websocket:
+  max_subscriptions_per_session: 10
+  send_timeout_ms: 5000
+```
+
+Best practices:
+- Limit dashboard widgets to 10-20 per dashboard
+- Use aggregation for high-frequency telemetry
+- Implement client-side throttling
+
+### Rule Chain Circular Dependencies
+
+**Problem:** Rule chains call each other, causing infinite loops or deep recursion.
+
+**Detection:**
+- Logs: "Rule chain depth exceeded" or stack overflow
+- Messages stuck in processing
+- CPU usage spikes with no corresponding device activity
+
+**Solution:**
+- Implement rule chain depth limit (default: 20)
+- Use rule chain versioning to detect cycles
+- Monitor `ruleChainExecutionTime` metric for anomalies
+
+```yaml
+actors:
+  rule:
+    max_rule_chain_execution_depth: 20
+```
+
+### Partition Lag During Deployment
+
+**Problem:** Rolling deployment causes temporary partition unavailability.
+
+**Detection:**
+- Consumer lag spikes during deployment
+- Temporary message processing delays
+- Partition rebalancing logs
+
+**Solution:**
+```yaml
+# Use cooperative sticky assignment
+queue:
+  kafka:
+    partition.assignment.strategy: "org.apache.kafka.clients.consumer.CooperativeStickyAssignor"
+```
+
+**Deployment Strategy:**
+1. Deploy one instance at a time
+2. Wait for partition reassignment (30-60s)
+3. Verify consumer lag stabilizes
+4. Proceed to next instance
+
 ## See Also
 
 - [Microservices Overview](./README.md) - Architecture overview

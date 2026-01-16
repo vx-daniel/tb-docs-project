@@ -397,6 +397,187 @@ class CustomConverter(Converter):
         }
 ```
 
+## Common Pitfalls
+
+Operating ThingsBoard IoT Gateway requires understanding component interactions, lifecycle management, and failure modes. Teams commonly encounter issues in four areas: connector lifecycle (restart failures, resource leaks), converter configuration (data transformation errors, missing converters), event storage (corruption, capacity management), and platform client (connection management, retry behavior). The pitfalls below represent architectural challenges that can impact reliability, data integrity, and operational continuity.
+
+### Connector Lifecycle Issues
+
+| Pitfall | Impact | Detection | Solution |
+|---------|--------|-----------|----------|
+| Connector restart failures after exception | Connector remains disabled, specific devices not connected | Connector status shows "STOPPED" or "ERROR", device data stops flowing | Implement exception handling in connector initialization. Add health checks to detect failed connectors. Configure auto-restart with exponential backoff |
+| Resource leaks in connector shutdown | Open file handles, socket connections persist after stop | Growing file descriptor count, eventual "too many open files" error | Ensure graceful shutdown closes all resources. Use context managers for connections. Implement timeout-based cleanup for stuck connectors |
+| Hot reload limitations | Config changes not applied without gateway restart | Modified configuration values not reflected in connector behavior | Document hot-reload scope clearly. Use gateway restart for structural changes (new connectors, storage type). Support runtime tuning for polling intervals only |
+
+### Converter Configuration
+
+| Pitfall | Impact | Detection | Solution |
+|---------|--------|-----------|----------|
+| Uplink converter JSON path expression errors | Telemetry extraction fails, data loss | Converter exception logs: "JSONPath not found", no telemetry for devices | Validate JSON path expressions against sample device data. Use defensive expressions with fallbacks: `$.temp or $.temperature`. Test converters with representative data |
+| Missing downlink converter for RPC | Platform RPC commands never reach devices | RPC timeout errors in platform, no command execution on devices | Configure both uplink and downlink converters for bidirectional protocols. Test RPC flow during integration. Document which RPCs are supported per device type |
+| Custom converter module loading failures | Connector startup fails, gateway unable to process data | "ModuleNotFoundError" or "ImportError" in logs, connector disabled | Verify custom converter in correct extensions directory path. Check module naming conventions. Ensure all dependencies installed in gateway environment |
+
+### Event Storage Problems
+
+| Pitfall | Impact | Detection | Solution |
+|---------|--------|-----------|----------|
+| File storage corruption after power loss | Gateway fails to start, event queue unreadable | "Cannot read storage file" errors on startup, gateway exits | Implement atomic writes with temp file + rename. Add storage validation on startup. Provide recovery tool to rebuild index from data files |
+| Memory storage overflow with persistent queue | Out-of-memory crash when queue grows unbounded | Increasing memory usage, eventual OOM kill by system | Use file-based storage for production. Configure maximum queue size limits. Implement backpressure to slow connector polling when queue is full |
+| Storage path misconfiguration | Cannot persist events, offline resilience disabled | "Permission denied" or "Directory not found" errors | Validate storage path exists with write permissions during startup. Create directory if missing. Use dedicated partition for storage to prevent system impact |
+
+### ThingsBoard Client Issues
+
+| Pitfall | Impact | Detection | Solution |
+|---------|--------|-----------|----------|
+| MQTT QoS misconfiguration causing data loss | Messages dropped during network issues when using QoS 0 | Gaps in telemetry timeline, data loss during brief disconnects | Use QoS 1 for telemetry delivery guarantee. Accept slight performance cost for reliability. Reserve QoS 0 for non-critical statistics |
+| Topic structure format errors | Messages published but platform doesn't process them | Messages published successfully but no data appears in platform | Validate topic format matches Gateway MQTT API specification. Test with MQTT client before integration. Enable client-side logging to verify topic strings |
+| Missing exponential backoff in reconnection | Connection retry storm overwhelms platform, may trigger rate limiting | Very frequent reconnect attempts (every 100ms), connection failures | Implement exponential backoff: start at 1s, double on each failure, cap at 60s. Add jitter to prevent thundering herd. Respect platform rate limits |
+
+**Detailed Example 1: Converter JSON Path Expression Errors**
+
+**Problem**: Uplink converter configured with JSON path expression `$.temperature` fails to extract telemetry when device sends data with different field name (`temp` or `t`), resulting in complete data loss for that telemetry key. No error is surfaced to operators until users notice missing data in dashboards.
+
+**Why This Happens**: Device firmware or protocol implementation uses different field naming than expected by converter configuration. JSON path expressions are exact match - `$.temperature` will not match `$.temp`. Connector successfully receives device data and forwards to converter, but converter extraction fails silently. ThingsBoard Gateway may not emit clear errors for missing JSON paths, instead publishing empty telemetry or omitting the field entirely.
+
+**Detection**:
+- Platform dashboards show missing telemetry for specific devices or keys
+- Converter debug logs show "JSONPath expression '$.temperature' returned no results"
+- Gateway publishes device connection events but no telemetry data appears
+- Enabling converter debug mode shows raw device data with different field names than configured paths
+- MQTT client subscribed to `v1/gateway/telemetry` shows partial or empty telemetry payloads
+
+**Solution**:
+1. **Immediate**: Update JSON path expression to match actual device field names. Test with sample device data:
+   ```json
+   {
+     "deviceName": "Sensor-001",
+     "telemetry": [
+       {
+         "ts": 1609459200000,
+         "values": {
+           "temp": 25.5  // Note: "temp" not "temperature"
+         }
+       }
+     ]
+   }
+   ```
+2. **Defensive**: Use fallback expressions in converter logic: `$.temperature or $.temp or $.t`
+3. **Validation**: Capture sample device data during commissioning. Validate converter extracts all expected fields. Enable converter logging during initial deployment
+4. **Monitoring**: Alert on missing telemetry keys for provisioned devices. Track converter extraction success rate metrics
+
+**Configuration Example**:
+```json
+{
+  "converter": {
+    "type": "json",
+    "deviceNameJsonExpression": "${$.deviceId}",
+    "deviceTypeJsonExpression": "sensor",
+    "telemetry": [
+      {
+        "key": "temperature",
+        "type": "double",
+        "value": "${$.temp}"  // Match actual device field name
+      }
+    ]
+  }
+}
+```
+
+**Detailed Example 2: File Storage Corruption After Power Loss**
+
+**Problem**: Gateway deployed on device experiencing power loss (unstable power grid, edge deployment) encounters file storage corruption when power fails during event write operation. Gateway fails to start on next boot because storage index file is incomplete, causing loss of all queued events from the outage period.
+
+**Why This Happens**: File-based event storage writes events to data files and maintains an index file tracking write positions. If power is lost mid-write, the data file may contain partial event data and the index file may be inconsistent with actual file contents. On startup, the gateway attempts to read from index-specified positions that don't contain valid data, causing parse errors. Without atomic writes (write to temp file, then rename), corruption is inevitable during crashes.
+
+**Detection**:
+- Gateway fails to start after power restoration
+- Logs show "Cannot parse storage file at offset X" or "Corrupted event data" errors
+- Storage directory contains `.dat` files but gateway won't initialize
+- Manual inspection of data files shows incomplete JSON objects or binary corruption
+- Gateway process exits during initialization phase before establishing platform connection
+
+**Solution**:
+1. **Immediate recovery**: Identify corrupted files and remove or rebuild:
+   ```bash
+   # Backup current storage
+   cp -r /var/lib/tb-gateway/data /var/lib/tb-gateway/data.backup
+
+   # Remove corrupted files (data loss occurs)
+   rm /var/lib/tb-gateway/data/*.dat
+   rm /var/lib/tb-gateway/data/*.idx
+
+   # Restart gateway
+   systemctl restart tb-gateway
+   ```
+2. **Prevention**:
+   - Use power supply with battery backup (UPS) for critical deployments
+   - Implement storage write strategy with atomic operations (temp file + rename)
+   - Add storage validation on startup with automatic recovery from corruption
+3. **Configuration**: Enable storage checksum validation if available. Configure maximum file size to limit corruption scope
+4. **Monitoring**: Alert on repeated gateway restart failures. Track storage write errors before they cause corruption
+
+**Storage Configuration**:
+```json
+{
+  "storage": {
+    "type": "file",
+    "data_folder_path": "/var/lib/tb-gateway/data",
+    "max_file_count": 100,
+    "max_records_per_file": 5000,  // Smaller files limit corruption scope
+    "max_file_size": 10485760       // 10MB file size limit
+  }
+}
+```
+
+**Detailed Example 3: MQTT Connection Retry Storm**
+
+**Problem**: Gateway deployed in environment with intermittent network connectivity enters connection retry storm after disconnect, attempting reconnection every 100-200ms without exponential backoff. This overwhelms the platform's connection rate limits, resulting in the gateway being temporarily banned by rate limiting policies, extending the outage duration significantly.
+
+**Why This Happens**: Default MQTT client configurations often use fixed retry intervals without exponential backoff or jitter. When gateway loses connection (network glitch, platform maintenance), it immediately attempts reconnection. Without backoff, failed attempts happen in rapid succession. ThingsBoard platform implements rate limiting (e.g., 10 connections/minute per IP) to protect against connection storms. Rapid retry attempts trigger rate limiting, causing connection refusals even after network recovers. Multiple gateways behind same NAT IP compound the problem (thundering herd).
+
+**Detection**:
+- Gateway logs show connection attempts every 100-200ms: "Connecting to ThingsBoard..." repeated rapidly
+- Platform logs show rate limit violations: "Connection rate limit exceeded for IP x.x.x.x"
+- Connection state oscillates: CONNECTING → DISCONNECTED → CONNECTING without CONNECTED state
+- Gateway connectivity outage extends 5-10x longer than actual network issue duration
+- Platform monitoring shows spike in connection attempts from gateway IP
+
+**Solution**:
+1. **Immediate**: Manually restart gateway with rate limiting in mind (wait 60s between attempts):
+   ```bash
+   systemctl stop tb-gateway
+   sleep 60  # Wait for rate limit window to reset
+   systemctl start tb-gateway
+   ```
+2. **Configuration**: Implement exponential backoff with jitter:
+   - Initial retry: 1 second
+   - Subsequent retries: double previous delay (2s, 4s, 8s, 16s, 32s, 60s max)
+   - Add random jitter (±20%) to prevent synchronized retries from multiple gateways
+   - Reset backoff after successful connection lasting >5 minutes
+3. **Prevention**: Configure MQTT client with connection limits. Test reconnection behavior during gateway commissioning
+4. **Monitoring**: Alert on excessive connection attempts (>5 per minute). Track time in CONNECTING state
+
+**Client Configuration**:
+```json
+{
+  "thingsboard": {
+    "host": "thingsboard.example.com",
+    "port": 1883,
+    "security": {
+      "type": "accessToken",
+      "accessToken": "YOUR_TOKEN"
+    },
+    "reconnect": {
+      "enabled": true,
+      "minDelay": 1000,       // 1 second initial
+      "maxDelay": 60000,      // 60 second maximum
+      "backoffMultiplier": 2, // Double on each failure
+      "jitter": 0.2           // 20% random jitter
+    }
+  }
+}
+```
+
 ## See Also
 
 - [Connectors Overview](./connectors-overview.md) - Connector types and configuration

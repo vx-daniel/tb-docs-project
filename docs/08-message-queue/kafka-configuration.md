@@ -447,6 +447,76 @@ queue:
 | Rebalancing storm | Frequent consumer restarts | Stabilize services |
 | Stuck consumer | max.poll.interval exceeded | Increase timeout or optimize processing |
 
+## Common Pitfalls
+
+### Connection and Bootstrap
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Single bootstrap server configured | Cluster outage causes complete connection failure | Use comma-separated list with multiple brokers: `bootstrap.servers: "kafka1:9092,kafka2:9092,kafka3:9092"` |
+| Incorrect port number | "Connection refused" errors, services fail to start | Verify broker listener port configuration (default 9092 for plaintext, 9093 for TLS). Check broker `listeners` setting |
+| DNS resolution failure for broker hostnames | Intermittent connectivity, timeout errors during DNS outages | Use IP addresses in `bootstrap.servers` or verify DNS reliability. Check `/etc/hosts` for local resolution |
+| Network firewall blocking Kafka port | Silent connection timeout after 30s, no error details | Verify port 9092/9093 open with `telnet kafka-host 9092`. Check security groups, iptables, cloud firewall rules |
+| Bootstrap servers specified with protocol prefix | "Unknown host" error from Kafka client | Remove `kafka://` prefix. Use bare `hostname:port` format: `kafka1:9092` not `kafka://kafka1:9092` |
+| Private network Kafka with public ThingsBoard instance | "Broker metadata unreachable" error, can connect but can't produce/consume | Kafka advertised.listeners must be reachable from ThingsBoard. Use VPN/VPC peering or expose Kafka via load balancer with correct advertised addresses |
+
+### Producer Configuration
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Using acks=1 (default in some configs) | Data loss if broker leader fails before replication completes | Set `acks: all` for critical topics (TB_CORE, TB_RULE_ENGINE, TB_TRANSPORT). Verify `min.insync.replicas >= 2` |
+| No compression enabled | Network bandwidth usage 5x higher, inter-datacenter costs increase | Enable `compression.type: lz4` (best throughput) or `snappy` (balanced). Avoid gzip (high CPU) unless bandwidth critical |
+| Tiny batch size (default 16 KB) | High CPU overhead from frequent small sends, poor throughput (< 10K msg/sec) | Increase `batch.size: 65536` (64 KB) and `linger.ms: 5` for high-throughput topics. Monitor batching metrics |
+| retries=0 for critical messages | Transient network failures cause permanent message loss | Set `retries: 10` with `retry.backoff.ms: 100`. Enable `enable.idempotence: true` to prevent duplicates (Kafka 0.11+, default 3.0+) |
+| Message size exceeds broker limit | "RecordTooLargeException", messages dropped silently | Increase broker `message.max.bytes: 10485760` (10 MB) and producer `max.request.size`. Or split large payloads into chunks |
+| Missing idempotence configuration | Duplicate messages delivered on retry, breaks exactly-once semantics | Enable `enable.idempotence: true`. Required for transactional writes. Enabled by default in Kafka 3.0+ |
+| Buffer memory too small for burst traffic | Producer blocks on `send()`, application threads stall | Increase `buffer.memory: 67108864` (64 MB default may be insufficient). Monitor `buffer-available-bytes` metric |
+| Request timeout too short for slow brokers | "Timeout expired" errors on legitimate requests during high load | Increase `request.timeout.ms: 60000` (60 seconds). Consider broker performance tuning if persistent |
+
+### Consumer Configuration
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| max.poll.interval.ms too short for slow processing | Consumer kicked from group during rule chain execution, constant rebalancing | Increase `max.poll.interval.ms: 600000` (10 minutes) for TB_RULE_ENGINE. Monitor processing time per batch |
+| fetch.min.bytes too high for low-traffic topics | Latency spikes (seconds to minutes) waiting for enough data to accumulate | Reduce `fetch.min.bytes: 1024` (1 KB) for real-time topics. Use default only for high-throughput batch processing |
+| max.poll.records too high for slow processing | Processing timeout despite messages available, consumer seems stuck | Reduce `max.poll.records: 100` for complex rule chains. Balance batch size vs processing time (target < max.poll.interval) |
+| session.timeout.ms too short | False rebalances triggered by GC pauses, consumer constantly rejoining group | Increase `session.timeout.ms: 30000` (30 seconds). Tune JVM GC to avoid pauses > 10s |
+| auto.offset.reset=latest for new consumer group | Messages published before consumer start are lost permanently | Use `auto_offset_reset: earliest` for TB_CORE, TB_RULE_ENGINE to process all messages. Use `latest` only for monitoring consumers |
+| enable.auto.commit=true with manual processing | Message loss if consumer crashes between poll() and processing completion | Use `enable.auto.commit: false` with manual commit after successful processing. Leverage ThingsBoard processing strategies |
+| Consumer group ID collision across environments | Production and staging/dev compete for same messages, both get partial data | Use unique group ID per environment: `tb-core-prod`, `tb-core-staging`, `tb-core-dev`. Include environment prefix in all group IDs |
+| fetch.max.wait.ms too low (< 100ms) | Excessive broker polling, high CPU on brokers from frequent empty fetches | Increase `fetch.max.wait.ms: 500` (500ms). Balance latency vs broker load. Use lower values only for ultra-low-latency requirements |
+
+### Topic Configuration
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Single partition for high-throughput topic | No parallelism possible, single consumer bottleneck (< 50K msg/sec) | Set `partitions = consumer_count` (e.g., 10 partitions for TB_RULE_ENGINE). Calculate: `partitions = target_throughput / per_consumer_throughput` |
+| Replication factor = 1 in production | Complete partition loss if single broker fails, no data recovery possible | Set `replication_factor: 3` minimum (recommend 3). Verify with `kafka-topics.sh --describe`. Requires >= 3 brokers |
+| retention.ms too short (< 1 day) | Data loss during maintenance windows, incidents, or processing delays | Increase `retention.ms: 604800000` (7 days) for critical topics. Use 24 hours minimum for any production topic |
+| min.insync.replicas = 1 with acks=all | Data loss despite acks=all if leader dies immediately after ack but before replication | Set `min.insync.replicas: 2` on broker/topic. Guarantees quorum write. Requires `replication_factor >= 3`, `acks: all` |
+| Partition count mismatch with consumer count | Idle consumers (consumers > partitions) or overloaded consumers (partitions > consumers) | Match `partitions = max(consumer_count)` per service type. Plan for growth: use `partitions = 2x current_consumers` |
+| segment.ms too large (days/weeks) | Delayed log cleanup, retention.ms not honored promptly, disk fills unexpectedly | Reduce `segment.ms: 3600000` (1 hour) for faster retention enforcement. Smaller segments = more files but quicker cleanup |
+
+### Monitoring and Operations
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| No consumer lag monitoring | Processing delays go unnoticed for hours/days, SLA violations, data backlog crisis | Monitor `records-lag-max` metric per consumer group. Alert on lag > 10,000 messages. Use ThingsBoard consumer-stats or Kafka monitoring tools |
+| Missing under-replicated partition alerts | Silent data loss risk, partitions with replication < target go unnoticed | Monitor broker `UnderReplicatedPartitions` metric. Alert immediately on > 0. Indicates broker failures or network issues |
+| No disk space monitoring on brokers | Broker crashes when disk full, partitions offline, data loss | Monitor disk usage on all brokers. Alert at 80% capacity. Ensure `log.retention.bytes` set to prevent unbounded growth |
+| Ignoring broker logs (ERROR/WARN) | Missed early warnings about replication failures, corruption, misconfigurations | Centralize broker logs (Splunk, ELK). Alert on ERROR/WARN patterns: "NotEnoughReplicas", "CorruptRecord", "LeaderNotAvailable" |
+| No rebalance monitoring | Slow/stuck rebalances cause application downtime (minutes to hours), users blocked | Track `rebalance-latency-avg` consumer metric. Alert on rebalance > 30 seconds. Investigate partition count, consumer count, network |
+| Consumer group lag divergence across partitions | Some consumers falling behind while others idle, uneven load distribution | Monitor per-partition lag, not just group total lag. Identify slow consumers, hot partitions. Consider partition key distribution |
+
+### Performance and Tuning
+
+| Pitfall | Impact | Solution |
+|---------|--------|----------|
+| Default JVM heap for Kafka brokers (1 GB) | Frequent GC pauses, out of memory errors under load (> 10K msg/sec) | Increase broker heap: `-Xmx6g -Xms6g` minimum for production. Allocate 25% of RAM to JVM, rest for OS page cache |
+| Untuned OS page cache settings | Poor read performance (10x slower), high disk I/O, consumer lag | Set `vm.swappiness=1`, increase `vm.dirty_ratio=80`. Linux page cache critical for Kafka performance - allocate 50%+ of RAM |
+| Network buffer too small for high throughput | Packet drops under load, retransmissions, unstable throughput | Increase socket buffers: `net.core.rmem_max=134217728` (128 MB), `net.core.wmem_max=134217728`. Verify with `netstat -s` |
+| Synchronous processing in consumer threads | Low throughput (< 1K msg/sec per consumer), poor CPU utilization | Use async processing with dedicated thread pools. Batch commit offsets. Leverage ThingsBoard's per-partition consumers with parallel processing |
+
 ## See Also
 
 - [Queue Architecture](./queue-architecture.md) - Overall queue design

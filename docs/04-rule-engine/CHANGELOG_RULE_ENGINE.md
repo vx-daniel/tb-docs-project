@@ -16,6 +16,7 @@
 
 #### action-nodes.md
 
+
 - **Phase 1-2 Lines added**: 123 lines (700 → 823 lines)
 - **Phase 3 Lines added**: 437 lines (823 → 1,260 lines)
 - **Total Lines added**: 560 lines (700 → 1,260 lines, +80%)
@@ -29,6 +30,7 @@
 
 #### analytics-nodes.md (PE)
 
+
 - **Lines added**: 268 lines (317 → 585 lines, +84%)
 - **Changes**:
   - Added Common Pitfalls section
@@ -40,6 +42,7 @@
 
 #### enrichment-nodes.md
 
+
 - **Lines added**: 66 lines (567 → 633 lines)
 - **Changes**:
   - Added Common Pitfalls section covering 7 node categories
@@ -49,6 +52,7 @@
 
 #### external-nodes.md
 
+
 - **Lines added**: 98 lines (619 → 717 lines)
 - **Changes**:
   - Added Common Pitfalls section covering 9 integration categories
@@ -57,6 +61,7 @@
   - Authentication, timeout, and retry patterns
 
 #### filter-nodes.md
+
 
 - **Phase 1-2 Lines added**: 80 lines (551 → 631 lines)
 - **Phase 3 Lines added**: 373 lines (631 → 1,004 lines)
@@ -72,6 +77,7 @@
 
 #### flow-nodes.md
 
+
 - **Lines added**: 40 lines (350 → 390 lines)
 - **Changes**:
   - Added Common Pitfalls section covering flow control
@@ -80,6 +86,7 @@
   - Queue strategy alignment
 
 #### transformation-nodes.md
+
 
 - **Phase 1-2 Lines added**: 83 lines (575 → 658 lines)
 - **Phase 3 Lines added**: 336 lines (658 → 994 lines)
@@ -97,6 +104,7 @@
 
 #### tbel.md
 
+
 - **Lines added**: 95 lines (610 → 705 lines)
 - **Changes**:
   - Added comprehensive Common Pitfalls section
@@ -106,6 +114,7 @@
   - Syntax and language feature guidance
 
 #### queues.md
+
 
 - **Lines added**: 70 lines (455 → 525 lines)
 - **Changes**:
@@ -117,6 +126,7 @@
 
 #### message-flow.md
 
+
 - **Lines added**: 95 lines (830 → 925 lines)
 - **Changes**:
   - Added Common Pitfalls section
@@ -125,6 +135,7 @@
   - Metadata, routing, and serialization patterns
 
 #### rule-chain-structure.md
+
 
 - **Lines added**: 95 lines (683 → 778 lines)
 - **Changes**:
@@ -137,6 +148,7 @@
 
 #### node-categories.md
 
+
 - **Lines added**: 65 lines (936 → 1,001 lines)
 - **Changes**:
   - Added Common Pitfalls section
@@ -146,6 +158,7 @@
   - Performance optimization
 
 #### node-development-contract.md
+
 
 - **Lines added**: 120 lines (1,149 → 1,269 lines)
 - **Changes**:

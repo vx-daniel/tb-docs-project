@@ -495,6 +495,143 @@ web-ui/
 - Use Angular dev server for hot reload
 - Configure proper CORS in TB Core
 
+## Common Pitfalls
+
+### Proxy Mode in Production
+
+**Problem:** Built-in API proxy enabled in production, creating single point of failure.
+
+**Detection:**
+- Web UI instance failures cause API unavailability
+- Can't scale API independently of UI
+- High memory usage on Web UI instances
+
+**Solution:**
+```yaml
+# ALWAYS disable in production
+TB_ENABLE_PROXY: false
+```
+
+Use HAProxy to route:
+- `/` → Web UI instances (static files)
+- `/api/*` → TB Core instances (API)
+
+### Large Bundle Sizes Cause Slow Initial Load
+
+**Problem:** 9MB+ JavaScript bundle takes too long to download on slow networks.
+
+**Detection:**
+- User complaints about slow page load
+- Lighthouse score < 50
+- Time to Interactive > 10 seconds
+
+**Solution:**
+- Enable CDN with aggressive caching
+- Configure HTTP/2 push for critical resources
+- Use lazy loading for rarely-used modules
+
+```
+# HAProxy compression
+compression algo gzip
+compression type text/html text/plain text/css application/javascript
+```
+
+### Missing Cache Headers
+
+**Problem:** Browsers don't cache static assets, causing unnecessary downloads.
+
+**Detection:**
+- High bandwidth usage
+- Repeated downloads of same files
+- Network waterfall shows uncached resources
+
+**Solution:**
+Configure Express.js caching:
+```javascript
+// Cache static assets for 1 year
+app.use(express.static('public', {
+  maxAge: '1y',
+  immutable: true
+}));
+
+// Don't cache index.html
+app.get('/', (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache');
+});
+```
+
+### WebSocket Connection Failures
+
+**Problem:** WebSocket connections fail through load balancer, breaking real-time updates.
+
+**Detection:**
+- Dashboards don't update in real-time
+- Browser console: WebSocket connection errors
+- Users must refresh to see new data
+
+**Solution:**
+```
+# HAProxy WebSocket configuration
+backend tb-api-backend
+    balance source  # Sticky sessions for WebSocket
+    option http-server-close
+    option forwardfor
+    timeout tunnel 3600s  # Keep WebSocket alive
+```
+
+### Memory Leaks in Node.js Server
+
+**Problem:** Express.js server memory grows over time, requiring periodic restarts.
+
+**Detection:**
+```bash
+# Monitor memory usage
+ps aux | grep node | awk '{print $6}'
+
+# Continuous growth over days
+```
+
+**Solution:**
+- Implement health check-based restarts
+- Use PM2 or similar process manager
+- Configure memory limits:
+
+```yaml
+deploy:
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      memory: 256Mi
+```
+
+Restart policy: Restart if memory > 400MB for > 5 minutes.
+
+### CORS Errors in Development
+
+**Problem:** Angular dev server can't reach TB Core API due to CORS restrictions.
+
+**Detection:**
+- Browser console: CORS policy errors
+- API calls fail with 403
+- Development environment broken
+
+**Solution:**
+**Option 1:** Enable proxy in Web UI (development only)
+```yaml
+TB_ENABLE_PROXY: true
+TB_HOST: localhost
+TB_PORT: 8080
+```
+
+**Option 2:** Configure CORS in TB Core
+```yaml
+# TB Core development config
+cors:
+  enabled: true
+  allowedOrigins: "http://localhost:4200"
+```
+
 ## See Also
 
 - [Microservices Overview](./README.md) - Architecture overview

@@ -940,6 +940,109 @@ graph LR
 | login.chunk.js | Login module | On navigation |
 | home.chunk.js | Home module | On navigation |
 
+## Common Pitfalls
+
+### Memory Leaks from Unmanaged Subscriptions
+
+| Issue | Symptom | Solution |
+|-------|---------|----------|
+| Unsubscribed data streams | Dashboard slows after navigation, memory grows | Track subscriptions, unsubscribe in cleanup lifecycle |
+| Retained DOM listeners | Events continue firing on destroyed components | Remove all event listeners before destruction |
+| Uncanceled timers | Background processes continue indefinitely | Cancel setTimeout/setInterval in cleanup |
+| Component reference retention | Large objects not garbage collected | Clear references to destroyed components |
+
+```mermaid
+graph TB
+    subgraph "Memory Leak Pattern"
+        CREATE[Component Created]
+        SUBSCRIBE[Subscribes to Stream]
+        DESTROY[Component Destroyed]
+        LEAK[Stream Still Active]
+    end
+
+    subgraph "Correct Pattern"
+        CREATE2[Component Created]
+        SUBSCRIBE2[Subscribes to Stream]
+        TRACK[Stores Subscription Reference]
+        DESTROY2[Component Destroyed]
+        UNSUB[Unsubscribes Explicitly]
+        CLEAN[Memory Released]
+    end
+
+    CREATE --> SUBSCRIBE
+    SUBSCRIBE --> DESTROY
+    DESTROY --> LEAK
+
+    CREATE2 --> SUBSCRIBE2
+    SUBSCRIBE2 --> TRACK
+    TRACK --> DESTROY2
+    DESTROY2 --> UNSUB
+    UNSUB --> CLEAN
+```
+
+### Change Detection Issues
+
+| Issue | Symptom | Solution |
+|-------|---------|----------|
+| Stale UI with optimized rendering | Data updates don't reflect in UI | Trigger change detection explicitly after external updates |
+| Mutation instead of replacement | State changes not detected | Replace objects instead of mutating properties |
+| Async updates outside framework context | External callbacks don't update UI | Wrap external async code in framework execution context |
+| Heavy computation in templates | UI freezes during render | Move expensive calculations outside render path |
+
+### State Management Mistakes
+
+| Issue | Symptom | Solution |
+|-------|---------|----------|
+| Direct state mutation | Unpredictable state changes | Always dispatch actions, never mutate state directly |
+| Missing selectors | Recomputing derived data frequently | Use memoized selectors for derived state |
+| Side effects in reducers | Inconsistent state updates | Keep reducers pure, handle side effects in effects layer |
+| Over-normalized state | Complex selectors, difficult debugging | Balance normalization with usability |
+
+### WebSocket Connection Management
+
+| Issue | Symptom | Solution |
+|-------|---------|----------|
+| Duplicate subscriptions | Multiple update messages for same data | Track subscription IDs, check before resubscribing |
+| Missing reconnection logic | Data stops after network interruption | Implement reconnection with subscription recreation |
+| Unsubscribe not sent | Server resources not released | Always send unsubscribe command with same ID |
+| Command ID collision | Updates routed to wrong subscribers | Generate unique IDs for each subscription |
+
+### Routing and Lazy Loading
+
+| Issue | Symptom | Solution |
+|-------|---------|----------|
+| Eager loading all modules | Large initial bundle size | Configure lazy loading for feature modules |
+| Missing route guards | Unauthorized access to protected routes | Implement guards for authentication/authorization checks |
+| Circular module dependencies | Build failures, runtime errors | Organize modules in clear hierarchy, avoid circular imports |
+| Preloading strategy misconfigured | Slow navigation or excessive preloading | Choose appropriate preloading strategy for use case |
+
+### Form Management
+
+| Issue | Symptom | Solution |
+|-------|---------|----------|
+| Missing validation triggers | Invalid data submitted | Validate on blur, change, and submit |
+| Form state not synchronized | Configuration changes lost | Subscribe to form changes, propagate immediately |
+| Validation errors not cleared | Errors persist after fix | Clear validators when dependencies change |
+| Form subscriptions not cleaned | Memory leaks in dialogs | Unsubscribe from form changes on dialog close |
+
+### Performance Bottlenecks
+
+| Issue | Symptom | Solution |
+|-------|---------|----------|
+| Missing trackBy in lists | Entire list re-renders on changes | Provide identity function for list items |
+| No virtual scrolling | Slow rendering with large lists | Implement virtual scrolling for 100+ items |
+| Synchronous blocking operations | UI freezes during processing | Use Web Workers or async processing |
+| Excessive HTTP requests | Slow page loads, server overload | Implement caching, batching, or pagination |
+
+### Module Organization
+
+| Issue | Symptom | Solution |
+|-------|---------|----------|
+| Shared module with providers | Multiple service instances | Move providers to Core module |
+| Core module imported multiple times | Duplicate singleton services | Prevent Core module reimport with guard |
+| Feature module dependencies | Tight coupling between features | Communicate via shared services or state |
+| Circular dependencies | Build errors | Restructure imports, use interfaces for types |
+
 ## See Also
 
 - [Widget System](./widget-system.md) - Widget framework details

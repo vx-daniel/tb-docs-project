@@ -420,6 +420,35 @@ graph TB
     end
 ```
 
+## Common Pitfalls
+
+### Model Configuration
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Training data includes known anomalies** | Model treats anomalies as normal, misses similar future anomalies | Review training period for incidents, exclude anomaly periods, or use clean baseline data |
+| **Segment size too small** | Excessive segments, poor clustering, noise dominates | Match segment size to operational cycles (machine cycle time, HVAC cycles, batch processes) |
+| **Insufficient training data** | Poor cluster formation, high false positive rate | Use minimum 100-200 segments for training, longer training period for better patterns |
+| **Mixing multiple operational modes** | Model confuses different modes as anomalies | Train separate models for distinct modes (summer/winter, production/maintenance) |
+
+### Training & Baseline
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Baseline period too short** | Poor normal pattern recognition | Use minimum 2-4 weeks of stable operation for training, avoid startup/commissioning periods |
+| **Model never retrained** | Accuracy degrades as equipment behavior changes | Enable periodic retraining (monthly/quarterly) to adapt to operational changes |
+| **Training during abnormal conditions** | Baseline includes non-representative data | Select training period during normal, stable operations without known issues |
+| **Wrong telemetry field selected** | Irrelevant anomalies detected | Choose fields with clear normal/abnormal patterns (vibration, temperature, not status codes) |
+
+### Detection & Alerting
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Threshold too sensitive** | Alarm flood, many low-score anomalies | Increase Score Index threshold, focus on sustained anomalies not brief spikes |
+| **Alert fatigue from false positives** | Operators ignore anomaly alarms | Tune threshold based on review tab, validate detected anomalies manually before enabling alarms |
+| **No cluster validation** | Poor quality anomalies, meaningless alerts | Review Cluster Info tab, ensure recognizable patterns in centroids before deployment |
+| **Ignoring anomaly duration** | Focusing only on score, missing long-term issues | Use Score Index (score × duration) to catch sustained deviations with lower intensity |
+
 ## Troubleshooting
 
 ### Common Issues

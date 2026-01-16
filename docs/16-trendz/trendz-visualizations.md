@@ -451,6 +451,35 @@ When embedded in ThingsBoard dashboards, views can filter data based on dashboar
 | Use appropriate aggregation | Meaningful values |
 | Set correct time zones | Correct time display |
 
+## Common Pitfalls
+
+### View Configuration
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Wrong chart type for data** | Line chart shows disconnected points for categorical data | Use bar chart for categorical comparisons, line chart only for time series |
+| **Telemetry on X axis in pie chart** | Error: "Pie chart requires single dimension" | Use attribute or entity name on label field, aggregated telemetry on value field |
+| **Too many series in line chart** | Overlapping lines, unreadable legend with 50+ entries | Add filter to reduce entities, or use grouping by category instead of individual devices |
+| **Label truncation in bar chart** | Device names cut off as "Device-Floor..." | Switch to horizontal bars for long labels, or use shorter entity labels |
+| **Missing aggregation on telemetry** | Error: "Telemetry field requires aggregation" | Apply aggregation function (AVG, SUM, MIN, MAX) to telemetry fields in views |
+
+### Aggregation & Grouping
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **AVG aggregation on state fields** | Nonsensical decimal values (0.347) for boolean states | Use DURATION or DURATION_PERCENT for states, never AVG/SUM |
+| **Wrong time bucket size** | Line chart shows flat lines (too coarse) or noise (too fine) | Match bucket to data pattern: 1-min for real-time, 1-hour for daily trends, 1-day for monthly analysis |
+| **High cardinality series explosion** | Chart becomes unreadable with hundreds of series | Filter to specific devices, or group by category/type instead of individual entities |
+| **No filter on large dataset** | Slow query, timeout errors | Add time range or entity filters before creating view, start with limited scope |
+
+### Display & Performance
+
+| Pitfall | Symptom | Solution |
+|---------|---------|----------|
+| **Embedding without time window** | Static view doesn't update with dashboard filter | Enable "Use dashboard time window" in embed settings |
+| **Export timeout on large data** | CSV/PDF export fails or hangs | Reduce time range, increase aggregation interval, or export in smaller chunks |
+| **Stale cache data** | View shows old values despite new telemetry | Reduce cache TTL in view settings, or manually refresh view |
+
 ## See Also
 
 - [Calculations](./trendz-calculations.md) - Calculated fields

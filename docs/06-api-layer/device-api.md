@@ -705,6 +705,17 @@ X-Authorization: Bearer {token}
 
 7. **Pagination**: Always paginate large result sets; use filters to reduce data transfer.
 
+## Common Pitfalls
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| Device creation fails with conflict | Device names must be unique within tenant | Use unique identifiers: MAC address, serial number, or append UUID to name (e.g., `Sensor-{macAddress}` or `Device-{uuid}`) |
+| Device can't connect despite valid credentials | Credential type doesn't match device profile transport configuration | Match credential type to transport: ACCESS_TOKEN for HTTP/MQTT default, MQTT_BASIC for MQTT username/password, X509_CERTIFICATE for TLS mutual auth |
+| Telemetry keys break queries and rule engine | Keys with spaces or special characters require escaping in queries | Use `snake_case` or `camelCase` for telemetry/attribute keys. Avoid spaces, dots, and special characters (e.g., use `battery_level` not `battery level`) |
+| Shared attributes not visible to device | Using SERVER_SCOPE instead of SHARED_SCOPE for device configuration | Use SHARED_SCOPE for device-visible attributes (configuration pushed to device), SERVER_SCOPE for internal metadata, CLIENT_SCOPE for device-reported state |
+| Device claiming timeout before user completes | Default claiming duration too short for user workflow | Increase `claimingDuration` in Device Profile (default varies), implement UI with clear timeout countdown, or allow reclaiming |
+| Credentials not deleted with device | Edge case where credentials orphaned after device deletion (rare) | Use proper device delete endpoint `/api/device/{id}`, verify credentials removed via `/api/device/{id}/credentials` returning 404 |
+
 ## See Also
 
 - [REST API Overview](./rest-api-overview.md) - General API patterns
@@ -713,3 +724,5 @@ X-Authorization: Bearer {token}
 - [MQTT Protocol](../05-transport-layer/mqtt.md) - MQTT transport details
 - [Device Entity](../02-core-concepts/entities/device.md) - Device data model
 - [Telemetry Data Model](../02-core-concepts/data-model/telemetry.md) - Telemetry structure
+- Official: [HTTP Device API](https://thingsboard.io/docs/reference/http-api/)
+- Official: [MQTT Device API](https://thingsboard.io/docs/reference/mqtt-api/)
